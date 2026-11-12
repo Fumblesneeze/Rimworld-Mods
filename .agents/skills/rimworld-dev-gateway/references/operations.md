@@ -71,6 +71,15 @@ the process because its window state changed.
 - Restore pressed input, active interaction, selection, camera, developer/god state, pause/speed, and
   every setting in failure cleanup.
 
+Native layout observations remain provisional until the enclosing dispatch completes with the
+same event and dispatcher provenance. A nested menu/draw postfix can run before a later callback
+throws or replaces the event; publishing there can authorize input against a failed layout.
+Inspect native exception handling too: a dispatcher that catches OnGUI exceptions internally
+needs an observed failure path, since its outer finalizer can see a successful return. Cover the
+active observation/publication lifecycle on an owned host target. Hook-composition tests with an
+inactive service establish signature compatibility only, not stale-layout rejection. These host
+checks support the existing native workflow gate; they do not replace it.
+
 ## Evidence discipline
 
 Use direct mutation only for arrangement/diagnosis. For the claim itself retain:

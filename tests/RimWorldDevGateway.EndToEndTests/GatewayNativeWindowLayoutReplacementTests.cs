@@ -9,9 +9,11 @@ using Verse;
 
 namespace RimWorldDevGateway.EndToEndTests;
 
+// 10 bounded native operations ×15s +7 screenshots ×30s +3 waits ×10s +120s synchronous/cleanup reserve =510s.
+// Paused UI has no assumed refresh-rate ceiling; wall time is the finite frame-lifetime bound.
 [RimWorldEndToEndTest("gateway.native-window-layout-replacement", EndToEndTestContract.GatewayPackageId,
     "brrainz.harmony", EndToEndTestContract.CorePackageId,
-    MaxFrames = 1800, MaxGameTicks = 1800, MaxWallClockSeconds = 90)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 1800, MaxWallClockSeconds = 600)]
 public sealed class GatewayNativeWindowLayoutReplacementTests : IRimWorldEndToEndTest
 {
     private readonly List<Window> owned = new();
@@ -49,7 +51,7 @@ public sealed class GatewayNativeWindowLayoutReplacementTests : IRimWorldEndToEn
                 return new Dictionary<string, string> { ["replacementEdge"] = edge };
             });
             yield return new WaitUntilStep("source rendered before " + edge, _ => source.DrawCount > 0,
-                new EndToEndDeadline(120, 120, TimeSpan.FromSeconds(10)));
+                new EndToEndDeadline(int.MaxValue, 120, TimeSpan.FromSeconds(10)));
             yield return new NativeWindowCaptureStep("capture source before " + edge,
                 windows => captured = windows.Single(item => item.NativeId == source.ID &&
                     item.RuntimeType == typeof(SourceProbe).FullName));
@@ -82,7 +84,7 @@ public sealed class GatewayNativeWindowLayoutReplacementTests : IRimWorldEndToEn
                     return new Dictionary<string, string> { ["preservedControlId"] = replacement.EstablishedHotControl.ToString() };
                 });
                 yield return new WaitUntilStep("replacement completed its control lifecycle", _ => GUIUtility.hotControl == 0,
-                    new EndToEndDeadline(120, 120, TimeSpan.FromSeconds(10)));
+                    new EndToEndDeadline(int.MaxValue, 120, TimeSpan.FromSeconds(10)));
             }
             yield return new NativeWindowCaptureStep("capture replacement after " + edge,
                 windows => captured = windows.Single(item => item.NativeId == replacement!.ID &&

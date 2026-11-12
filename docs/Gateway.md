@@ -357,6 +357,26 @@ The authored `gateway.native-window-text` scenario covers invalid/valid
 numeric drafts, empty text, a BMP name, an unchanged adjacent field and focus replacement during
 layout followed by fresh input. Its reviewed minimized native run remains pending.
 
+The Entry-menu prerequisite adds `native-entry-menu.capture` with `{"version":1}` and
+`native-entry-menu.click` with `{"version":1,"controlHandle":"<captured handle>"}` through
+the existing typed automation invocation surface. Capture observes only the native Options and
+developer quicktest buttons, with rendered pixel rectangles and exact `options`/`dev-quicktest`
+control keys. A click uses the captured center through the existing native input lane. It never
+creates a WindowStack owner, invokes a captured callback, changes developer mode or sends desktop
+input. Root/UI/stack/dispatcher, language, developer mode, geometry, control identity, obstruction
+and fresh post-layout observations are rechecked before delivery. Recapture after transitions.
+Menu captures remain provisional until the enclosing native layout completes, including pending
+window processing. Late callback failures, replaced events, missing observers or unsupported
+finalizer composition refuse the capture; a swallowed native OnGUI failure cannot reuse old controls.
+
+`NativeEntryMenuCaptureStep` and `NativeEntryMenuClickActionStep` use the same15-second operations
+and retained deferred cleanup. Input delivery does not establish Options visibility or completed
+new-game readiness. Failed or malformed Entry captures retain the returned run/request IDs,
+state, original error code and raw result artifact. Separately wait and observe native outcomes.
+Authored scenario
+`gateway.native-entry-menu` is process-owned and must run alone because it replaces the entire
+disposable game. Independent review and reviewed native verification remain pending.
+
 `native-log.set-open` accepts `{"version":1,"open":true}` (or false) through the same typed
 automation invocation surface. It invokes the inspected1.7 developer-log toolbar command,
 requires developer mode and settled UI, and observes the resulting native window. An already

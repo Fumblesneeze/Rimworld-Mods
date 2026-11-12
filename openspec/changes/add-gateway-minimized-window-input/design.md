@@ -22,6 +22,34 @@ background OS input, supporting uninspected 1.6 input internals, or accepting ga
 
 ## Decisions
 
+### Entry-menu controls
+
+The supporting S138 save-switch workflow requires Options and developer quicktest at Entry.
+Observe the actual native ListableOption/ButtonText layout under MainMenuDrawer, including its
+current transform, instead of computing menu row ordinals. These inline controls have no ordinary
+WindowStack owner. Bind exact handles to the actual Entry root/UI/stack, dispatcher, language,
+developer mode, geometry and native control identity. Require a fresh completed native layout
+before each input mouse phase. Reuse the existing deferred click lane and cleanup, with an explicit
+Entry target lease; absence of a hot-control window mapping is never ownership evidence.
+Expose version1 `native-entry-menu.capture` and `native-entry-menu.click` through the existing
+typed automation projection and shared E2E steps. Click only the captured center. The native
+Options/new-game outcome remains separately observed; no captured callback is directly invoked.
+Implementation research and exact file lease are retained locally in
+`artifacts/Implementation/gateway-entry-menu/plan.md`. Host work and authored scenarios do not
+accept the native lifecycle; root owns final reviewed-build verification.
+
+Menu observations stay provisional through the enclosing `ImguiDispatch.Dispatch` finalizer.
+The menu postfix alone cannot publish: later OnGUI work or Harmony postfixes may throw or replace
+the event. Bind the active observation to the exact event, dispatcher, host, drawing mode and
+layout event types; invalidate it on nested failure or missing/skipped pending-window processing.
+The inspected dispatcher swallows OnGUI exceptions and calls `GUI.ClearPendingWindows`, so observe
+that call outside normal `ProcessPendingWindows` scope as failure. Normal pending processing also
+clears in its finally and is allowed only when that exact phase returns successfully. Require all
+owned observers still published; foreign finalizers on these observed boundaries are unsupported
+because they can suppress a late failure before publication. The outer dispatch must have only the
+owned finalizer and no inner finalizers. These finite guards apply to Entry capture, not ordinary
+window availability. Retain failed/malformed Entry capture run identity and error/result evidence.
+
 ### 2026-11-11 current-beta dispatch diagnosis
 
 The installed 1.7.5005 rev1082 runtime produced `native_input_not_dispatched` on the first enabled

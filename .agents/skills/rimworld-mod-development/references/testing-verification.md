@@ -16,6 +16,11 @@ Source-linked host tests can compile product files under a newer C# language ver
 mod project. Keep shared source within the product project's language version and perform the owning
 product build at the batch checkpoint; a passing host test does not prove product compilation.
 
+Read generated evidence at the exact path returned by the operation. If only a run directory is
+known, enumerate that bounded directory with `rg --files --no-ignore` before selecting its log or
+TRX; do not guess filenames from a remembered suite or previous run. Evidence directories are
+ignored by Git, so an ordinary `rg --files` can otherwise hide the files that actually exist.
+
 The Zlepper testing SDK only references game assemblies; it does not load mods, apply Harmony, or load Def XML. Keep ordinary, explicit-Harmony, and DefDatabase tests in separate projects/processes. Simulate package presence through the public package-ID boundary; use constructed lightweight `Def` fixtures only in an initially empty isolated Def database; use actual RimWorld for populated/Core/Workshop databases, `ThingDef`/`RecipeDef`, XML inheritance/cross-references/PatchOperations, or another mod's real lifecycle. Read [the host-test decision table](../../../../docs/TestingEnvironments.md) before adding such a test.
 
 Choose the environment from what the assertion genuinely needs:

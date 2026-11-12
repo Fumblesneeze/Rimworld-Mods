@@ -81,6 +81,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
                 postfix: new HarmonyMethod(Hook(nameof(AfterInputFrameReset))) { priority = Priority.First },
                 finalizer: new HarmonyMethod(Hook(nameof(FinalizeInputFrameReset))) { priority = Priority.Last });
             InstallTextHooks();
+            InstallEntryHooks();
             harmony.Patch(contract.FrameResetBoundary,
                 postfix: new HarmonyMethod(Hook(nameof(AfterInputResetBoundary))) { priority = Priority.First },
                 transpiler: new HarmonyMethod(Hook(nameof(ObserveResetBoundaryStream))) { priority = Priority.Last },
@@ -151,7 +152,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
             throw Error("stale_window_handle");
         GatewayNativeInputPoint point = capture.Descriptor.Geometry.ResolvePoint(pixelX, pixelY);
         if (point.Error != null) throw Error(point.Error);
-        var backend = new ClickBackend(this, capture, pixelX, pixelY, point, scope);
+        var backend = new ClickBackend(this, new WindowClickTarget(this, capture), pixelX, pixelY, point, scope);
         string? rejection = backend.Validate(false);
         if (rejection != null) throw Error(rejection);
         context.RunStep("native-click-admission", () => { });
@@ -263,6 +264,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
                 "Native input hook cleanup was incomplete.", result?.Result);
         captures.Clear();
         textCaptures.Clear();
+        entryCaptures.Clear();
         lastFocusedText = null;
         return result;
 #else
@@ -352,6 +354,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
                     catch { complete = false; }
                 }
             }
+            complete &= RemoveEntryHooks();
             foreach (var patch in new[]
             {
                 (contract.Dispatch, nameof(BeforeNativeDispatch)),
@@ -666,6 +669,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
         if (service != null && UnityData.IsInMainThread && input != null && ReferenceEquals(__instance, service.dispatchInstance))
         {
             if (input.rawType is EventType.layout or EventType.repaint) service.lastFocusedText = null;
+            service.BeginEntryLayout(input, __instance, __1);
             service.textFrame?.Capture(input, __1);
         }
         if (frame == null || !UnityData.IsInMainThread || input == null ||
@@ -788,10 +792,64 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
         public object Host { get; }
     }
 
-    private sealed class ClickBackend : IGatewayNativeClickBackend, IGatewayNativeScopedClickBackend
+    private interface IClickTarget
+    {
+        GatewayNativeWindowGeometry Geometry { get; }
+        bool ContextCurrent { get; }
+        bool TargetPresent { get; }
+        bool OwnsHotControl(int control);
+        bool HasOtherWindowOwner(int control);
+        void BeginDispatch();
+        string? Validate(double pixelX, double pixelY, bool afterLayout);
+    }
+
+    private sealed class WindowClickTarget : IClickTarget
     {
         private readonly VerseGatewayNativeWindowInput service;
         private readonly CaptureLease capture;
+        public WindowClickTarget(VerseGatewayNativeWindowInput service, CaptureLease capture)
+        { this.service = service; this.capture = capture; }
+        public GatewayNativeWindowGeometry Geometry => capture.Descriptor.Geometry;
+        public bool ContextCurrent => ReferenceEquals(Find.WindowStack, capture.Stack);
+        public bool TargetPresent => capture.Stack.Windows.Any(window => ReferenceEquals(window, capture.Window));
+        public bool OwnsHotControl(int control) => service.contract!.ControlBelongsTo(control, capture.Descriptor.NativeId);
+        public bool HasOtherWindowOwner(int control) => service.contract!.ControlWindows.GetValue(null) is Dictionary<int, int> owners &&
+            owners.TryGetValue(control, out int owner) && owner != capture.Descriptor.NativeId &&
+            capture.Stack.Windows.Count(window => window.ID == owner &&
+                GatewayNativeWindowInputContract.SupportsWindowIdentity(window.ID, window is ImmediateWindow)) == 1;
+        public void BeginDispatch() { }
+        public string? Validate(double pixelX, double pixelY, bool afterLayout)
+        {
+            WindowStack? stack = Find.WindowStack;
+            if (stack == null || !ContextCurrent) return "stale_window_stack";
+            if (stack.Windows.Count > MaximumWindows) return "native_window_inventory_limit";
+            Window? current = stack.Windows.FirstOrDefault(window => ReferenceEquals(window, capture.Window));
+            if (current == null) return "stale_window_instance";
+            string? leaseError = capture.Identity.Validate(current, stack);
+            if (leaseError != null) return leaseError;
+            if (current.ID != capture.Descriptor.NativeId ||
+                !GatewayNativeWindowInputContract.SupportsWindowIdentity(current.ID, current is ImmediateWindow))
+                return "stale_window_instance";
+            if (!ReferenceEquals(service.dispatchInstance, capture.Dispatcher) ||
+                !ReferenceEquals(service.dispatchHost, capture.Host)) return "stale_native_dispatcher";
+            Rect bounds = current.windowRect;
+            if (bounds.x != Geometry.X || bounds.y != Geometry.Y || bounds.width != Geometry.Width ||
+                bounds.height != Geometry.Height || Prefs.UIScale != Geometry.UiScale ||
+                Screen.width != Geometry.PixelWidth || Screen.height != Geometry.PixelHeight || !service.ValidExtent())
+                return "stale_window_geometry";
+            string? pointError = Geometry.ResolvePoint(pixelX, pixelY).Error;
+            if (pointError != null) return pointError;
+            if (!stack.GetsInput(current) || !ReferenceEquals(stack.GetWindowAt(
+                new Vector2((float)(pixelX / Geometry.UiScale), (float)(pixelY / Geometry.UiScale))), current))
+                return "native_window_obscured";
+            return null;
+        }
+    }
+
+    private sealed class ClickBackend : IGatewayNativeClickBackend, IGatewayNativeScopedClickBackend
+    {
+        private readonly VerseGatewayNativeWindowInput service;
+        private readonly IClickTarget capture;
         private readonly double pixelX, pixelY;
         private readonly Vector2 target, previousPointer;
         private bool pointerClaimed;
@@ -831,7 +889,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
                     ["lastCapturedPass"] = lastCapturedPass,
                     ["queuedPressEdgeObserved"] = queuedPressEdge,
                     ["queuedReleaseEdgeObserved"] = queuedReleaseEdge,
-                    ["mouseOriginOffset"] = capture.Descriptor.Geometry.MouseOriginOffset,
+                    ["mouseOriginOffset"] = capture.Geometry.MouseOriginOffset,
                     ["mousePassSeen"] = observedMousePass?.Seen ?? false,
                     ["mousePassAdmitted"] = observedMousePass?.Admitted ?? false,
                     ["mousePassOriginalObserved"] = observedMousePass?.OriginalObserved ?? false,
@@ -861,7 +919,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
             observedMousePass = mousePass;
         }
 
-        public ClickBackend(VerseGatewayNativeWindowInput service, CaptureLease capture,
+        public ClickBackend(VerseGatewayNativeWindowInput service, IClickTarget capture,
             double pixelX, double pixelY, GatewayNativeInputPoint point, GatewayNativePointerScope? scope)
         {
             this.service = service; this.capture = capture; this.pixelX = pixelX; this.pixelY = pixelY;
@@ -879,6 +937,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
 
         public void BeginDispatch()
         {
+            capture.BeginDispatch();
             preparingDispatch = true;
             PressedThisDispatch = queuedEdgeThisDispatch = rejectedThisDispatch = injectionFailed = false;
         }
@@ -922,33 +981,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
             return null;
         }
 
-        private string? ValidateTarget()
-        {
-            WindowStack? stack = Find.WindowStack;
-            if (stack == null || !ReferenceEquals(stack, capture.Stack)) return "stale_window_stack";
-            if (stack.Windows.Count > MaximumWindows) return "native_window_inventory_limit";
-            Window? current = stack.Windows.FirstOrDefault(window => ReferenceEquals(window, capture.Window));
-            if (current == null) return "stale_window_instance";
-            string? leaseError = capture.Identity.Validate(current, stack);
-            if (leaseError != null) return leaseError;
-            if (current.ID != capture.Descriptor.NativeId ||
-                !GatewayNativeWindowInputContract.SupportsWindowIdentity(current.ID, current is ImmediateWindow))
-                return "stale_window_instance";
-            if (!ReferenceEquals(service.dispatchInstance, capture.Dispatcher) ||
-                !ReferenceEquals(service.dispatchHost, capture.Host)) return "stale_native_dispatcher";
-            GatewayNativeWindowGeometry geometry = capture.Descriptor.Geometry;
-            Rect bounds = current.windowRect;
-            if (bounds.x != geometry.X || bounds.y != geometry.Y || bounds.width != geometry.Width ||
-                bounds.height != geometry.Height || Prefs.UIScale != geometry.UiScale ||
-                Screen.width != geometry.PixelWidth || Screen.height != geometry.PixelHeight || !service.ValidExtent())
-                return "stale_window_geometry";
-            string? pointError = geometry.ResolvePoint(pixelX, pixelY).Error;
-            if (pointError != null) return pointError;
-            if (!stack.GetsInput(current) || !ReferenceEquals(stack.GetWindowAt(
-                new Vector2((float)(pixelX / geometry.UiScale), (float)(pixelY / geometry.UiScale))), current))
-                return "native_window_obscured";
-            return null;
-        }
+        private string? ValidateTarget(bool afterLayout = false) => capture.Validate(pixelX, pixelY, afterLayout);
 
         public void Press()
         {
@@ -1023,7 +1056,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
                 foreignInput = true;
                 return "native_input_ownership_lost";
             }
-            return ValidateTarget();
+            return ValidateTarget(afterLayout: true);
         }
 
         public void ObserveDispatch(bool originalRan)
@@ -1033,7 +1066,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
             try
             {
                 ownedHotControl = GUIUtility.hotControl;
-                if (ownedHotControl != 0 && !Contract.ControlBelongsTo(ownedHotControl, capture.Descriptor.NativeId))
+                if (ownedHotControl != 0 && !capture.OwnsHotControl(ownedHotControl))
                     guiUncertain = true;
                 ownedButtonLatch = (bool)Contract.ButtonActive.GetValue(null)!;
                 if (ownedButtonLatch)
@@ -1085,22 +1118,19 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
         {
             if (!observedPress) return;
             if (guiUncertain || foreignInput) throw Error("native_gui_ownership_unavailable");
-            bool sameStack = ReferenceEquals(Find.WindowStack, capture.Stack);
+            bool sameStack = capture.ContextCurrent;
             int currentHot = GUIUtility.hotControl;
             if (currentHot != 0)
             {
                 bool owned = currentHot == ownedHotControl && sameStack &&
-                    Contract.ControlBelongsTo(currentHot, capture.Descriptor.NativeId);
+                    capture.OwnsHotControl(currentHot);
                 DispatchFrame? frame = service.currentDispatchFrame;
                 bool rejectedRelease = frame != null && ReferenceEquals(frame.Backend, this) &&
                     HasQueuedRelease && !frame.MousePass.Dispatched;
-                bool otherOwner = sameStack && Contract.ControlWindows.GetValue(null) is Dictionary<int, int> owners &&
-                    owners.TryGetValue(currentHot, out int owner) && owner != capture.Descriptor.NativeId &&
-                    capture.Stack.Windows.Count(window => window.ID == owner &&
-                        GatewayNativeWindowInputContract.SupportsWindowIdentity(window.ID, window is ImmediateWindow)) == 1;
+                bool otherOwner = sameStack && capture.HasOtherWindowOwner(currentHot);
                 if (owned) GUIUtility.hotControl = 0;
                 else if (!GatewayNativeWindowInputContract.PreserveReplacementHotControl(rejectedRelease,
-                    capture.Stack.Windows.Any(window => ReferenceEquals(window, capture.Window)), otherOwner))
+                    capture.TargetPresent, otherOwner))
                     throw Error("native_gui_ownership_unavailable");
             }
             if (ownedButtonLatch && (bool)Contract.ButtonActive.GetValue(null)!)

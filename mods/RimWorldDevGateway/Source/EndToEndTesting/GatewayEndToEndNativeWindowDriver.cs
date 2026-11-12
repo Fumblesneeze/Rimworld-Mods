@@ -67,10 +67,11 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
             catch (GatewayAutomationException exception)
             { return GatewayEndToEndCompletedStepOperation.Failed(exception.Code, exception.Message); }
         }
-        if (step is NativeWindowClickActionStep or NativeWindowReplaceTextActionStep)
+        if (step is NativeWindowClickActionStep or NativeWindowReplaceTextActionStep or NativeEntryMenuClickActionStep)
         {
             var click = step as NativeWindowClickActionStep;
             var text = step as NativeWindowReplaceTextActionStep;
+            var entry = step as NativeEntryMenuClickActionStep;
             if (context is not GatewayEndToEndTestContext ownedContext)
                 return GatewayEndToEndCompletedStepOperation.Failed("native_input_cleanup_unavailable",
                     "Native input requires the owned asynchronous scenario cleanup context.");
@@ -96,21 +97,55 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
             {
                 var arguments = new Dictionary<string, object?>
                 {
-                    ["version"] = click?.PointerScopeHandle == null ? 1 : 2,
-                    ["windowHandle"] = click?.WindowHandle ?? text!.WindowHandle
+                    ["version"] = click?.PointerScopeHandle == null ? 1 : 2
                 };
-                if (click != null)
+                if (entry != null) arguments["controlHandle"] = entry.ControlHandle;
+                else if (click != null)
                 {
+                    arguments["windowHandle"] = click.WindowHandle;
                     arguments["pixelX"] = click.PixelX; arguments["pixelY"] = click.PixelY;
                     if (click.PointerScopeHandle != null) arguments["pointerScopeHandle"] = click.PointerScopeHandle;
                 }
-                else { arguments["controlHandle"] = text!.ControlHandle; arguments["text"] = text.Text; }
-                var run = registry.StartRun(click != null ? GatewayNativeWindowAutomations.ClickName : GatewayNativeWindowAutomations.ReplaceTextName,
+                else { arguments["windowHandle"] = text!.WindowHandle; arguments["controlHandle"] = text.ControlHandle; arguments["text"] = text.Text; }
+                var run = registry.StartRun(entry != null ? GatewayNativeEntryMenuAutomations.ClickName :
+                    click != null ? GatewayNativeWindowAutomations.ClickName : GatewayNativeWindowAutomations.ReplaceTextName,
                     "e2e-native-" + Guid.NewGuid().ToString("N"),
                     arguments, timeout: TimeSpan.FromSeconds(15));
                 retained = run;
                 deferredAdmitted = run.DeferredOperation != null;
-                return new InputOperation(run, arguments, click?.ExpectedFailureCode ?? text?.ExpectedFailureCode);
+                return new InputOperation(run, arguments, entry?.ExpectedFailureCode ?? click?.ExpectedFailureCode ?? text?.ExpectedFailureCode);
+            }
+            catch (GatewayAutomationException exception)
+            { return GatewayEndToEndCompletedStepOperation.Failed(exception.Code, exception.Message); }
+        }
+        if (step is NativeEntryMenuCaptureStep entryCapture)
+        {
+            try
+            {
+                var run = registry.StartRun(GatewayNativeEntryMenuAutomations.CaptureName, "e2e-entry-" + Guid.NewGuid().ToString("N"),
+                    new Dictionary<string, object?> { ["version"] = 1 }, timeout: TimeSpan.FromSeconds(15));
+                var artifacts = new Dictionary<string, string>
+                {
+                    ["automationRunId"] = run.RunId, ["requestId"] = run.RequestId,
+                    ["automationState"] = run.State, ["automationErrorCode"] = run.Error?.Code ?? string.Empty,
+                    ["automationErrorMessage"] = run.Error?.Message ?? string.Empty,
+                    ["nativeEntryMenuInventory"] = "null"
+                };
+                try { artifacts["nativeEntryMenuInventory"] = System.Text.Encoding.UTF8.GetString(GatewayJsonWriter.Write(run.Result)); }
+                catch (GatewayJsonSerializationException exception)
+                { artifacts["nativeEntryMenuInventorySerializationError"] = exception.Message; }
+                if (run.State != "succeeded" || run.Result is not IReadOnlyList<EndToEndNativeEntryMenuControl> controls)
+                    return GatewayEndToEndCompletedStepOperation.FromOutcome(GatewayEndToEndStepOutcome.Fail(
+                        run.Error?.Code ?? "native_capture_invalid_result",
+                        run.Error?.Message ?? "Native Entry capture did not return its controls.", artifacts));
+                try { entryCapture.Receive(controls); }
+                catch (Exception exception)
+                {
+                    return GatewayEndToEndCompletedStepOperation.FromOutcome(GatewayEndToEndStepOutcome.Fail(
+                        "native_capture_observation_failed", "Native Entry observation failed: " +
+                        exception.GetBaseException().GetType().Name, artifacts));
+                }
+                return GatewayEndToEndCompletedStepOperation.Passed(artifacts);
             }
             catch (GatewayAutomationException exception)
             { return GatewayEndToEndCompletedStepOperation.Failed(exception.Code, exception.Message); }

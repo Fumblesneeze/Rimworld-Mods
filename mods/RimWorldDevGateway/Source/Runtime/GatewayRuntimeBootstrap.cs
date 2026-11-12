@@ -441,6 +441,11 @@ public sealed class GatewayRuntimeHost : MonoBehaviour
         automations = registry;
         VerseGatewayDeveloperLog.Register(registry);
         VerseGatewayMainTab.Register(registry);
+        GatewayNativeEntryMenuAutomations.Register(registry,
+            () => RequireNativeWindows().CaptureEntryMenu(),
+            (handle, context) => RequireNativeWindows().BeginEntryClick(handle, context),
+            () => new GatewayAutomationAvailability(nativeWindows != null && nativeWindows.EntryUnavailableReason == null,
+                nativeWindowInitializationFailure ?? nativeWindows?.EntryUnavailableReason ?? "native_input_initializing"));
         GatewayNativeWindowAutomations.Register(registry,
             () => RequireNativeWindows().Capture(),
             (handle, x, y, context) => RequireNativeWindows().Begin(handle, x, y, context),

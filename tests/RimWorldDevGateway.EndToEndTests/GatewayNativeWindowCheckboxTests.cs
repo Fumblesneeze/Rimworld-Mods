@@ -9,9 +9,11 @@ using Verse;
 
 namespace RimWorldDevGateway.EndToEndTests;
 
+// 5 bounded native operations ×15s +4 screenshots ×30s +10s wait +90s synchronous/cleanup reserve =295s.
+// Paused UI has no assumed refresh-rate ceiling; wall time is the finite frame-lifetime bound.
 [RimWorldEndToEndTest("gateway.native-window-checkbox", EndToEndTestContract.GatewayPackageId,
     "brrainz.harmony", EndToEndTestContract.CorePackageId,
-    MaxFrames = 1200, MaxGameTicks = 1200, MaxWallClockSeconds = 60)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 1200, MaxWallClockSeconds = 360)]
 public sealed class GatewayNativeWindowCheckboxTests : IRimWorldEndToEndTest
 {
     private CheckboxProbe window = null!;
@@ -31,7 +33,7 @@ public sealed class GatewayNativeWindowCheckboxTests : IRimWorldEndToEndTest
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
         yield return new WaitUntilStep("native probe has rendered", _ => window.DrawCount > 0,
-            new EndToEndDeadline(120, 120, TimeSpan.FromSeconds(10)));
+            new EndToEndDeadline(int.MaxValue, 120, TimeSpan.FromSeconds(10)));
         yield return new NativeWindowCaptureStep("capture exact probe instance", windows => captured = windows.Single(
             item => item.NativeId == window.ID && item.RuntimeType == typeof(CheckboxProbe).FullName));
         yield return Capture("before native checkbox input");

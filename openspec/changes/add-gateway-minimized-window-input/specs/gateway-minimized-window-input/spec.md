@@ -2,6 +2,42 @@
 
 Owner: repository tooling **RimWorld Dev Gateway**, `mods/RimWorldDevGateway`.
 
+### Requirement: Click an exact observed Entry-menu control through native input
+
+The Gateway SHALL capture the actual rendered Options and developer quicktest controls in a
+settled Entry menu and click one current captured control through the existing minimized native
+input lane. It MUST NOT fabricate a WindowStack owner, call a captured callback directly or
+change developer mode to make a control available. A delivered gesture is separate from the
+subsequent native window or new-game outcome.
+
+#### Scenario: Open Options and create a disposable second game from Entry
+- **WHEN** an authenticated operator captures an unobscured settled Entry menu and clicks its exact Options handle
+- **THEN** native button input opens the ordinary Options window while the game remains minimized
+- **AND** after native closing controls, a fresh capture may expose developer quicktest when developer mode is already enabled
+- **AND** clicking that current control follows the native quicktest path; the caller separately waits for and observes the distinct playable game
+
+#### Scenario: Refuse a stale or obscured Entry control
+- **WHEN** the root, UI root, window stack, dispatcher, language, developer mode, extent, layout, native control identity or enabled state changes, or a game, long event, world view or blocking window appears
+- **THEN** remaining input is refused before reaching another control
+- **AND** the provider requires fresh completed native layout before each mouse phase, retains delivered phases and cleans only its owned input
+- **AND** missing, ambiguous or unsupported controls never fall back to an ordinal, coordinate guess or callback invocation
+
+#### Scenario: Preserve native input ownership across an Entry transition
+- **WHEN** cancellation, a rejected release or a native scene transition occurs during an Entry gesture
+- **THEN** the existing deferred input lifecycle retains partial results and attempts only provably owned release and pointer restoration
+- **AND** an unrelated hot control is never treated as owned because it lacks a window mapping; ambiguous cleanup quarantines further injection
+
+#### Scenario: Reject an observation invalidated after the menu returns
+- **WHEN** a menu has returned but a later callback fails, replaces the layout event or changes dispatcher provenance before the enclosing native dispatch finishes
+- **THEN** its controls remain provisional and cannot authorize the following mouse phase
+- **AND** native OnGUI failures caught by the dispatcher invalidate the observation through the inspected pending-window cleanup path
+- **AND** only intact enclosing completion, including successful native pending-window processing, publishes the current controls; skipped phases or unsupported observer/finalizer authority fail closed
+
+#### Scenario: Retain a failed Entry capture run
+- **WHEN** the capture handler rejects the layout or returns a malformed inventory
+- **THEN** the E2E outcome retains the returned automation run ID, request ID, state, original error code and result artifact
+- **AND** the original rejection code is preserved and the inventory observer is not invoked
+
 ### Requirement: Navigate an available ordinary bottom tab through its native button
 
 The Gateway SHALL offer a typed desired-open-state action for one exact supported bottom tab in
