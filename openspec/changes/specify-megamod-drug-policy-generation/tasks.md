@@ -53,6 +53,15 @@ zero warnings/errors. Exact evidence is in
 Actual native origin refresh, pawn BodySize/stage semantics, curve preparation and F0–F5/runtime
 preview/Create acceptance remain open; no task is checked from this host-only checkpoint.
 
+The paired rate checkpoint proves the age Single conversion/division, the concrete Core expansion
+flag read with its declaring-initializer premise, and ordered rate/parent-stage consumption through
+the Core-false return. Its three actual RED/GREEN tracers and35 distinct focused Harmony cases
+pass. Independent review corrected a typed-local mutation fixture; its exact rerun passed1/1 and
+review closed with no remaining finding. Root's integrated product compile has zero warnings/errors.
+The existing finite observation bundle is unchanged. Current native fields, initialized types,
+stage membership/dispatch, runtime call edges and remaining F0–F5 proofs remain open. Evidence:
+`artifacts/Implementation/megamod-p0/s139-native-facts/rate-stage/implementation.md`.
+
 - [ ] 2.1 After 1.1–1.3 and 1.7, RED/GREEN C1 one established suggestion at a time in Unit using immutable fact inputs; include binary32 decay boundaries, late/early day boundaries and dispatch margin, editor overflow without clamping, unsupported/negative/nonfinite/non-progress cases, chemical-or-tolerance connected groups, dose/population assumptions, manual provenance and no arbitrary drug-name dependency. Retain durable actual failures and passing nonzero counts; runtime exposure still requires 1.6.
   - Revision20 core implemented with five retained RED/GREEN slices and 46/46 focused Unit cases; independent review found no issues. Checkpoint e4f7827. `Source/Features/DrugPolicyGeneration/README.md` describes the bounded API and local evidence ledger. This does not close runtime fact admission, complete preference/reset editing or native creation.
 - [ ] 2.2 RED/GREEN complete baseline-to-draft projection, explicit applicable medical permission, off-schedule defaults, full resets, Any/100% reversal and independent edits; no tests that merely repeat literal tables.

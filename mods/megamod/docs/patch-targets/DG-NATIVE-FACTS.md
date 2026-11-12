@@ -1,7 +1,7 @@
 # DG-NATIVE-FACTS: current native facts for C1 suggestions
 
 Owner: `fumblesneeze.megamod`, S139. **Definition projection, detached F0 inputs and partial F1 contribution, pawn and
-zero-range initialization body proofs implemented; complete effective admission and native finalized-fact/player
+zero-range initialization and conditional Core-rate body proofs implemented; complete effective admission and native finalized-fact/player
 acceptance pending.** No mutation patch, runtime registration or player-facing invocation is added.
 Index before wiring the runtime consumer.
 
@@ -161,6 +161,51 @@ creation/parent/props/PostAdd dispatch remain unproved. Save/load and later fiel
 covered by this initialization claim. Concrete daily-rate, hash/calendar/batching, other
 accumulators and clamp/removal obligations remain open. No preview or complete native facts are
 authorized; eventual runtime union-bundle integration remains root-owned and unregistered.
+
+## F1 conditional age/Core-flag/ordered-rate body proof
+
+`DrugGenerationRateBodyGuard` and its matching `DrugGenerationRateAdmissionTests` add three roots
+to the existing finite observation mechanism, which remains unchanged: actual
+`Pawn_AgeTracker.get_AgeBiologicalYearsFloat`, `ModsConfig.get_BiotechActive` and concrete
+`HediffComp_SeverityPerDay.SeverityChangePerDay`. Six exact nongeneric callable bindings also name
+the inherited Pawn getter, concrete private Props getter and actual virtual Hediff CurStage slot.
+Seven fields bind tracker ticks, the expansion flag, pawn tracker, stored rate, comp parent,
+properties minimum age and stage factor. Call shape and operand identity are checked; no original
+assembly/hash test substitutes for the observed incoming stream.
+
+The age leaf reads that tracker's current Int64 ticks, converts to Single before dividing by3600000
+and returns the result. Negative default ticks remain negative. The flag leaf returns the exact
+static Boolean and does not certify false. Its declaring type must have a cctor: existing callback
+shape rejects same-type callbacks, while the scalar proof refuses other-type static writes, calls,
+addresses and escapes. Metadata inspection does not run the initializer. A no-cctor flag type
+cannot reuse this protection argument and receives an explicit refusal; no helper policy is widened.
+
+The rate consumer calls Pawn on this comp, reads that pawn's tracker, calls the bound age getter,
+then calls this comp's Props and reads minAge. Native `bge.un` continues (including equality);
+otherwise the body returns float0. On the continuing path, it reads this comp's stored rate
+**before** calling that comp parent's virtual CurStage. The returned stage supplies its current
+factor, or null supplies float1. The product is stored in a Single local before the exact flag
+call. Under the separately established false flag, the branch returns that same local and skips
+the Biotech tail. That tail is not treated as reached ordinary-call dependencies; all selected
+inner callbacks still receive the unchanged conservative callback proof.
+
+The tests execute null/member factor1, negative/zero/adult ticks, current tracker replacement,
+changed fields and same-signature call operands, native branch paths, reference writes and changed
+Single storage. An actual alias-mutating stage getter shows why a later rate read changes the
+result; that case proves caller ordering only and explicitly does not admit the harmful stage
+body. A conversion counterexample at16777219ticks observes a one-ulp change from late conversion.
+Labeled nops and an acquired scalar diagnostic observer remain positive until the observer's
+effective body writes the flag. Current publication checks, refusal and exact-owner cleanup use
+the existing bundle. The retained local ledger is
+`artifacts/Implementation/megamod-p0/s139-native-facts/rate-stage/implementation.md`.
+
+This is unregistered partial admission. F0/current instance state, natural real type initialization,
+already proved Pawn/Props bodies, actual virtual CurStage dispatch/membership/no-effects, a freshly
+false flag bound to finalized configuration/lifetime and selected-runtime call-edge/repatch proof
+remain required. The current game uses Waylith CLR; installed-file research and host NoInlining
+stand-ins cannot prove native inlining. The separately allocated closed generic/interface/List
+stage gate is unchanged. Native save/load/later field writes, active Biotech, hash/calendar/batching,
+outer accumulators/clamp and all remaining F0–F5 obligations stay open. No suggestion is exposed.
 
 ## Effective native semantics still required before exposure
 

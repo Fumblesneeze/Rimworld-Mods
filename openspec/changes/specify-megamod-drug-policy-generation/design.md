@@ -361,6 +361,33 @@ later field stability. The concrete rate and hash/calendar/batching/outer accumu
 obligations remain open. Root integrates the native union of roots without overlapping observers;
 none of these partial receipts exposes generation or closes task1.6.
 
+The subsequent `DrugGenerationRateBodyGuard` adds three finite observed roots: the actual age
+getter, expansion-flag getter and concrete daily-rate body. It binds the already owned Pawn/Props
+declarations and actual virtual CurStage slot as call operands, without duplicating their observers
+or claiming their bodies. The age leaf reads the same tracker Int64 field, converts to Single and
+divides by3600000. The flag leaf returns its exact static Boolean. The current ModsConfig declaring
+type has a type initializer: same-type callbacks fail the existing bundle's no-cctor shape rule,
+and callbacks on other types cannot write that flag through the scalar proof. The guard checks
+this metadata premise and refuses unproved protection; it neither executes nor certifies the cctor.
+No protected-static API, shared-helper change or generic/BCL observer is added.
+
+The consumer follows the inspected native order: same-comp Pawn/current tracker/age, same-comp
+Props/minAge, `bge.un` to the continuing path or float-zero return; stored rate read before the
+same parent's virtual stage getter; null factor1 or current stage field; multiplication and Single
+local store; bound flag call and false branch to that same local return. Nops may carry branch
+labels; required destinations and exact nongeneric operands must still match. The unreachable
+Biotech tail is not recursively evaluated, while all selected inner callbacks retain the existing
+conservative effect proof. No arithmetic reassociation or delayed stored-rate read is accepted.
+
+This remains a conditional body checkpoint. Current native field identities/values, nonnegative
+age with minAge0, admitted Pawn/Props/CurStage effects and actual current stage membership are
+separate premises. Body validity does not freeze the Boolean: native integration must read a
+current false flag in the finalized configuration/lifetime, not infer it from package labels, and
+revalidate or refuse relevant later changes. The actual1.7 installation ships Waylith CLR; host
+NoInlining fixtures do not establish native call-edge/inlining or repatch behavior. Stage membership
+still needs its separately allocated closed generic/interface/List gate. The positive consumer
+receipt adds no registration or preview authority and closes none of task1.6 or F0–F5 acceptance.
+
 Generation preference controls use the common composite-settings renderer. A small transient
 percentage draft reuses S138's localized percentage parser and exact unchanged-value preservation;
 it owns no persisted settings or policy rows. The mood/recreation controls accept numeric values,

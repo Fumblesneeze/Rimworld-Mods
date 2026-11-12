@@ -186,6 +186,22 @@ mislabel those edited choices as computed recommendations or silently revert the
 - **THEN** generation remains unavailable until current F0 inputs, natural type initialization, native call-edge/repatch behavior and F2 construction/assignment/PostAdd dispatch are separately admitted
 - **AND** the proof does not certify save/load, later stored-rate writers, concrete daily-rate/hash/calendar/batching behavior, other accumulators or clamping, and does not close complete native-fact or player-workflow acceptance.
 
+#### Scenario: Core rate preserves current age and ordered stage consumption
+- **WHEN** partial admission observes the actual age getter, expansion-flag getter and concrete daily-rate body with separately established current comp/pawn/tracker/parent/properties, natural type initialization and a current false Biotech flag
+- **THEN** age is the same tracker's current Int64 ticks converted to Single before division by3600000; the rate compares that result with the same comp's minimum age, returning zero below the bound and continuing at equality
+- **AND** the continuing path reads the stored rate before calling that parent's virtual stage getter, multiplies by the returned stage's factor or1 for null, stores the product to Single and returns that stored value on the false-flag branch without entering the Biotech tail.
+
+#### Scenario: Changed rate dependencies withhold the partial receipt
+- **WHEN** a composed leaf or consumer substitutes a field, exact called method, receiver, branch, reference write, Single store or state-read order, or a consumed observer gains an unproved effect
+- **THEN** the current body receipt is withheld with a target-level reason even if the changed method has the same signature
+- **AND** harmless labeled nops and body-proved scalar observers remain eligible through the existing finite observation bundle; inspection neither invokes those observers nor replays foreign transpilers.
+
+#### Scenario: A flag-body receipt does not establish Core mode or stage membership
+- **WHEN** the actual expansion getter continues to return its bound static Boolean field
+- **THEN** body validity remains distinct from its current value; native use must freshly establish false in the same finalized configuration/lifetime and revalidate or refuse after relevant changes
+- **AND** the concrete flag's declaring type must have a type initializer for the existing no-initializer/own-scalar callback policy to protect it; an unproved protection premise refuses admission without executing that initializer
+- **AND** a Human adult definition does not prove a pawn's current age, the default negative tracker value is not silently treated as adult, and admitted Pawn/Props/CurStage bodies, current stage membership/effects and actual runtime call-edge/inlining behavior remain required before complete rate admission or suggestion exposure.
+
 #### Scenario: Fresh-dose and side-high assumptions remain visible
 - **WHEN** the preview uses an admitted ordinary native high, Alcohol, Rest-offset or rottable drug shape
 - **THEN** it states the fresh whole-dose/no-prior-effect assumptions and explains that ordinary impairment, food poisoning and residual high/tolerance are not prevented by the suggestion.
