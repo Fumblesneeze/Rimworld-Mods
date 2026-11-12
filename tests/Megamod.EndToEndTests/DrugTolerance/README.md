@@ -161,3 +161,37 @@ Early group and `Enable()` only after successful admission. Root's native lifecy
 `NativeDrugTolerancePersistence.ProcessPendingFailure()` after it reaches the main thread. The
 ordinary enable setting does not gate this persistence support. The future editor/enforcement
 group must depend on its current `CanUseChoices` receipt.
+# Routine use and setting transitions
+
+`megamod.drug-tolerance.native-scheduled-routes` and
+`megamod.drug-tolerance.native-direct-joy-routes` passed reviewed isolated runs at checkpoint9e0f032.
+Root inspected all19 causal captures of ordinary consumption or retained physical Beer, direct-only
+positive DrugDesire behavior, native Health outcomes and explicit manual Drink exclusion. Exact
+builds, process/action/log identities and cleanup are local in
+`artifacts/Implementation/megamod-p0/s138-native-routes/native-verification.md`. These are scoped
+zero/Any routes, not full S138 acceptance.
+
+`megamod.drug-tolerance.native-setting-transitions` adds an independently reviewed, not yet
+live-accepted continuation. Native global off permits the previously blocked zero-limit pawn's
+ordinary scheduled dose. Native on during chewing preserves that same executing job; a passive
+actual ingestion observation binds completion to the immutable job ID and original physical Beer.
+Afterward, fresh native attempts by the second zero-limit pawn must remain drinkless. Stored policy
+choices and save inheritance remain unchanged. No direct setting setter or forced job is the test
+action. Cleanup restores initial globals/scroll and removes exact test-owned prefixes.
+
+Its complete allowance is at most68 native operations,15 screenshots and480 seconds of waits:
+1950 fixed seconds plus180 shared reserve within2400. Use launcher2700. The game-tick limit is24000
+and the independent frame cap is int.MaxValue. Runtime counters verify the actual yielded sequence.
+The two prior route sequences and their1440-second budgets remain intact; select only the new
+scenario for this addition. Native execution, personal image/log inspection and exact-build cleanup
+are still required. Main-menu, save override/switching and save/resume during ingestion remain open.
+
+`megamod.drug-tolerance.native-social-drinks` is independently reviewed and compile-discovered;
+native acceptance remains pending. It activates the table's native gather-spot gizmo, then undrafts ordinary recreation
+subjects. Zero and positive-DrugDesire zero must make real rejected drink selections, occupy
+reserved chairs and gain social recreation without a drink. Any must select, carry and consume
+one exact ground Beer through native SocialRelax. The fixture checks current atomic admission,
+physical supplies and ordinary Health outcomes; it neither creates a job nor invokes the selector.
+This proves no party-event lifecycle. Budget37 native operations/11 screenshots/360 wait seconds,
+scenario1440 and launcher1800. Local plan/review/source evidence is under
+`artifacts/Implementation/megamod-p0/s138-native-social-routes/`; root owns final native observation.

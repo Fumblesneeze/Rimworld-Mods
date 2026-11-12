@@ -80,6 +80,12 @@ SHALL not disable the native scheduled, direct recreation and social-drinking ro
 - **THEN** this feature does not cancel that order or add a final-ingestion veto
 - **AND** a subsequent routine selection observes the current tolerance and policy.
 
+#### Scenario: Ordinary settings change around an executing scheduled dose
+- **WHEN** native scheduled attempts are withheld by a retained numeric-zero choice and the player disables this feature through its common setting
+- **THEN** ordinary native scheduling can select that dose when its other conditions permit
+- **AND** re-enabling through the setting while that dose is being consumed does not cancel the existing order or add a final-ingestion veto
+- **AND** the retained zero applies to subsequent native selections without rewriting the policy choice or save inheritance.
+
 ### Requirement: Recreation uses the recipient and retains native joy exceptions
 Ordinary recreational drug use SHALL apply the recipient's tolerance choice in addition to its other recreation permissions.
 Native exceptions for a positive drug-desire trait or a mental state SHALL retain their existing

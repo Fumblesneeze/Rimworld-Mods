@@ -6,10 +6,14 @@ using System.Reflection;
 using HarmonyLib;
 using LudeonTK;
 using Megamod.Features.DrugTolerance.Runtime;
+using Megamod.Features.DrugTolerance.Core;
+using Megamod.EndToEndTests.Diagnostics;
+using Megamod.Settings;
 using RimWorld;
 using RimWorldDevGateway.EndToEndTesting;
 using Verse;
 using Verse.AI;
+using UnityEngine;
 using HarmonyOwner = HarmonyLib.Harmony;
 
 namespace Megamod.EndToEndTests.DrugTolerance;
@@ -34,6 +38,16 @@ public sealed class NativeToleranceDirectJoyRouteTests : IRimWorldEndToEndTest
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) => fixture.Execute(context);
 }
 
+[RimWorldEndToEndTest("megamod.drug-tolerance.native-setting-transitions", "fumblesneeze.megamod",
+    "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod",
+    MaxFrames = int.MaxValue, MaxGameTicks = 24000, MaxWallClockSeconds = 2400)]
+public sealed class NativeToleranceSettingTransitionTests : IRimWorldEndToEndTest
+{
+    private readonly NativeToleranceRouteFixture fixture = new(false, settingsTransitions: true);
+    public void Arrange(IEndToEndContext context) => fixture.Arrange(context);
+    public IEnumerator<EndToEndStep> Execute(IEndToEndContext context) => fixture.Execute(context);
+}
+
 // Private native S138 fixtures; the orchestrator owns reviewed-build acceptance.
 // Only disposable preconditions are constructed. Engine thinking after native undraft/unpause
 // selects every routine job. The sole manual order is the ordinary native Beer float-menu action.
@@ -42,8 +56,15 @@ internal sealed class NativeToleranceRouteFixture
     private static readonly FieldInfo RuntimeField = typeof(MegamodMod).GetField("drugTolerance", BindingFlags.Instance | BindingFlags.NonPublic)!;
     private static readonly MethodInfo ScheduledTarget = typeof(Pawn_DrugPolicyTracker).GetMethod(nameof(Pawn_DrugPolicyTracker.AllowedToTakeScheduledNow))!;
     private static readonly MethodInfo JoyTarget = typeof(JoyGiver_Ingest).GetMethod("CanIngestForJoy", BindingFlags.Instance | BindingFlags.NonPublic)!;
+    private static readonly MethodInfo IngestedTarget = typeof(Thing).GetMethod(nameof(Thing.Ingested), new[] { typeof(Pawn), typeof(float) })!;
     private static NativeToleranceRouteFixture? active;
     private readonly bool directJoy;
+    private readonly bool settingsTransitions;
+    private bool expectedEnabled = true;
+    private SettingsRuntime settings = null!;
+    private NativeDiagnosticSettingsView settingView = null!;
+    private string settingPointer = null!;
+    private readonly List<Dialog_ModSettings> ownedSettings = new();
     private readonly string marker = "ToleranceRoutes-" + Guid.NewGuid().ToString("N").Substring(0, 8);
     private readonly List<Subject> subjects = new();
     private readonly List<DrugPolicy> policies = new();
@@ -62,7 +83,11 @@ internal sealed class NativeToleranceRouteFixture
     private int nativeOperations, screenshots, waitSeconds;
     private string phase = "arranged";
 
-    internal NativeToleranceRouteFixture(bool directJoy) => this.directJoy = directJoy;
+    internal NativeToleranceRouteFixture(bool directJoy, bool settingsTransitions = false)
+    {
+        this.directJoy = directJoy; this.settingsTransitions = settingsTransitions;
+        if (directJoy && settingsTransitions) throw new ArgumentException("The settings workflow owns the scheduled route.");
+    }
 
     internal void Arrange(IEndToEndContext context)
     {
@@ -77,6 +102,36 @@ internal sealed class NativeToleranceRouteFixture
         mod = LoadedModManager.GetMod<MegamodMod>();
         runtime = RuntimeField.GetValue(mod) as NativeDrugToleranceRuntime
             ?? throw new InvalidOperationException("The real megamod tolerance runtime has not been registered.");
+        if (settingsTransitions)
+        {
+            settings = SettingsRuntime.Instance ?? throw new InvalidOperationException("Common settings are unavailable.");
+            EndToEndAssert.NotNull(settings.CurrentBinding);
+            EndToEndAssert.True(settings.Store.UsesGlobal(DrugToleranceSettings.Enabled) &&
+                settings.Store.GetEffective(DrugToleranceSettings.Enabled) &&
+                settings.Store.EffectiveOffReason(DrugToleranceSettings.Enabled) == null);
+            EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_ModSettings>());
+            var globals = settings.Store.ExportGlobals();
+            var binding = settings.CurrentBinding!;
+            var saved = settings.Store.ExportSave(binding);
+            settingView = new(() => settingPointer, DrugToleranceSettings.Enabled.Id);
+            var scroll = settingView.Scroll;
+            context.DeferCleanup(() =>
+            {
+                RequireGame();
+                var failures = new List<Exception>();
+                void Attempt(Action action) { try { action(); } catch (Exception error) { failures.Add(error); } }
+                foreach (var window in ownedSettings.Distinct())
+                    Attempt(() => { if (Find.WindowStack.Windows.Contains(window)) window.Close(); });
+                Attempt(() => settings.Store.LoadGlobals(globals));
+                Attempt(() => settingView.RestoreScroll(scroll));
+                Attempt(() => EndToEndAssert.True(ReferenceEquals(binding, settings.CurrentBinding) &&
+                    settings.Store.ExportSave(binding).Values.OrderBy(pair => pair.Key).SequenceEqual(saved.Values.OrderBy(pair => pair.Key)),
+                    "The inherited save state must remain unchanged."));
+                Attempt(() => EndToEndAssert.True(settings.Store.ExportGlobals().Values.OrderBy(pair => pair.Key)
+                    .SequenceEqual(globals.Values.OrderBy(pair => pair.Key)), "Restore the exact initial global preferences."));
+                if (failures.Count != 0) throw new AggregateException("Tolerance settings cleanup failed.", failures);
+            });
+        }
         RequireAvailable();
         beerDef = DefDatabase<ThingDef>.GetNamed("Beer");
         highDef = DefDatabase<HediffDef>.GetNamed("AlcoholHigh");
@@ -102,7 +157,7 @@ internal sealed class NativeToleranceRouteFixture
         subjects.Add(CreateSubject(prefix + " Zero", center + offsets[0], any: false, drugDesire: false));
         subjects.Add(CreateSubject(prefix + " Any", center + offsets[1], any: true, drugDesire: false));
         subjects.Add(CreateSubject(prefix + " Trait Zero", center + offsets[2], any: false, drugDesire: true));
-        if (!directJoy)
+        if (!directJoy && !settingsTransitions)
         {
             manualBeer = ThingMaker.MakeThing(beerDef); manualBeer.stackCount = 1;
             ownedThings.Add(manualBeer);
@@ -121,6 +176,7 @@ internal sealed class NativeToleranceRouteFixture
         });
         InstallTrace(ScheduledTarget, nameof(ObserveScheduled));
         InstallTrace(JoyTarget, nameof(ObserveJoy));
+        if (settingsTransitions) InstallTrace(IngestedTarget, nameof(ObserveIngestion));
         AssertInitial();
     }
 
@@ -181,10 +237,20 @@ internal sealed class NativeToleranceRouteFixture
         }
         yield return new AssertionStep("verify the complete compiled route sequence fits its declared wall allowance", _ =>
         {
-            EndToEndAssert.Equal(directJoy ? 36 : 38, nativeOperations);
-            EndToEndAssert.Equal(directJoy ? 9 : 10, screenshots);
-            EndToEndAssert.Equal(directJoy ? 450 : 360, waitSeconds);
-            EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 180 <= 1440);
+            if (settingsTransitions)
+            {
+                EndToEndAssert.True(nativeOperations <= 68, "The bounded settings-scroll paths must fit the complete native-operation allowance.");
+                EndToEndAssert.Equal(15, screenshots);
+                EndToEndAssert.Equal(480, waitSeconds);
+                EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 180 <= 2400);
+            }
+            else
+            {
+                EndToEndAssert.Equal(directJoy ? 36 : 38, nativeOperations);
+                EndToEndAssert.Equal(directJoy ? 9 : 10, screenshots);
+                EndToEndAssert.Equal(directJoy ? 450 : 360, waitSeconds);
+                EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 180 <= 1440);
+            }
         });
         yield return new CheckpointStep("complete route operation and timeout accounting", _ => Evidence());
     }
@@ -241,7 +307,11 @@ internal sealed class NativeToleranceRouteFixture
             yield return Shot(subject.Name + " retains its Beer after actual native attempts and the Any dose");
         }
         yield return new CheckpointStep("paired native routine results and exact selection attempts", _ => Evidence());
-        if (!directJoy)
+        if (settingsTransitions)
+        {
+            foreach (var step in SettingsWorkflow(context)) yield return step;
+        }
+        else if (!directJoy)
         {
             var subject = subjects[0];
             yield return Select(subject, "select the blocked pawn for its explicit manual order ");
@@ -271,6 +341,77 @@ internal sealed class NativeToleranceRouteFixture
         yield return new CheckpointStep("final native route evidence; full S138 remains open", _ => Evidence());
     }
 
+    private IEnumerable<EndToEndStep> SettingsWorkflow(IEndToEndContext context)
+    {
+        var held = subjects[2];
+        yield return Select(held, "select the second blocked subject before changing settings ");
+        var draft = DraftToggle(context, held, false);
+        yield return new GizmoActionStep("draft the second blocked subject while the global rule is off", new[] { held.Pawn.ThingID },
+            draft.RuntimeType, EndToEndGizmoInteraction.Toggle, stableGizmoId: draft.StableId);
+        foreach (var step in ChangeSetting(false)) yield return step;
+        phase = "off allows native selection";
+        // The starting zero-limit pawn now uses its original held Beer through ordinary scheduling.
+        // Re-enable during the observed real chewing job: no new job or result is manufactured.
+        foreach (var step in Consume(context, subjects[0], subjects[0].Supply, manual: false, reenableDuringJob: true)) yield return step;
+        int earlierAttempts = held.ScheduledAttempts.DistinctTicks;
+        int resumedAt = Find.TickManager.TicksGame;
+        phase = "on restricts the next native selection";
+        foreach (var step in Undraft(context, held)) yield return step;
+        yield return Run("observe ordinary scheduled attempts after native re-enabling", EndToEndGameSpeed.Superfast);
+        yield return Wait("observe fresh rejected attempts with the retained numeric zero after re-enabling", _ =>
+        {
+            AssertBlocked(held);
+            return Find.TickManager.TicksGame - resumedAt >= 600 && held.ScheduledAttempts.DistinctTicks >= earlierAttempts + 2;
+        }, 6000, 120);
+        yield return Pause("pause after fresh re-enabled native refusals");
+        yield return Select(held, "select the subject whose retained zero applies again ");
+        yield return new PawnInspectTabActionStep("show retained original Beer after native re-enabling", held.Pawn.ThingID, EndToEndPawnInspectTab.Gear);
+        yield return Shot("re-enabled tolerance limits preserve numeric zero and withhold the untouched Beer");
+        yield return new CheckpointStep("native settings timing and in-progress dose evidence", _ => Evidence());
+    }
+
+    private IEnumerable<EndToEndStep> ChangeSetting(bool enabled)
+    {
+        yield return new ModSettingsActionStep("open native settings to " + (enabled ? "enable" : "disable") + " tolerance limits", "fumblesneeze.megamod");
+        yield return new NativePointerScopeBeginStep("retain pointer during tolerance setting action", handle => settingPointer = handle);
+        Rect editor = default;
+        bool visible = false;
+        for (int attempt = 0; ; attempt++)
+        {
+            yield return new NativeWindowCaptureStep("capture current native tolerance enable control", windows =>
+            {
+                var actual = Find.WindowStack.WindowOfType<Dialog_ModSettings>() ?? throw new InvalidOperationException("Settings did not open.");
+                ownedSettings.Add(actual);
+                settingView.Bind(windows.Single(window => window.RuntimeType == typeof(Dialog_ModSettings).FullName), actual);
+            });
+            yield return new CheckpointStep("measure the native global tolerance checkbox", _ =>
+            {
+                editor = settingView.MeasureCheckbox(out visible);
+                return settingView.Evidence(editor, visible);
+            });
+            if (visible) break;
+            Vector2 point = default;
+            yield return new AssertionStep("plan bounded native tolerance settings scroll", _ =>
+            {
+                EndToEndAssert.True(attempt < 3);
+                point = settingView.PlanTrackClick(editor);
+            });
+            yield return settingView.Click("scroll native settings to the tolerance checkbox", point);
+        }
+        yield return Shot("global tolerance checkbox before native " + (enabled ? "enable" : "disable"));
+        yield return settingView.Click("click the global tolerance checkbox to " + (enabled ? "enable" : "disable"), editor.center);
+        yield return new AssertionStep("observe the native setting change without editing retained policy choices", _ =>
+        {
+            EndToEndAssert.Equal(enabled, settings.Store.GetEffective(DrugToleranceSettings.Enabled));
+            EndToEndAssert.True(settings.Store.UsesGlobal(DrugToleranceSettings.Enabled));
+            expectedEnabled = enabled;
+            RequireAvailable();
+        });
+        yield return Shot("global tolerance checkbox after native " + (enabled ? "enable" : "disable"));
+        yield return new NativePointerScopeEndStep("restore pointer after the tolerance setting action", settingPointer);
+        yield return new WindowCancelActionStep("close native tolerance settings", typeof(Dialog_ModSettings).FullName!);
+    }
+
     private IEnumerable<EndToEndStep> Undraft(IEndToEndContext context, Subject subject)
     {
         yield return Select(subject, "select drafted route subject ");
@@ -280,7 +421,7 @@ internal sealed class NativeToleranceRouteFixture
             toggle.RuntimeType, EndToEndGizmoInteraction.Toggle, stableGizmoId: toggle.StableId);
     }
 
-    private IEnumerable<EndToEndStep> Consume(IEndToEndContext context, Subject subject, Thing source, bool manual)
+    private IEnumerable<EndToEndStep> Consume(IEndToEndContext context, Subject subject, Thing source, bool manual, bool reenableDuringJob = false)
     {
         yield return new AssertionStep("record the pending native ingestion observation for " + subject.Name, _ =>
         {
@@ -306,16 +447,34 @@ internal sealed class NativeToleranceRouteFixture
             if (subject.Pawn.jobs.curDriver is not JobDriver_Ingest driver || !driver.GainingNutritionNow ||
                 !ReferenceEquals(subject.Pawn.carryTracker.CarriedThing, source)) return false;
             subject.JobObserved = job.ToString(); subject.JobObservedTick = Find.TickManager.TicksGame;
+            subject.ObservedJob = job;
+            subject.ObservedJobLoadId = job.loadID;
             return true;
         }, 1800, 60);
         yield return Pause("pause the real ingestion job for " + subject.Name);
         yield return Frame("frame " + subject.Name + " during its native Beer job");
         yield return Shot(subject.Name + (manual ? " is carrying out its explicit native Drink order" : " is carrying out its ordinary native routine job"));
+        if (reenableDuringJob)
+        {
+            foreach (var step in ChangeSetting(true)) yield return step;
+            yield return new AssertionStep("native re-enabling preserves the already executing dose", _ =>
+            {
+                RequireAvailable();
+                EndToEndAssert.True(ReferenceEquals(subject.Pawn.CurJob, subject.ObservedJob) && !source.Destroyed &&
+                    subject.Pawn.CurJob.loadID == subject.ObservedJobLoadId &&
+                    ReferenceEquals(subject.Pawn.carryTracker.CarriedThing, source), "The same native job and dose must survive re-enabling.");
+                phase = "on preserves an already executing dose";
+            });
+        }
         yield return Run("finish ordinary Beer ingestion for " + subject.Name, EndToEndGameSpeed.Normal);
         yield return Wait("observe the real physical dose and native effects for " + subject.Name, _ =>
         {
             ObserveBlocked();
             if (!source.Destroyed || !subject.Pawn.drugs.HasEverTaken(beerDef)) return false;
+            if (reenableDuringJob)
+                EndToEndAssert.True(subject.IngestionCalls == 1 && subject.IngestionJobLoadId == subject.ObservedJobLoadId &&
+                    subject.IngestionWasObservedJob && subject.IngestionWhileEnabled,
+                    "The observed native job must make the actual ingestion call for this exact physical dose after re-enabling.");
             EndToEndAssert.True(Severity(subject, highDef) > 0 && Severity(subject, toleranceDef) > 0,
                 "Native ingestion must create both ordinary alcohol and tolerance effects.");
             EndToEndAssert.Equal(manual ? 1 : 0, HeldBeer(subject));
@@ -378,6 +537,21 @@ internal sealed class NativeToleranceRouteFixture
     {
         if (__instance?.GetType() == typeof(JoyGiver_TakeDrug) && __1 != null) active?.RecordAttempt(__0, __1.def, direct: true);
     }
+    private static void ObserveIngestion(Thing __instance, Pawn __0)
+    {
+        var fixture = active;
+        if (fixture == null || !fixture.settingsTransitions || !ReferenceEquals(Current.Game, fixture.game) || __instance == null || __0 == null) return;
+        foreach (var subject in fixture.subjects)
+            if (ReferenceEquals(subject.Pawn, __0) && ReferenceEquals(subject.Supply, __instance))
+            {
+                // Passive call provenance only. No result, argument, job or dose mutation.
+                if (subject.IngestionCalls < int.MaxValue) subject.IngestionCalls++;
+                subject.IngestionJobLoadId = __0.CurJob?.loadID ?? -1;
+                subject.IngestionWasObservedJob = ReferenceEquals(__0.CurJob, subject.ObservedJob);
+                subject.IngestionWhileEnabled = fixture.expectedEnabled;
+                return;
+            }
+    }
     private void RecordAttempt(Pawn pawn, ThingDef drug, bool direct)
     {
         // No product predicate, native return, ref argument, exception or game mutation here.
@@ -394,14 +568,15 @@ internal sealed class NativeToleranceRouteFixture
     private void RequireAvailable()
     {
         RequireGame();
-        EndToEndAssert.True(ReferenceEquals(RuntimeField.GetValue(mod), runtime) && runtime.Available,
-            "The real atomic enforcement/editor group must remain available: " + runtime.StatusKey);
+        EndToEndAssert.True(ReferenceEquals(RuntimeField.GetValue(mod), runtime) && runtime.Available == expectedEnabled &&
+            (expectedEnabled || (settingsTransitions && !settings.Store.GetEffective(DrugToleranceSettings.Enabled))),
+            "The real atomic group must match the observed ordinary enable setting: " + runtime.StatusKey);
         foreach (var target in tracedTargets)
         {
             var info = HarmonyOwner.GetPatchInfo(target);
             EndToEndAssert.True(info != null && info.Prefixes.Count(patch => patch.owner == traceOwner.Id) == 1 &&
-                info.Prefixes.Any(patch => patch.owner == "fumblesneeze.megamod") &&
-                info.Finalizers.Any(patch => patch.owner == "fumblesneeze.megamod"), "Required live trace/product ownership changed.");
+                (target == IngestedTarget || (info.Prefixes.Any(patch => patch.owner == "fumblesneeze.megamod") &&
+                info.Finalizers.Any(patch => patch.owner == "fumblesneeze.megamod"))), "Required live trace/product ownership changed.");
         }
         foreach (var subject in subjects)
             EndToEndAssert.True(ReferenceEquals(subject.Pawn.drugs.CurrentPolicy, subject.Policy) &&
@@ -418,9 +593,11 @@ internal sealed class NativeToleranceRouteFixture
         RequireAvailable();
         var result = new Dictionary<string, string>
         {
-            ["scope"] = directJoy ? "Core direct recreation: zero/Any/positive DrugDesire; full S138 remains open" : "Core scheduled zero/Any/positive DrugDesire plus explicit manual order; full S138 remains open",
+            ["scope"] = settingsTransitions ? "native global off/on, existing dose completion and subsequent scheduled zero refusal; full S138 remains open" :
+                directJoy ? "Core direct recreation: zero/Any/positive DrugDesire; full S138 remains open" : "Core scheduled zero/Any/positive DrugDesire plus explicit manual order; full S138 remains open",
             ["phase"] = phase, ["tick"] = Find.TickManager.TicksGame.ToString(), ["observationStart"] = observationStart.ToString(),
             ["available"] = runtime.Available.ToString(), ["traceOwner"] = traceOwner.Id,
+            ["expectedEnabled"] = expectedEnabled.ToString(), ["settingsTransitions"] = settingsTransitions.ToString(),
             ["nativeOperations"] = nativeOperations.ToString(), ["screenshots"] = screenshots.ToString(),
             ["maximumWaitSeconds"] = waitSeconds.ToString(),
             ["countedFixedAllowanceSeconds"] = (nativeOperations * 15 + screenshots * 30 + waitSeconds).ToString(),
@@ -448,6 +625,9 @@ internal sealed class NativeToleranceRouteFixture
                 "recreationBoredom=" + subject.Pawn.needs.joy.tolerances.TolerancesString(),
                 "scheduledAttempts=" + subject.ScheduledAttempts, "directJoyAttempts=" + subject.JoyAttempts,
                 "observedJob=" + subject.JobObserved, "jobTick=" + subject.JobObservedTick, "completionTick=" + subject.CompletedTick,
+                "observedJobLoadId=" + subject.ObservedJobLoadId, "actualIngestionCalls=" + subject.IngestionCalls,
+                "ingestionJobLoadId=" + subject.IngestionJobLoadId, "ingestionWasObservedJob=" + subject.IngestionWasObservedJob,
+                "ingestionWhileEnabled=" + subject.IngestionWhileEnabled,
                 "currentJob=" + subject.Pawn.CurJob, "mentalState=" + subject.Pawn.InMentalState
             });
         return result;
@@ -477,6 +657,9 @@ internal sealed class NativeToleranceRouteFixture
         internal readonly Attempts ScheduledAttempts = new(), JoyAttempts = new();
         internal bool TraceArmed, AllowIngestion;
         internal string JobObserved = "none";
+        internal Job? ObservedJob;
+        internal int ObservedJobLoadId = -1, IngestionJobLoadId = -1, IngestionCalls;
+        internal bool IngestionWasObservedJob, IngestionWhileEnabled;
         internal int JobObservedTick = -1, CompletedTick = -1;
         internal string Name => Pawn.Name.ToStringShort;
         internal Subject(Pawn pawn, DrugPolicy policy, DrugPolicyEntry entry, Thing supply, bool any, bool drugDesire)
