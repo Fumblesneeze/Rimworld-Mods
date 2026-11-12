@@ -101,6 +101,17 @@ values, job/loadID/source identity, reviewed build and complete cleanup/log evid
 This accepts strict positive equality and natural-decay re-eligibility only. It does not prove
 natural accumulation, Any-versus100, shared chemicals or any remaining broader task.
 
+The subsequent reviewed06f9894 B/C batch passed101+125 steps; root personally inspected all29
+captures. Numeric100 rejected at seeded native cap1 while Any selected and consumed its physical
+Beer; actual decay then made the numeric subject eligible. Two native manual tea doses created
+PsychiteTolerance without severity seeds. The unchanged2% policy repeatedly rejected Yayo while
+the4% control consumed its original Yayo and increased the same tolerance. Native major overdose
+and downing after that allowed dose are retained, not suppressed or described as safe. Exact
+build/source/job/process/action/log/cleanup records are local in
+`artifacts/Implementation/megamod-p0/s138-native-boundaries/cap-shared-native-verification.md`.
+This accepts those cap/shared-chemical workflows only. Flake, full accumulation/clearance, save
+contexts and all remaining route/composition/layout obligations stay open; no full task is checked.
+
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.
 - [ ] 2.3 RED/GREEN admitted map/caravan scheduled restriction composed directly with S024, preserving native false, interval/quantity/history, no scheduled joy exception and the attached stock-pickup coupling without a substitute-refill promise.

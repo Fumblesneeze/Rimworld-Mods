@@ -229,5 +229,13 @@ Both cases passively bind actual decision, health and ingestion observations to 
 physical source and executing job. Active native chewing-toil identity observes non-nutritive
 drugs without changing their Nutrition. Select these exact IDs individually; their combined declared
 caps are3240 seconds, or4680 including the positive-boundary case. Suggested individual launcher
-allowances total3960 seconds, or5760 including that case. Authored fixtures and review alone do not
-accept either scenario; final reviewed native evidence remains required.
+allowances total3960 seconds, or5760 including that case.
+
+Both cases passed on reviewed checkpoint06f9894:101 and125 steps. Root personally inspected all29
+captures. Numeric100 rejected at the native cap while Any consumed Beer; after native decay the
+numeric subject consumed its original dose. Actual tea created the shared tolerance that blocked
+Yayo at2% and permitted it at4%. The allowed Yayo caused a native major overdose/downing, retained
+in the evidence; these controls make no safety promise. Full logs, exact source/job/process/build
+identity and successful cleanup are in
+`artifacts/Implementation/megamod-p0/s138-native-boundaries/cap-shared-native-verification.md`.
+No broader feature task closes from these two scoped observations.

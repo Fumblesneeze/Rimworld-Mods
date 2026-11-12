@@ -648,3 +648,12 @@ tolerance boundary are checkpointed; scoped native observations do not close ful
 
 This division groups related fixes and verification while keeping source ownership disjoint.
 Every remaining native case, original feature and P0–P8 obligation remains allocated.
+
+After the06f9894 B/C native batch, `tolerance_native_routes` advances to artifact-only D/E:
+save-specific override/inheritance with a dormant-off value preserved through one native save/load,
+and save/resume during actual scheduled ingestion after a native editor change to zero. The latter
+must rebind fresh Game/pawn/job/source identities and prove actual resumed consumption plus a fresh
+rejection. Each case uses only its own one-roundtrip baseline; neither claims genuine two-save
+switching. Existing native input/view/save helpers remain the control surface. Root compiles and
+accepts only independently reviewed exact hashes; transient draft/review-slot pauses do not remove
+these cases or the separate two-save-switching obligation.
