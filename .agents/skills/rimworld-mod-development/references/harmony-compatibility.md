@@ -106,6 +106,10 @@ An observation-only hook should still require only the callable and execution fa
   Classify the injected payload as well as its declared type: a mutable argument array remains
   writable through object/interface parameters, while by-ref private patch state is not a target
   argument or result writer. Pair those rejection and compatible-state cases on the actual provider.
+- Identify the selected game's actual runtime before making JIT/inlining assumptions. Inspect its bundled
+  runtime/CoreLib path and version separately from the host test runtime; confirm the loaded image
+  in fresh native evidence before accepting call-edge/inlining behavior. A historical Mono assumption
+  does not establish behavior for the inspected1.7 installation's Waylith CLR.
 - Preserve machine arithmetic when validating layout or numeric producer chains. Real-number
   affine equality does not prove Single/Double evaluation equivalence: large cancellation,
   overflow and reassociation can change consumed values. Keep the relevant operation order or
@@ -132,6 +136,9 @@ An observation-only hook should still require only the callable and execution fa
   `Available == false` alone does not prove that already-emitted owned branches are inactive. Check
   that an unavailable captured context really bypasses owned decisions. Keep unsupported rewrites
   explicit instead of expanding into a speculative framework for arbitrary hostile modifications.
+  In off/on workflows, an availability getter may short-circuit on the setting before checking
+  admission. If the fixture claims healthy retained admission while off, inspect its underlying
+  current receipts read-only; false availability and one present patch do not establish that claim.
 - Acquired transient scopes need cleanup even when later compatibility inspection fails. Put the
   acquired-token cleanup in an independent `finally`, preserve the original exception, and isolate
   reporting failures. Rejected nested scopes must not borrow a parent's provenance or authority.

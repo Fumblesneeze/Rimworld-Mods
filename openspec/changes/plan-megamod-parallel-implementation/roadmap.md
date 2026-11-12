@@ -951,3 +951,13 @@ release conditions are in `p0-dispatch.md`. The shared initial catalog is not an
 exclusion receipt, and detached input snapshots do not prove native Human/static-curve binding.
 Root retains integration and final observation. This sequencing preserves all139 features and
 every remaining F0–F5, native composition and P0–P8 acceptance obligation.
+
+Revision21 continuation after526ed1e — the reviewed consumed-input snapshot and deterministic
+initialization checkpoints are committed with focused host evidence and remain unregistered.
+Root takes the D/E save-context native batch. The next disjoint S139 lease narrows rate work to
+age, Core expansion flag and ordered rate consumption; stage membership awaits exact closed
+generic/interface/BCL dispatch and selected-runtime inlining evidence. The installed1.7 game
+ships Waylith CLR; installed-file inspection does not establish a live process's call edges.
+`p0-dispatch.md` records exact paths and deployment-before-source-release ownership. Native
+Human/static-curve binding, applied-save exclusions, full F0–F5 admission, all139 features and
+the P0–P8 gates remain required. No prior native evidence is reused to accept a changed runtime.

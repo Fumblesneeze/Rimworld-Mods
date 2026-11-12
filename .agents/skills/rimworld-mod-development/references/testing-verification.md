@@ -63,7 +63,7 @@ test seam; then clear disposable state and alerts. For a plain quickstart, pass 
 `-Scenario`; the resulting evidence label `none` is not a literal scenario argument. Fixture setup and
 mutation occur only after the attributed test starts—never as implicit startup behavior.
 
-The grouped runner passes each child's exact additional-mod order through a UTF-8 package-ID file and uses a short `smoke-NNN` runtime branch; do not replace either with repeated cross-process PowerShell array parameters or a descriptive save-data path that can exceed Mono's Windows file boundary. Retained stderr stays raw, while JUnit replaces only XML-invalid characters.
+The grouped runner passes each child's exact additional-mod order through a UTF-8 package-ID file and uses a short `smoke-NNN` runtime branch; do not replace either with repeated cross-process PowerShell array parameters or a descriptive save-data path that can exceed the selected runtime's Windows path limits. Retained stderr stays raw, while JUnit replaces only XML-invalid characters.
 
 For a native right-click order, use `context.GetRequiredService<IEndToEndFloatMenuCatalog>()`, call `Query(actorRuntimeId, targetRuntimeId)` on the E2E execution thread, and choose exactly one enabled option by its visible label. Feed the returned `StableId` to `FloatMenuActionStep`. Never duplicate the stable-ID hash or directly start the job that the native option would create.
 
@@ -137,6 +137,8 @@ Prefer action → wait → observation steps that exercise the same native path 
   Within one registered cleanup callback, protect each owned object, policy and patch target
   separately too: the harness can continue with another callback, but cannot resume a loop after
   its first exception. Complete every safe cleanup attempt and verification before aggregating.
+  Keep process-owned UI restoration in callbacks separate from Game-dependent cleanup: rejecting
+  a stale or partial loaded Game must not skip safe renderer-scroll or other process-state restoration.
 - Frame related actors/Things with the camera, then select only the evidence target before a full-frame
   screenshot. RimWorld multi-selection hides the ordinary single-Thing inspect pane.
 - Wait for `Game.PlayerHasControl` and a valid player faction before incidents/jobs/reset. Eliminate
@@ -196,7 +198,7 @@ Discover `DevGateway/current.json` beneath the isolated save-data root, verify i
 6. named automation/quickstart and returned mutation ledger;
 7. controlled shutdown and credential-free tombstone.
 
-Run final gameplay acceptance with developer mode enabled. Before shutdown, open and inspect RimWorld's native developer log/console so visible warnings are not missed; after controlled shutdown, inspect the complete flushed `Player.log`. Search at minimum for `Exception`, `Error`, `Warning`, `FileNotFoundException`, `TypeLoadException`, `MissingMethodException`, Harmony patch failures, XML errors, unresolved cross-references, and gateway request failures. Classify every match in the retained evidence. Known engine probes or one explicitly intentional dev-only warning may be documented, but a passing scenario never excuses an unexplained warning or error. A package only passes a third-party-library decision after those DLLs load and serve a real request inside Unity Mono.
+Run final gameplay acceptance with developer mode enabled. Before shutdown, open and inspect RimWorld's native developer log/console so visible warnings are not missed; after controlled shutdown, inspect the complete flushed `Player.log`. Search at minimum for `Exception`, `Error`, `Warning`, `FileNotFoundException`, `TypeLoadException`, `MissingMethodException`, Harmony patch failures, XML errors, unresolved cross-references, and gateway request failures. Classify every match in the retained evidence. Known engine probes or one explicitly intentional dev-only warning may be documented, but a passing scenario never excuses an unexplained warning or error. A package only passes a third-party-library decision after those DLLs load and serve a real request inside the exact selected game runtime.
 
 Use FlaUI against the exact PID for visible menu/window evidence or capabilities not yet surfaced by the gateway. Revalidate the window handle before click/drag/key input and release pressed input in failure cleanup. Bound every FlaUI child command, terminate it only through its retained process handle, mark service/connect attempts before invocation, and reconcile observed disconnected/stopped state after timeouts or malformed responses. Preserve a service that was already running and disconnected; an unconfirmed child termination or final connection/service state fails the run.
 

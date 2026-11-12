@@ -657,3 +657,20 @@ rejection. Each case uses only its own one-roundtrip baseline; neither claims ge
 switching. Existing native input/view/save helpers remain the control surface. Root compiles and
 accepts only independently reviewed exact hashes; transient draft/review-slot pauses do not remove
 these cases or the separate two-save-switching obligation.
+
+After526ed1e, root integrates the independently reviewed D/E fixtures and owns their complete
+compile/discovery, fresh-process native verification and any batch defect return. The new F0
+consumed-input and seven-method initialization APIs remain unregistered checkpoints.
+
+The next `generation_admission` lease is exactly
+`Harmony/DrugGenerationRateBodyGuard.cs` under the S139 feature, its matching
+`DrugGenerationRateAdmissionTests.cs` in Megamod.Harmony, and the corresponding S139 design,
+specification and DG-NATIVE-FACTS sections. Root releases these compiled files and focused Harmony
+outputs only after the reviewed D/E package has deployed. Prove the actual age getter, Core flag
+getter and ordered rate consumer using the existing finite observation bundle unchanged; preserve
+the concrete consumed static's declaring-type initializer premise. Current native fields, CurStage
+membership and actual runtime call-edge/inlining proof remain supplied, unproved prerequisites.
+No registration, shared helper, BCL patch, generic observation or stage-body extension belongs to
+this lease. The closed generic/interface stage gate remains separately allocated. Root retains
+project links, installs, games, integration and commits. This refines sequencing without removing
+any positive profile, native scenario, feature or P0–P8 obligation.

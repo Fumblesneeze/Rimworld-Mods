@@ -177,4 +177,4 @@ Treat ThingID, debug-action, gizmo, and interaction handles as resolvable capabi
 
 Capture original developer/god/time/camera/selection state before mutation. Restore it in `finally`-style cleanup, delete only disposable handles returned by the current run, cancel the exact active interaction, and use controlled shutdown.
 
-Record the exact player-action sequence and personally observed before/after result together with API request IDs, manifest/process identity, screenshot paths, relevant log cursor, mod list, and configuration hashes in the evidence bundle. A green host test does not replace a Unity Mono smoke for packaged dependency loading, and a successful state probe does not replace player-behavior acceptance.
+Record the exact player-action sequence and personally observed before/after result together with API request IDs, manifest/process identity, screenshot paths, relevant log cursor, mod list, and configuration hashes in the evidence bundle. A green host test does not replace a live run on the exact selected game runtime for packaged dependency loading, and a successful state probe does not replace player-behavior acceptance.

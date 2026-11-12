@@ -155,7 +155,7 @@ affected current claim; inspection never invokes a foreign callback or replays i
 
 The focused host cases execute signed-zero returns, actual calculator and instance-field writes,
 and changed helper/calculator/hook bodies before asserting refusal. Observer acquisition/repatch
-and harmless labeled nops use the unchanged finite-bundle lifecycle. Native Mono call edges and
+and harmless labeled nops use the unchanged finite-bundle lifecycle. Native runtime call edges and
 repatch/inlining, Rand's real type initialization, F0 current input identities and F2 actual
 creation/parent/props/PostAdd dispatch remain unproved. Save/load and later field writers are not
 covered by this initialization claim. Concrete daily-rate, hash/calendar/batching, other

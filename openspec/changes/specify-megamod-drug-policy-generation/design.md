@@ -356,7 +356,7 @@ This is a conditional initialization producer, not a current-input or perpetual-
 F0/F2 must separately bind the actual nonnull comp/properties pair and finite negative rate with
 zero endpoints/reversal; either signed zero is allowed. The real types, especially Rand, must
 already have naturally completed initialization. Host NoInlining fixtures do not prove native
-Mono call-edge/repatch behavior, actual construction/assignment/PostAdd dispatch, save/load or
+runtime call-edge/repatch behavior, actual construction/assignment/PostAdd dispatch, save/load or
 later field stability. The concrete rate and hash/calendar/batching/outer accumulation/clamp
 obligations remain open. Root integrates the native union of roots without overlapping observers;
 none of these partial receipts exposes generation or closes task1.6.

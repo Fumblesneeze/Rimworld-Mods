@@ -31,7 +31,7 @@ guard with helper → calculator → hook focused RED/GREEN, using the same obse
 unchanged. Its host tests execute actual signed-zero, calculator and instance-field behavior,
 changed receiver/field/address/store/call/branch effects and observer currentness. The helper is
 unregistered and conditional on F0/F2 inputs and naturally initialized runtime types; native
-Mono call edges/repatching, real PostAdd dispatch, save/load and remaining rate/hash/calendar/
+runtime call edges/repatching, real PostAdd dispatch, save/load and remaining rate/hash/calendar/
 accumulator/clamp work are still open. Independent review closed after five same-shaped call-operand
 replacement regressions; the affected checkpoint passes62/62 (43initialization plus19existing).
 Root native integration remains a separate gate; this checkpoint closes none of the task boxes below.
