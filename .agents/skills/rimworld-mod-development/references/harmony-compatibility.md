@@ -114,6 +114,9 @@ An observation-only hook should still require only the callable and execution fa
   transformation safe: preserve explicit precision conversions and intermediate Single rounding,
   including at typed stores. Track writes through every represented value type and managed-reference
   alias; a Vector field write cannot be ignored merely because a Rect write is already checked.
+  Preserve state-read timing across calls: identical operand provenance and operation counts do not
+  justify reading an accumulator before a callee that may mutate an alias. Exercise the changed
+  ordering on a real ref alias and compare the actual result before admitting such a transformation.
   Add a changed-consumer regression for each newly modeled aggregate. Do not broaden this into a
   general-purpose IL evaluator; refuse unproved forms within the narrow consumed chain.
 - Revoke old admission before evaluating a newly composed stream. A validator/metadata failure

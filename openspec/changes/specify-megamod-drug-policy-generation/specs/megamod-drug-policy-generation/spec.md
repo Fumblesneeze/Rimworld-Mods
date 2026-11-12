@@ -150,6 +150,16 @@ mislabel those edited choices as computed recommendations or silently revert the
 - **THEN** it preserves that catalog's identities/order and returns immutable scalar facts without another catalog scan or invoking native ingestion/random effects
 - **AND** no positive shape result is exposed to the player until current effective native semantics and finalized inputs have passed their separate admission gate.
 
+#### Scenario: A decay contribution is admitted as a partial fact only
+- **WHEN** current contribution admission observes the composed native `CompPostTickInterval(ref float,int)` body
+- **THEN** it proves the same-comp pawn, interval200 and incoming delta feed the bound interval check, with a false result skipping the whole contribution and a true result performing exactly one virtual daily-rate call, Single-local rate rounding, binary32 multiplication by0.0033333334f, Single-local product rounding, followed by the original-ref read, exactly one addition and the write in that order
+- **AND** this partial receipt does not authorize suggestions until pawn/hash/rate bodies, rate initialization, other accumulated contributions, severity clamping and the remaining finalized native facts are separately proved.
+
+#### Scenario: Changed contribution or callback effects revoke the partial receipt
+- **WHEN** a supported repatch changes the multiplier, intermediate Single stores, state-read timing, ref consumer, contribution cardinality or a consumed callback's effects
+- **THEN** admission checks the actual current root and callback bodies and withholds the partial receipt for unproved effects, even when method signatures are unchanged
+- **AND** compatible static-void scalar observers can remain admitted without executing them or replaying foreign transpilers as inspection probes; new observers require explicit revalidation and their owned observations are cleaned up after failed acquisition or removal.
+
 #### Scenario: Fresh-dose and side-high assumptions remain visible
 - **WHEN** the preview uses an admitted ordinary native high, Alcohol, Rest-offset or rottable drug shape
 - **THEN** it states the fresh whole-dose/no-prior-effect assumptions and explains that ordinary impairment, food poisoning and residual high/tolerance are not prevented by the suggestion.

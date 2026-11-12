@@ -11,6 +11,15 @@
 
 ## 2. Implement established behavior in vertical RED and GREEN slices
 
+2026-11-12 native-facts checkpoint: the first F1 contribution-flow guard and current publication
+receipt are implemented but unregistered. Thirteen focused Harmony cases pass after independent
+review corrected accumulator-read ordering, the first Single store and closed-generic callable
+identity. Each correction has retained RED/GREEN evidence in
+`artifacts/Implementation/megamod-p0/s139-native-facts/f1-contribution-admission.md`.
+This proves one conditional ref/float contribution in actual composed host bodies, not called
+native helper semantics, complete decay, finalized inputs, preview authority or gameplay. Task1.6
+and all remaining F0–F5/native obligations stay open; no task below closes from this checkpoint.
+
 - [ ] 2.1 After 1.1–1.3 and 1.7, RED/GREEN C1 one established suggestion at a time in Unit using immutable fact inputs; include binary32 decay boundaries, late/early day boundaries and dispatch margin, editor overflow without clamping, unsupported/negative/nonfinite/non-progress cases, chemical-or-tolerance connected groups, dose/population assumptions, manual provenance and no arbitrary drug-name dependency. Retain durable actual failures and passing nonzero counts; runtime exposure still requires 1.6.
   - Revision20 core implemented with five retained RED/GREEN slices and 46/46 focused Unit cases; independent review found no issues. Checkpoint e4f7827. `Source/Features/DrugPolicyGeneration/README.md` describes the bounded API and local evidence ledger. This does not close runtime fact admission, complete preference/reset editing or native creation.
 - [ ] 2.2 RED/GREEN complete baseline-to-draft projection, explicit applicable medical permission, off-schedule defaults, full resets, Any/100% reversal and independent edits; no tests that merely repeat literal tables.

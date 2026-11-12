@@ -313,6 +313,22 @@ array. Snapshot Version/Identity still govern currentness; this metadata alone p
 body safe and enables no native action. The creation guard must prove its consumed no-escape and
 actual-list semantics, admitting irrelevant/compatible effects and refusing unproved effects.
 
+The first F1 native-facts milestone is a separate contribution-flow guard and admission, documented
+in `DG-NATIVE-FACTS`. It binds `CompPostTickInterval(ref float,int)`, the inherited pawn getter,
+`Gen.IsHashIntervalTick(Thing,int,int)` and the virtual `SeverityChangePerDay()` declaration.
+The actual incoming body must pass the same pawn,200 and incoming delta to the interval check;
+false skips the contribution, true performs one rate call, Single-local rate rounding, binary32
+multiply by0.0033333334f, Single-local product rounding, then the original-ref read, addition and
+write in that order. Reads cannot move across the virtual call because its body may change an
+aliased accumulator. All four native callable bindings are nongeneric.
+Harmless aliases/nops and body-proved scalar observers can qualify. This small conditional grammar
+remains separate from constructor proof and refuses unknown arithmetic, branches, calls and ref
+effects. Owned observers and C01 snapshots cover the root plus relevant callback bodies, including
+repatch currentness, explicit acquisition, failed-acquisition rollback and obsolete-observer pruning.
+The helper remains unregistered. Its positive receipt says nothing about pawn/hash/rate bodies,
+rate initialization, other accumulators, outer comp dispatch or severity clamping. All remaining
+F0–F5 dependencies and finalized/native workflows are required before any suggestion is exposed.
+
 Generation preference controls use the common composite-settings renderer. A small transient
 percentage draft reuses S138's localized percentage parser and exact unchanged-value preservation;
 it owns no persisted settings or policy rows. The mood/recreation controls accept numeric values,

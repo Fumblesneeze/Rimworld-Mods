@@ -1,8 +1,9 @@
 # DG-NATIVE-FACTS: current native facts for C1 suggestions
 
-Owner: `fumblesneeze.megamod`, S139. **Definition projection implemented; independent review,
-effective-method admission and native finalized-fact/player acceptance pending.** No mutation patch,
-runtime registration or player-facing invocation is added. Index before wiring the runtime consumer.
+Owner: `fumblesneeze.megamod`, S139. **Definition projection and a contribution-only F1 host
+admission milestone implemented; complete effective admission and native finalized-fact/player
+acceptance pending.** No mutation patch, runtime registration or player-facing invocation is added.
+Index before wiring the runtime consumer.
 
 ## Ownership and traceability
 
@@ -11,7 +12,7 @@ runtime registration or player-facing invocation is added. Index before wiring t
   complete preview; task 1.6 remains open.
 - Source: `Source/Features/DrugPolicyGeneration/Runtime/NativeDrugGenerationFacts.cs`.
 - Focused fixture: `tests/Megamod.Defs/DrugPolicyGeneration/NativeDrugGenerationFactsTests.cs`.
-- Kind: read-only definition adapter plus a **future** C01 semantic-admission consumer, no patch
+- Kind: read-only definition adapter plus a generation-local partial C01 admission consumer, no patch
   of owned megamod code. XML cannot capture a transient current catalog or validate edited runtime
   outcomes. There is no call to the native safe-dose helper or source generator API.
 - Exact read-only inspection: 1.7.5005 rev1082, Assembly-CSharp SHA256
@@ -65,13 +66,51 @@ Definition predicates, each exercised by constructed Defs tests:
    Other need/outcome callbacks are unsupported. Rottable can cause food poisoning; fresh-dose and
    remaining-harm disclosure are required, not inferred from its definition type.
 
+## F1 contribution-only admission milestone
+
+`DrugGenerationDecayGuard` binds the actual nongeneric declarations of these four methods, retaining module,
+metadata token and exact declaring type rather than relying on reflected lookup identity:
+
+- instance `HediffComp_SeverityModifierBase.CompPostTickInterval(ref float,int) : void`;
+- inherited instance `HediffComp.get_Pawn() : Pawn`;
+- static `Gen.IsHashIntervalTick(Thing,int,int) : bool`;
+- virtual instance `HediffComp_SeverityModifierBase.SeverityChangePerDay() : float`.
+
+The inspected native body calls the pawn getter on the same comp, passes that pawn, integer200 and
+the incoming delta to the interval check, and skips the complete contribution on false. On true it
+calls the bound virtual daily-rate slot exactly once, stores that rate into a Single local,
+multiplies by binary32 `0.0033333334f`, stores the product into a Single local, and only then reads
+the original ref accumulator and adds the rounded product exactly once to that value
+before writing that same reference. Moving the read across the virtual call is not equivalent:
+the callee may change a field aliased by the supplied reference. The guard recognizes this bounded
+conditional data flow, including harmless local aliases/nops. It refuses changed calls, constants,
+receiver/ref provenance, arithmetic/order/rounding, duplicate contributions, unknown calls, other
+branches and exception regions; it is not a general IL evaluator or pristine-body hash check.
+
+`DrugGenerationDecayAdmission` owns a final observation transpiler over the actual incoming root
+and consumed callback bodies. `Available` is inspection-only; `Revalidate` explicitly acquires new
+callback observers and removes obsolete ones using a coherent dependency snapshot. Actual outer
+and selected inner callbacks can qualify as static-void scalar observers through the existing
+scalar callback proof; constructor grammar is unchanged. By-ref/native-reference writes or escapes,
+skip/replacement, factories and unproved bindings/effects are refused. Callback body publications
+are part of currentness, not signatures alone. A changed root/callback publication is rechecked;
+foreign transpilers are never rerun as inspection probes. Limits remain256instructions/body,
+32observed methods and eight callback levels. Failed revalidation rolls back newly acquired
+observers; rollback attempts all owned members and retains failed removals for retry.
+
+This receipt proves only the caller's contribution flow. It **does not prove** the pawn getter's
+body, interval/hash/calendar behavior, actual virtual rate body/initialization, other comp
+contributions, outer `HediffWithComps` accumulation or the final severity setter/clamp. Those
+dependencies and the complete F0–F5 fact gate remain required. The helper is unregistered and no
+preview, creation or ordinary-Core support claim is enabled by these host cases.
+
 ## Effective native semantics still required before exposure
 
 The adapter's type/field checks do **not** prove effective method bodies. The future C01 consumer
 must admit only the consumed semantics, including compatible foreign edits, and invalidate its
 receipt after relevant supported repatching. No blanket foreign-owner or whole-body-hash ban.
-The following inspected members establish the data-flow obligations; this document does not claim
-their executable admission is implemented:
+The following inspected members establish the remaining data-flow obligations. The F1 contribution
+subclaim above does not authorize their behavior:
 
 - `Thing.Ingested(Pawn,float) : float` and protected virtual instance
   `IngestedCalculateAmounts(Pawn,float,out int,out float) : void`: one whole item under admitted1/1
@@ -109,7 +148,8 @@ Caller-effective admission failures must leave Generate unavailable with a bound
 ordinary controls usable. Example: `[fumblesneeze.megamod] Target DG-NATIVE-FACTS unavailable;
 predicate=whole-dose-outcome-flow; reason=unproved-effective-body; unavailable=Generate;
 fallback=native-policy-controls`. No per-tick/pawn log and no foreign unpatching. The implemented
-read-only adapter itself performs no logging/registration; there is no owned patch rollback here.
+read-only adapter itself performs no logging/registration. The separate unregistered F1 helper uses
+the ordinary PatchCandidate rollback lifecycle and retains a target-level failure reason.
 
 ## Verification matrix
 
@@ -121,6 +161,8 @@ read-only adapter itself performs no logging/registration; there is no owned pat
 | Reachable effects, malformed/nonmonotone curves and active Alcohol/effecter branches | No automatic suggestion | Defs passed |
 |297/298 side-high events; gain equal addiction threshold | Exact model boundary, no shortening | Defs passed |
 | Catalog order/channel identity, partial path and detached values | No rescan, immutable projection, actual reference channels | Defs passed |
+| F1 contribution fixture; changed multiplier/ref consumer/duplicate contribution | Exact float contribution or unavailable receipt; native-shaped effects still execute | Focused host Harmony passed |
+| F1 scalar outer/inner observers, callback repatch and cleanup | Explicit acquisition, body-current receipt, no inspection execution/probe or retained obsolete observers | Focused host Harmony passed |
 | Current effective native bodies and benign/changed foreign patches | Semantic admission/invalidation before exposure | Pending C01/Harmony and native inspection |
 | Actual finalized four Core profiles and inherited/modified content | Current facts match supported shape or explicit unsupported reason | Pending isolated exact-mod process |
 | Preview/reasons/Create and later native dose behavior | Honest visible disclosure and ordinary composed policy behavior | Pending reviewed-build native player workflow |
