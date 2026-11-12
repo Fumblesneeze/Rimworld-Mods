@@ -9,6 +9,28 @@ namespace RimWorldDevGateway.Waylith.Harmony.Tests;
 [TestFixture, NonParallelizable]
 public sealed class NativeCaravanHookCompositionTests
 {
+    private static int observedId;
+
+    [Test]
+    public void PostfixObservesTheNormalizedByValueIdAfterTheNativeStyleStore()
+    {
+        var harmony = new HarmonyLib.Harmony("gateway.normalized-window-id." + Guid.NewGuid().ToString("N"));
+        var target = typeof(NativeCaravanHookCompositionTests).GetMethod(nameof(NormalizeId), BindingFlags.Static | BindingFlags.NonPublic)!;
+        observedId = 0;
+        try
+        {
+            harmony.Patch(target, postfix: new HarmonyMethod(typeof(NativeCaravanHookCompositionTests), nameof(ObserveNormalizedId)));
+            Assert.That(NormalizeId(1439870015), Is.EqualTo(-1439870015));
+            Assert.That(observedId, Is.EqualTo(-1439870015));
+        }
+        finally { harmony.UnpatchAll(harmony.Id); observedId = 0; }
+        Assert.That(HarmonyLib.Harmony.GetPatchInfo(target)?.Owners.Contains(harmony.Id) ?? false, Is.False);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int NormalizeId(int id) { id = -Math.Abs(id); return id; }
+    private static void ObserveNormalizedId(int __0) => observedId = __0;
+
     [TestCase(false)]
     [TestCase(true)]
     public void EntryAndCaravanDispatchAndPendingStatesCoexistAndRejectForeignFinalizers(bool throws)

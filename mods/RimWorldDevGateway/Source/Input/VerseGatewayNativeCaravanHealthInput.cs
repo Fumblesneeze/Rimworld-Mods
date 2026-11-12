@@ -245,7 +245,7 @@ internal sealed partial class VerseGatewayNativeWindowInput
     {
         var service = installed; var frame = service?.caravanFrame;
         if (frame?.ExtraTab is not { } tab || frame.Caravan is not { } caravan || !frame.Intact || !__runOriginal ||
-            frame.Input.rawType != EventType.repaint || __0 != 1439870015 || !ReferenceEquals(caravan.View.Stack, __instance) ||
+            frame.Input.rawType != EventType.repaint || __0 != -1439870015 || !ReferenceEquals(caravan.View.Stack, __instance) ||
             VerseGatewayCaravanInspection.DetailPawn!.GetValue(tab) is not Pawn pawn) return;
         var matches = __instance.Windows.OfType<ImmediateWindow>().Where(w => w.ID == -1439870015 && ReferenceEquals(w.doWindowFunc, __3)).Take(2).ToArray();
         if (matches.Length != 1) { frame.Failed = true; return; }

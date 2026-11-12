@@ -9,6 +9,10 @@ Before coding, classify Harmony as either a design-time fallback because the ins
 - Use the gameplay mod's stable package ID as the Harmony ID.
 - Let the RimWorld ModSdk compile against Harmony; do not ship a private `0Harmony.dll`.
 - Prefer postfixes for observation and additive behavior. Use prefixes only when the original must be skipped or arguments/results must change.
+- A postfix observes parameter values after the original body, including ordinary by-value
+  parameters reassigned with `starg`. Inspect those writes before comparing against callsite
+  constants. Observe the normalized value, or capture original input in prefix `__state` when
+  that is the actual contract; do not assume a method's return preserves its input arguments.
 - Avoid transpilers unless no stable call boundary exists. If unavoidable, match structural landmarks, fail closed with a clear warning, and add a live compatibility probe for the exact installed game/mod version.
 - Keep patches idempotent and side-effect-free during discovery. Avoid hot-path allocations and recursive logging.
 - Never touch Unity or Verse live state from network, timer, threaded-log, or worker callbacks. Queue it to the game main thread.
