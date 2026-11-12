@@ -754,3 +754,27 @@ native Any edit with attached pickup, then independent refill from empty. Its au
 compiled scenario and launches no game; root must review counted actions/cleanup before release.
 Caravan/world control and language-only runs remain separately allocated prerequisites. All
 remaining S138/S139 contracts, other features and P0–P8 gates stay allocated and unaccepted.
+
+After0fda103, root accepted the scoped S138 main-menu/two-save workflow on its isolated reviewed
+build:138 native steps and14 personally inspected captures, with exact cleanup/configuration proof.
+The Gateway ordinary pair and singular Entry prerequisites also passed; their full native matrices
+remain separate. A managed detached acceptance worktree keeps compiled inputs fixed while main
+checkout workers use their disjoint leases. Completed stopped-run evidence is mirrored under the
+main ignored artifacts directory before that worktree can be archived.
+
+Checkpoint0374d55 contains the independently reviewed passive nongeneric published-body reader:
+37 affected checks, strict validation and canonical65-file product build/install pass. It installs
+no new observer and remains unregistered; no Waylith execution, generic-family, stage-membership
+or generator acceptance is inferred. Its source lease is returned to root.
+
+Root now integrates the reviewed `native-stock-routes` fixture. The sole post-review edit removes
+its artifact-draft comment; the owning E2E project compiles. Root owns exact discovery, native run,
+personal observations and any review/fix batch. The earlier pooled-Job evidence defect is corrected
+through immutable active snapshots. Main-menu and stock scenarios remain distinct selected runs;
+completed workflows are not replayed merely to exercise the batch API.
+
+The artifact-only Gateway world/caravan plan now has a checked23-field camera restoration premise
+and nongeneric Health-row observation seam. Independent review found that revisiting the same
+caravan can retain an open Health detail; its author must correct desired-open handling and action
+budgets before a compiled lease. That Gateway tooling owner remains separate from S138's normal
+world-tick consumption contract. All139 features, full S138/S139 obligations and P0–P8 gates remain.
