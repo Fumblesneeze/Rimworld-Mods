@@ -191,7 +191,7 @@ internal sealed class NativeToleranceSaveContextFixture
         {
             EndToEndAssert.Equal(1, saves);
             EndToEndAssert.True(settingsScrollClicks >= 0 && settingsScrollClicks <= (resume ? 0 : 12));
-            EndToEndAssert.Equal(resume ? 48 : 59 + 2 * settingsScrollClicks, nativeOperations);
+            EndToEndAssert.Equal(resume ? 49 : 60 + 2 * settingsScrollClicks, nativeOperations);
             EndToEndAssert.Equal(resume ? 12 : 21, screenshots);
             EndToEndAssert.Equal(resume ? 245 : 360, waitSeconds);
             EndToEndAssert.True(nativeOperations * 15 + screenshots * 30 + waitSeconds + 300 + 180 <= (resume ? 2400 : 3000));
@@ -366,10 +366,19 @@ internal sealed class NativeToleranceSaveContextFixture
 
     private IEnumerable<EndToEndStep> SaveAndRebind()
     {
+        // Health/Gear evidence and pawn re-selection leave the native Inspect pane open.
+        // Close that exact selected pawn's Gear pane through its existing native close command.
+        yield return new InspectPaneCloseActionStep("close the selected pawn Gear pane before native serialization",
+            subjects[resume ? 0 : 1].PawnId, typeof(ITab_Pawn_Gear).FullName!);
         yield return new AssertionStep("retain immutable native serialization inputs before the sole roundtrip", _ =>
         {
-            RequireCurrent(); EndToEndAssert.True(!saveRequested && Find.TickManager.Paused && !File.Exists(SavePath));
-            EndToEndAssert.True(Find.MainTabsRoot.OpenTab == null && !Find.WindowStack.IsOpen<Dialog_ModSettings>() && !Find.WindowStack.IsOpen<Dialog_ManageDrugPolicies>());
+            RequireCurrent();
+            EndToEndAssert.False(saveRequested, "This case permits exactly one native save/load request.");
+            EndToEndAssert.True(Find.TickManager.Paused, "The native game must stay paused before saving; speed=" + Find.TickManager.CurTimeSpeed);
+            EndToEndAssert.False(File.Exists(SavePath), "The unique disposable save must not already exist: " + SaveName);
+            EndToEndAssert.True(Find.MainTabsRoot.OpenTab == null, "Native tabs must be closed before saving; open=" + Find.MainTabsRoot.OpenTab?.defName);
+            EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_ModSettings>(), "Native settings must be closed before saving.");
+            EndToEndAssert.False(Find.WindowStack.IsOpen<Dialog_ManageDrugPolicies>(), "Native policy manager must be closed before saving.");
             savedTick = Find.TickManager.TicksGame; serializedSave = settings.Store.ExportSave(binding);
             if (resume)
             {
@@ -661,7 +670,9 @@ internal sealed class NativeToleranceSaveContextFixture
             ["retainedAtomicReceipts"] = retainedAdmission,
             ["saveTick"] = savedTick.ToString(), ["savedToil"] = savedToil.ToString(), ["savedTicksLeft"] = savedTicksLeft.ToString(),
             ["nativeOperations"] = nativeOperations.ToString(), ["screenshots"] = screenshots.ToString(), ["waitSeconds"] = waitSeconds.ToString(), ["saves"] = saves.ToString(),
-            ["settingsScrollClicks"] = settingsScrollClicks.ToString(), ["saveLoadReserveSeconds"] = "300", ["synchronousReserveSeconds"] = "180"
+            ["settingsScrollClicks"] = settingsScrollClicks.ToString(), ["saveLoadReserveSeconds"] = "300", ["synchronousReserveSeconds"] = "180",
+            ["nativeOpenTab"] = Find.MainTabsRoot.OpenTab?.defName ?? "none", ["paused"] = Find.TickManager.Paused.ToString(),
+            ["timeSpeed"] = Find.TickManager.CurTimeSpeed.ToString(), ["saveRequested"] = saveRequested.ToString(), ["savePathExists"] = File.Exists(SavePath).ToString()
         };
         foreach (var subject in subjects)
         {

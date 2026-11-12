@@ -141,6 +141,9 @@ Prefer action → wait → observation steps that exercise the same native path 
   a stale or partial loaded Game must not skip safe renderer-scroll or other process-state restoration.
 - Frame related actors/Things with the camera, then select only the evidence target before a full-frame
   screenshot. RimWorld multi-selection hides the ordinary single-Thing inspect pane.
+  Selection and Health/Gear captures can reopen the native Inspect tab. If a later save/load boundary
+  requires no open main tab, use the native inspect-pane close action after the last capture;
+  closing a settings dialog or Assign does not establish that later selection left every tab closed.
 - Wait for `Game.PlayerHasControl` and a valid player faction before incidents/jobs/reset. Eliminate
   `Could not find player faction` sequencing errors; a green assertion with an error-severity log is
   not acceptable evidence.

@@ -75,6 +75,11 @@ SHALL not disable the native scheduled, direct recreation and social-drinking ro
 - **THEN** the existing order follows ordinary native execution and interruption rules
 - **AND** the new limit governs its next routine eligibility decision.
 
+#### Scenario: Reload preserves an executing dose after a policy edit
+- **WHEN** a pawn is consuming a routinely selected dose, the player applies a zero tolerance limit and saves and reloads
+- **THEN** the serialized native job and physical dose may continue under ordinary native execution rules
+- **AND** a fresh routine selection observes the retained zero limit rather than inheriting permission from the earlier job.
+
 #### Scenario: Tolerance changes while carrying a selected dose
 - **WHEN** tolerance reaches the chosen limit after a routine job selected its dose, including across save/load
 - **THEN** this feature does not cancel that order or add a final-ingestion veto
@@ -235,6 +240,11 @@ the retained choices at subsequent eligible decisions.
 #### Scenario: Disable and re-enable in a loaded save
 - **WHEN** the player disables the feature and later enables it
 - **THEN** subsequent applicable use decisions follow the effective setting, and previously saved row choices remain.
+
+#### Scenario: A dormant save override survives reload beneath an enabled global default
+- **WHEN** the player stores Current save off, restores Use global while Global default is on, and saves and reloads
+- **THEN** the inherited global value remains effective and unchecking Use global restores the retained save-off choice
+- **AND** subsequent native routine decisions alternate between the retained policy restriction and ordinary native permission as the player changes that inheritance choice, without changing the global default or policy limit.
 
 #### Scenario: Main menu and save switching
 - **WHEN** the player is at the main menu or switches between two saves
