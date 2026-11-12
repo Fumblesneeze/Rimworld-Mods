@@ -5,6 +5,64 @@ namespace RimWorldDevGateway.Waylith.Tests;
 [TestFixture]
 public sealed class NativeWindowAutomationTests
 {
+    [TestCase("missing-end")]
+    [TestCase("extra")]
+    [TestCase("version")]
+    [TestCase("blank-window")]
+    [TestCase("blank-scope")]
+    [TestCase("string-end")]
+    [TestCase("nan")]
+    [TestCase("infinity")]
+    public void InvalidDragArgumentsNeverReachTheInputLane(string fault)
+    {
+        var registry = new GatewayAutomationRegistry(); int calls = 0;
+        GatewayNativeWindowAutomations.Register(registry, () => Array.Empty<GatewayNativeWindowDescriptor>(),
+            (_, _, _, _) => throw new AssertionException("Invalid drag must not click."), () => GatewayAutomationAvailability.AvailableNow,
+            drag: (_, _, _, _, _, _, _) => { calls++; return new PendingClick(); });
+        var args = new Dictionary<string, object?> { ["version"] = 1, ["windowHandle"] = "window-1",
+            ["startPixelX"] = 10, ["startPixelY"] = 20, ["endPixelX"] = 30, ["endPixelY"] = 40 };
+        switch (fault)
+        {
+            case "missing-end": args.Remove("endPixelY"); break;
+            case "extra": args["extra"] = true; break;
+            case "version": args["version"] = 2; break;
+            case "blank-window": args["windowHandle"] = " "; break;
+            case "blank-scope": args["pointerScopeHandle"] = " "; break;
+            case "string-end": args["endPixelX"] = "30"; break;
+            case "nan": args["endPixelX"] = double.NaN; break;
+            case "infinity": args["startPixelY"] = double.PositiveInfinity; break;
+        }
+        GatewayAutomationRun? run = null;
+        try { run = registry.StartRun(GatewayNativeWindowAutomations.DragName, "invalid-drag", args); }
+        catch (GatewayAutomationException error) when (fault is "nan" or "infinity")
+        { Assert.That(error.Code, Is.EqualTo("invalid_automation_arguments")); }
+        if (run != null) Assert.That(run.Error?.Code, Is.EqualTo("invalid_native_input_arguments"));
+        Assert.That(calls, Is.Zero);
+    }
+
+    [TestCase(null)]
+    [TestCase("owned-scope")]
+    public void DragRetainsBothEndpointsAndWaitsForTheExistingDeferredCleanup(string? scope)
+    {
+        var registry = new GatewayAutomationRegistry(); var operation = new PendingClick(); int calls = 0;
+        GatewayNativeWindowAutomations.Register(registry, () => Array.Empty<GatewayNativeWindowDescriptor>(),
+            (_, _, _, _) => throw new AssertionException("Drag must not become a click."), () => GatewayAutomationAvailability.AvailableNow,
+            drag: (handle, startX, startY, endX, endY, context, scopeHandle) =>
+            {
+                calls++;
+                Assert.That((handle, startX, startY, endX, endY, scopeHandle), Is.EqualTo(("window-1", 40.5, 120d, 40.5, 121d, scope)));
+                return operation;
+            });
+        var args = new Dictionary<string, object?> { ["version"] = 1, ["windowHandle"] = "window-1",
+            ["startPixelX"] = 40.5, ["startPixelY"] = 120, ["endPixelX"] = 40.5, ["endPixelY"] = 121 };
+        if (scope != null) args["pointerScopeHandle"] = scope;
+        var run = registry.StartRun(GatewayNativeWindowAutomations.DragName, "drag-request", args);
+        Assert.That(run.State, Is.EqualTo("running")); Assert.That(calls, Is.EqualTo(1));
+        Assert.That(run.Artifacts.Any(a => a.Name == "native-drag-request"), Is.True);
+        operation.Complete = true; registry.Advance();
+        Assert.That(run.State, Is.EqualTo("succeeded"));
+    }
+
     [Test]
     public void CaptureExposesExactWindowDescriptorsWithoutSendingInput()
     {

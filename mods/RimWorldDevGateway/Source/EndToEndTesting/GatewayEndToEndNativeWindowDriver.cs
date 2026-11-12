@@ -67,17 +67,19 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
             catch (GatewayAutomationException exception)
             { return GatewayEndToEndCompletedStepOperation.Failed(exception.Code, exception.Message); }
         }
-        if (step is NativeWindowClickActionStep or NativeWindowReplaceTextActionStep or NativeEntryMenuClickActionStep)
+        if (step is NativeWindowClickActionStep or NativeWindowDragActionStep or NativeWindowReplaceTextActionStep or NativeEntryMenuClickActionStep)
         {
             var click = step as NativeWindowClickActionStep;
+            var drag = step as NativeWindowDragActionStep;
             var text = step as NativeWindowReplaceTextActionStep;
             var entry = step as NativeEntryMenuClickActionStep;
+            string? requestedScope = click?.PointerScopeHandle ?? drag?.PointerScopeHandle;
             if (context is not GatewayEndToEndTestContext ownedContext)
                 return GatewayEndToEndCompletedStepOperation.Failed("native_input_cleanup_unavailable",
                     "Native input requires the owned asynchronous scenario cleanup context.");
-            if (click?.PointerScopeHandle != null &&
+            if (requestedScope != null &&
                 (!scopes.TryGetValue(ownedContext, out var pointerScope) || pointerScope.Closed ||
-                    pointerScope.Handle != click.PointerScopeHandle))
+                    pointerScope.Handle != requestedScope))
                 return GatewayEndToEndCompletedStepOperation.Failed("native_pointer_scope_not_owned",
                     "This scenario does not own the requested pointer workflow.");
             GatewayAutomationRun? retained = null;
@@ -100,6 +102,13 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
                     ["version"] = click?.PointerScopeHandle == null ? 1 : 2
                 };
                 if (entry != null) arguments["controlHandle"] = entry.ControlHandle;
+                else if (drag != null)
+                {
+                    arguments["windowHandle"] = drag.WindowHandle;
+                    arguments["startPixelX"] = drag.StartPixelX; arguments["startPixelY"] = drag.StartPixelY;
+                    arguments["endPixelX"] = drag.EndPixelX; arguments["endPixelY"] = drag.EndPixelY;
+                    if (drag.PointerScopeHandle != null) arguments["pointerScopeHandle"] = drag.PointerScopeHandle;
+                }
                 else if (click != null)
                 {
                     arguments["windowHandle"] = click.WindowHandle;
@@ -108,12 +117,12 @@ internal sealed class GatewayEndToEndNativeWindowDriver : IGatewayEndToEndStepDr
                 }
                 else { arguments["windowHandle"] = text!.WindowHandle; arguments["controlHandle"] = text.ControlHandle; arguments["text"] = text.Text; }
                 var run = registry.StartRun(entry != null ? GatewayNativeEntryMenuAutomations.ClickName :
-                    click != null ? GatewayNativeWindowAutomations.ClickName : GatewayNativeWindowAutomations.ReplaceTextName,
+                    click != null ? GatewayNativeWindowAutomations.ClickName : drag != null ? GatewayNativeWindowAutomations.DragName : GatewayNativeWindowAutomations.ReplaceTextName,
                     "e2e-native-" + Guid.NewGuid().ToString("N"),
                     arguments, timeout: TimeSpan.FromSeconds(15));
                 retained = run;
                 deferredAdmitted = run.DeferredOperation != null;
-                return new InputOperation(run, arguments, entry?.ExpectedFailureCode ?? click?.ExpectedFailureCode ?? text?.ExpectedFailureCode);
+                return new InputOperation(run, arguments, entry?.ExpectedFailureCode ?? click?.ExpectedFailureCode ?? drag?.ExpectedFailureCode ?? text?.ExpectedFailureCode);
             }
             catch (GatewayAutomationException exception)
             { return GatewayEndToEndCompletedStepOperation.Failed(exception.Code, exception.Message); }

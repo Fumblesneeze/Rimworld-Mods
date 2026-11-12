@@ -5,6 +5,48 @@ namespace RimWorldDevGateway.Tests;
 [TestFixture]
 public sealed class NativeWindowInputContractTests
 {
+    [TestCase(9, 21, "point_outside_window")]
+    [TestCase(109.999999999, 21, "point_outside_window")]
+    [TestCase(50, 119.999999999, "point_outside_window")]
+    [TestCase(50, 21, null)]
+    [TestCase(50, 22, null)]
+    public void DragEndpointsMustRemainInsideTheWindowAfterNativeFloatProjection(double x, double y, string? error)
+    {
+        var geometry = new GatewayNativeWindowGeometry(10, 20, 100, 100, 1, 1600, 900, 1);
+        var point = GatewayNativeWindowInputContract.ResolveDragPoint(geometry, x, y);
+        Assert.That(point.Error, Is.EqualTo(error));
+        if (error == null) Assert.That((point.InputX, point.InputY), Is.EqualTo((x, 899 - y)));
+    }
+
+    [TestCase(false, 42, 0, "native_slider_busy")]
+    [TestCase(true, 43, 42, "native_slider_ownership_lost")]
+    [TestCase(true, 0, 42, "native_slider_ownership_lost")]
+    [TestCase(true, 42, 0, "native_slider_ownership_lost")]
+    [TestCase(false, 0, 0, null)]
+    [TestCase(true, 42, 42, null)]
+    public void DragCannotBorrowOrContinueThroughAForeignSliderLatch(bool held, int current, int owned, string? error)
+        => Assert.That(GatewayNativeWindowInputContract.RejectSliderInput(held, new(current, 0, 0), new(owned, 0, 0)), Is.EqualTo(error));
+
+    [TestCase(42, 0, false, true, true)]
+    [TestCase(42, 42, true, false, true)]
+    [TestCase(42, 43, true, false, false)]
+    [TestCase(42, 42, false, false, false)]
+    [TestCase(42, 42, true, true, false)]
+    [TestCase(0, 42, true, false, false)]
+    public void SliderLatchCleanupPreservesForeignOrUnconfirmedState(int owned, int current, bool window, bool foreign, bool allowed)
+        => Assert.That(GatewayNativeWindowInputContract.CanRestoreSliderLatch(new(owned, 0, 0), new(current, 0, 0), window, foreign), Is.EqualTo(allowed));
+
+    [TestCase(0, 81, (byte)1)]
+    [TestCase(42, 81, (byte)2)]
+    [TestCase(0, 0, (byte)1)]
+    public void NativeReleaseCannotClearAnUnownedRangeSliderState(int slider, int range, byte end)
+    {
+        var current = new GatewayNativeSliderState(slider, range, end);
+        Assert.That(GatewayNativeWindowInputContract.RejectSliderInput(false, current, default), Is.EqualTo("native_slider_busy"));
+        Assert.That(GatewayNativeWindowInputContract.RejectSliderInput(true, current, new(slider, 0, 0)), Is.EqualTo("native_slider_ownership_lost"));
+        Assert.That(GatewayNativeWindowInputContract.CanRestoreSliderLatch(new(slider, 0, 0), current, true, false), Is.False);
+    }
+
     [Test]
     public void MousePassReceiptDistinguishesMissingRejectedAndDeliveredPasses()
     {

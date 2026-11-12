@@ -16,15 +16,22 @@ internal interface IGatewayNativeScopedClickBackend
     IReadOnlyDictionary<string, object?> PointerReceipt { get; }
 }
 
+internal interface IGatewayNativeDragBackend : IGatewayNativeClickBackend
+{
+    void MoveHeld();
+}
+
 internal sealed class GatewayNativeClickOperation : IGatewayDeferredAutomationOperation
 {
     private readonly IGatewayNativeClickBackend backend;
+    private readonly bool drag;
     private Phase phase;
     private GatewayDeferredAutomationResult? result;
     private bool ownsButton;
     private bool ownsPointer;
     private bool pressDispatched;
     private bool releaseDispatched;
+    private bool dragDispatched;
     private bool stopped;
     private bool dispatchUncertain;
     private string? failure;
@@ -32,8 +39,12 @@ internal sealed class GatewayNativeClickOperation : IGatewayDeferredAutomationOp
     public Exception? Failure { get; private set; }
     public bool IsQuarantined => phase == Phase.Quarantined;
 
-    public GatewayNativeClickOperation(IGatewayNativeClickBackend backend)
-        => this.backend = backend ?? throw new ArgumentNullException(nameof(backend));
+    public GatewayNativeClickOperation(IGatewayNativeClickBackend backend, bool drag = false)
+    {
+        this.backend = backend ?? throw new ArgumentNullException(nameof(backend));
+        if (drag && backend is not IGatewayNativeDragBackend) throw new ArgumentException("Drag requires a held-movement backend.", nameof(backend));
+        this.drag = drag;
+    }
     public void BeforeDispatch(bool stopRequested = false)
     {
         try { QueueNextPhase(stopRequested); }
@@ -57,8 +68,8 @@ internal sealed class GatewayNativeClickOperation : IGatewayDeferredAutomationOp
             if (!ownsPointer) Finish();
             return;
         }
-        if (phase is not (Phase.WaitingPress or Phase.WaitingRelease)) return;
-        string? rejection = backend.Validate(phase == Phase.WaitingRelease);
+        if (phase is not (Phase.WaitingPress or Phase.WaitingMove or Phase.WaitingRelease)) return;
+        string? rejection = backend.Validate(phase != Phase.WaitingPress);
         if (rejection != null)
         {
             failure = rejection;
@@ -72,6 +83,11 @@ internal sealed class GatewayNativeClickOperation : IGatewayDeferredAutomationOp
             backend.Press();
             phase = Phase.PressQueued;
         }
+        else if (phase == Phase.WaitingMove)
+        {
+            ((IGatewayNativeDragBackend)backend).MoveHeld();
+            phase = Phase.MoveQueued;
+        }
         else if (phase == Phase.WaitingRelease)
         {
             backend.Release();
@@ -81,7 +97,7 @@ internal sealed class GatewayNativeClickOperation : IGatewayDeferredAutomationOp
     }
     public void AfterDispatch(bool originalRan)
     {
-        if (!originalRan && phase is Phase.PressQueued or Phase.ReleaseQueued)
+        if (!originalRan && phase is Phase.PressQueued or Phase.MoveQueued or Phase.ReleaseQueued)
         {
             failure = "native_input_not_dispatched";
             phase = Phase.Cleanup;
@@ -89,6 +105,11 @@ internal sealed class GatewayNativeClickOperation : IGatewayDeferredAutomationOp
         else if (phase == Phase.PressQueued)
         {
             pressDispatched = true;
+            phase = drag ? Phase.WaitingMove : Phase.WaitingRelease;
+        }
+        else if (phase == Phase.MoveQueued)
+        {
+            dragDispatched = true;
             phase = Phase.WaitingRelease;
         }
         else if (phase == Phase.ReleaseQueued)
@@ -139,11 +160,12 @@ internal sealed class GatewayNativeClickOperation : IGatewayDeferredAutomationOp
             ["cleanupComplete"] = cleanupComplete, ["stopped"] = stopped,
             ["dispatchUncertain"] = dispatchUncertain, ["initialFailure"] = initialFailure
         };
+        if (drag) receipt["dragDispatched"] = dragDispatched;
         if (backend is IGatewayNativeScopedClickBackend scoped)
             foreach (var pair in scoped.PointerReceipt) receipt[pair.Key] = pair.Value;
         result = failure == null ? GatewayDeferredAutomationResult.Success(receipt)
-            : GatewayDeferredAutomationResult.Failure(failure, "Native click context is unavailable.", receipt);
+            : GatewayDeferredAutomationResult.Failure(failure, drag ? "Native drag context is unavailable." : "Native click context is unavailable.", receipt);
     }
 
-    private enum Phase { WaitingPress, PressQueued, WaitingRelease, ReleaseQueued, Cleanup, Complete, Quarantined }
+    private enum Phase { WaitingPress, PressQueued, WaitingMove, MoveQueued, WaitingRelease, ReleaseQueued, Cleanup, Complete, Quarantined }
 }

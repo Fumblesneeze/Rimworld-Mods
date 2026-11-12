@@ -3,9 +3,31 @@ using System.Reflection.Emit;
 
 namespace RimWorldDevGateway;
 
+internal readonly record struct GatewayNativeSliderState(int Slider, int Range, byte End)
+{
+    public bool Valid => Range == 0 ? End == 0 : Slider == 0 && End is 1 or 2;
+}
+
 // Pure callable-shape policy; inspecting it never initializes native input or Harmony.
 internal static class GatewayNativeWindowInputContract
 {
+    public static bool CanRestoreSliderLatch(GatewayNativeSliderState owned, GatewayNativeSliderState current, bool exactWindow, bool foreignInput)
+        => current == default || owned != default && owned.Valid && current == owned && exactWindow && !foreignInput;
+
+    public static string? RejectSliderInput(bool ownsButton, GatewayNativeSliderState current, GatewayNativeSliderState owned)
+        => !ownsButton ? current == default ? null : "native_slider_busy" : current.Valid && current == owned ? null : "native_slider_ownership_lost";
+
+    public static GatewayNativeInputPoint ResolveDragPoint(GatewayNativeWindowGeometry geometry, double x, double y)
+    {
+        var point = geometry.ResolvePoint(x, y);
+        if (point.Error != null) return point;
+        float nativeX = (float)point.InputX, nativeY = (float)point.InputY;
+        // Match the inspected native float ReadPhysMouse projection, including rounding at edges.
+        float physicalY = (float)geometry.PixelHeight - (float)geometry.MouseOriginOffset - nativeY;
+        string? error = geometry.ResolvePoint(nativeX, physicalY).Error;
+        return new(error, nativeX, nativeY);
+    }
+
     // The tiny native projection has two inspected forms: height-y and height-1-y.
     // Bind the actual mouse vector, its x/y fields and host height; unknown transforms refuse.
     public static double? MouseOriginOffset(IReadOnlyList<GatewayNativeInstructionShape> body,

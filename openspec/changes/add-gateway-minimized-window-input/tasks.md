@@ -81,6 +81,9 @@ use does not close section 3's adverse/context/scale matrix or all product featu
 
 ## 3. Integrated tooling acceptance
 
+- [ ] Add bounded native-window.drag and NativeWindowDragActionStep through existing exact-window input, including real MouseDrag provenance, owned slider-latch cleanup and focused RED/GREEN.
+- [ ] Independently review the drag slice and personally observe the reviewed native slider workflow, including ordinary-click preservation and one-pixel held movement; endpoint receipts alone do not accept slider behavior.
+
 Task2.6 has scoped reviewed native evidence in
 `artifacts/EndToEndRuns/Grouped/20261107T194544522Z-37b8743c67f04c349620e3ab1064c991/`.
 Root inspected all five causal captures: ordinary menu opens and persists, first option is selected

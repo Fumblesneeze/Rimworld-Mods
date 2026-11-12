@@ -22,6 +22,24 @@ background OS input, supporting uninspected 1.6 input internals, or accepting ga
 
 ## Decisions
 
+The native-window.drag addition reuses the existing click gesture state machine and exact-window
+backend with one optional held-movement phase. Its version1 arguments are windowHandle,
+startPixelX/startPixelY/endPixelX/endPixelY and optional pointerScopeHandle. Both endpoints must
+resolve inside the current capture and remain distinct in actual native float coordinates.
+NativeWindowDragActionStep uses the same arguments plus optional expectedFailureCode and pointer
+scope. The existing registry, E2E input cleanup and15s operation bound apply; no additional lane.
+An actual post-layout MouseDrag at the end point must be observed between down/up. On inspected
+Windows1.7, UnityGUIBugsFixer.MouseDrag requires that event; press/release alone cannot adjust the
+slider. The native slider latch starts neutral; capture only the value acquired by this gesture,
+prefer native release reset and otherwise restore only the exact still-owned latch. Never call
+the global ResetSliderDraggingIDs to clean an ambiguous or foreign interaction.
+The inspected native reset clears sliderDraggingID, draggingId and curDragEnd together. Capture
+and compare that fixed three-field state: neutral before press; exact owned, valid state before
+held movement/release and after layout; neutral or exact-owned for cleanup. A new foreign range
+selection must block native release too, because that release would clear it. No snapshot writes
+occur after context/input ownership loss. Validate both endpoints again after float projection;
+rounding outside the window or movement collapsing to zero native distance is a refusal.
+
 ### Entry-menu controls
 
 The supporting S138 save-switch workflow requires Options and developer quicktest at Entry.

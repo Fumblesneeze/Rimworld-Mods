@@ -133,12 +133,33 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
 
     public IGatewayDeferredAutomationOperation Begin(string windowHandle, double pixelX, double pixelY,
         GatewayAutomationContext context, string? pointerScopeHandle = null)
+        => BeginGesture(windowHandle, pixelX, pixelY, context, pointerScopeHandle, null);
+
+    public IGatewayDeferredAutomationOperation BeginDrag(string windowHandle, double startPixelX, double startPixelY,
+        double endPixelX, double endPixelY, GatewayAutomationContext context, string? pointerScopeHandle = null)
+        => BeginGesture(windowHandle, startPixelX, startPixelY, context, pointerScopeHandle, (endPixelX, endPixelY));
+
+    public string? DragUnavailableReason
+    {
+        get
+        {
+#if RIMWORLD_1_7
+            return UnavailableReason ?? (SliderContractAvailable ? null : "native_drag_contract_unavailable");
+#else
+            return "native_input_runtime_unsupported";
+#endif
+        }
+    }
+
+    private IGatewayDeferredAutomationOperation BeginGesture(string windowHandle, double pixelX, double pixelY,
+        GatewayAutomationContext context, string? pointerScopeHandle, (double X, double Y)? dragEnd)
     {
         RequireMainThread();
         RequireAvailable();
         if (context == null) throw new ArgumentNullException(nameof(context));
         if (context.CallerThreadId != Thread.CurrentThread.ManagedThreadId) throw Error("native_input_wrong_thread");
 #if RIMWORLD_1_7
+        if (dragEnd != null && DragUnavailableReason is string dragFailure) throw Error(dragFailure);
         RetireCompleted();
         if (active != null || textActive != null) throw Error("native_input_busy");
         GatewayNativePointerScope? scope = null;
@@ -151,15 +172,23 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
         else if (pointerScope != null && pointerScope.Result == null) throw Error("native_pointer_scope_busy");
         if (windowHandle == null || !captures.TryGetValue(windowHandle, out CaptureLease? capture))
             throw Error("stale_window_handle");
-        GatewayNativeInputPoint point = capture.Descriptor.Geometry.ResolvePoint(pixelX, pixelY);
+        GatewayNativeInputPoint point = dragEnd == null ? capture.Descriptor.Geometry.ResolvePoint(pixelX, pixelY) :
+            GatewayNativeWindowInputContract.ResolveDragPoint(capture.Descriptor.Geometry, pixelX, pixelY);
         if (point.Error != null) throw Error(point.Error);
-        var backend = new ClickBackend(this, new WindowClickTarget(this, capture), pixelX, pixelY, point, scope);
+        if (dragEnd is { } end)
+        {
+            var endPoint = GatewayNativeWindowInputContract.ResolveDragPoint(capture.Descriptor.Geometry, end.X, end.Y);
+            if (endPoint.Error != null) throw Error(endPoint.Error);
+            if ((float)point.InputX == (float)endPoint.InputX && (float)point.InputY == (float)endPoint.InputY)
+                throw Error("native_drag_movement_required");
+        }
+        var backend = new ClickBackend(this, new WindowClickTarget(this, capture), pixelX, pixelY, point, scope, dragEnd);
         string? rejection = backend.Validate(false);
         if (rejection != null) throw Error(rejection);
-        context.RunStep("native-click-admission", () => { });
+        context.RunStep(dragEnd == null ? "native-click-admission" : "native-drag-admission", () => { });
         activeContext = context;
         activeBackend = backend;
-        active = new GatewayNativeClickOperation(backend);
+        active = new GatewayNativeClickOperation(backend, drag: dragEnd != null);
         activeResult = new GatewayNativeInputResultOperation(active, () => failure ?? backend.ScopeFailure);
         return activeResult;
 #else
@@ -849,12 +878,29 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
         }
     }
 
-    private sealed class ClickBackend : IGatewayNativeClickBackend, IGatewayNativeScopedClickBackend
+    private static readonly FieldInfo? SliderDraggingId = typeof(Widgets).GetField("sliderDraggingID", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly);
+    private static readonly FieldInfo? RangeDraggingId = typeof(Widgets).GetField("draggingId", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly);
+    private static readonly FieldInfo? RangeDragEnd = typeof(Widgets).GetField("curDragEnd", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly);
+    private static bool SliderContractAvailable => SliderDraggingId?.FieldType == typeof(int) && SliderDraggingId.IsStatic &&
+        RangeDraggingId?.FieldType == typeof(int) && RangeDraggingId.IsStatic && RangeDragEnd?.IsStatic == true &&
+        RangeDragEnd.FieldType.FullName == "Verse.Widgets+RangeEnd" && RangeDragEnd.FieldType.IsEnum &&
+        Enum.GetUnderlyingType(RangeDragEnd.FieldType) == typeof(byte) &&
+        Enum.GetNames(RangeDragEnd.FieldType).SequenceEqual(new[] { "None", "Min", "Max" }) &&
+        Enum.GetValues(RangeDragEnd.FieldType).Cast<object>().Select(Convert.ToByte).SequenceEqual(new byte[] { 0, 1, 2 });
+    private static GatewayNativeSliderState ReadSliderState() => new((int)SliderDraggingId!.GetValue(null)!,
+        (int)RangeDraggingId!.GetValue(null)!, Convert.ToByte(RangeDragEnd!.GetValue(null)!));
+
+    private sealed class ClickBackend : IGatewayNativeDragBackend, IGatewayNativeScopedClickBackend
     {
         private readonly VerseGatewayNativeWindowInput service;
         private readonly IClickTarget capture;
-        private readonly double pixelX, pixelY;
-        private readonly Vector2 target, previousPointer;
+        private double pixelX, pixelY;
+        private Vector2 target;
+        private readonly Vector2 previousPointer;
+        private readonly double startPixelX, startPixelY;
+        private readonly (double X, double Y)? dragEnd;
+        private GatewayNativeSliderState ownedSliderLatch;
+        private bool movedThisDispatch, queuedMovementObserved, nativeDragObserved;
         private bool pointerClaimed;
         private bool buttonClaimed;
         private bool observedPress;
@@ -904,6 +950,14 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
                     receipt["pointerScopeState"] = pointerState;
                     receipt["pointerRestored"] = pointerState == "gesture-restored";
                 }
+                if (dragEnd != null)
+                {
+                    receipt["heldMovementQueued"] = queuedMovementObserved;
+                    receipt["nativeMouseDragObserved"] = nativeDragObserved;
+                    receipt["ownedSliderLatch"] = ownedSliderLatch.Slider;
+                    receipt["ownedRangeSliderLatch"] = ownedSliderLatch.Range;
+                    receipt["ownedRangeSliderEnd"] = ownedSliderLatch.End;
+                }
                 return receipt;
             }
         }
@@ -920,13 +974,16 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
         {
             originalDispatchObserved = originalRan;
             observedMousePass = mousePass;
+            nativeDragObserved |= movedThisDispatch && originalRan && mousePass.Dispatched;
         }
 
         public ClickBackend(VerseGatewayNativeWindowInput service, IClickTarget capture,
-            double pixelX, double pixelY, GatewayNativeInputPoint point, GatewayNativePointerScope? scope)
+            double pixelX, double pixelY, GatewayNativeInputPoint point, GatewayNativePointerScope? scope, (double X, double Y)? dragEnd = null)
         {
             this.service = service; this.capture = capture; this.pixelX = pixelX; this.pixelY = pixelY;
+            startPixelX = pixelX; startPixelY = pixelY; this.dragEnd = dragEnd;
             target = new Vector2((float)point.InputX, (float)point.InputY);
+            if (dragEnd != null) SetDragExpectedPosition();
             previousPointer = Mouse.current.position.ReadValue();
             Scope = scope;
         }
@@ -943,6 +1000,7 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
             capture.BeginDispatch();
             preparingDispatch = true;
             PressedThisDispatch = queuedEdgeThisDispatch = rejectedThisDispatch = injectionFailed = false;
+            movedThisDispatch = false;
         }
 
         public void EndDispatchPreparation() => preparingDispatch = false;
@@ -974,6 +1032,9 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
             if (!float.IsFinite(previousPointer.x) || !float.IsFinite(previousPointer.y))
                 return "native_pointer_unavailable";
             if (!ownsButton && (bool)Contract.ButtonActive.GetValue(null)!) return "native_input_busy";
+            if (dragEnd != null && GatewayNativeWindowInputContract.RejectSliderInput(ownsButton,
+                ReadSliderState(), ownedSliderLatch) is string sliderError)
+            { foreignInput |= ownsButton; return sliderError; }
             if (ownsButton && guiUncertain) return "native_gui_ownership_unavailable";
             if (ownsButton && mouse.position.ReadValue() != target)
             { foreignInput = true; return "native_pointer_ownership_lost"; }
@@ -984,7 +1045,35 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
             return null;
         }
 
-        private string? ValidateTarget(bool afterLayout = false) => capture.Validate(pixelX, pixelY, afterLayout);
+        private string? ValidateTarget(bool afterLayout = false)
+        {
+            string? rejection = capture.Validate(pixelX, pixelY, afterLayout);
+            if (rejection != null || dragEnd is not { } end) return rejection;
+            return capture.Validate(startPixelX, startPixelY, afterLayout) ?? capture.Validate(end.X, end.Y, afterLayout);
+        }
+
+        private void SetDragExpectedPosition()
+        {
+            pixelX = target.x;
+            pixelY = (float)capture.Geometry.PixelHeight - (float)capture.Geometry.MouseOriginOffset - target.y;
+        }
+
+        public void MoveHeld()
+        {
+            if (dragEnd is not { } end || !buttonClaimed || !Mouse.current.leftButton.isPressed) throw Error("native_input_ownership_lost");
+            var point = GatewayNativeWindowInputContract.ResolveDragPoint(capture.Geometry, end.X, end.Y);
+            if (point.Error != null) throw Error(point.Error);
+            target = new((float)point.InputX, (float)point.InputY); SetDragExpectedPosition();
+            movedThisDispatch = true;
+            try
+            {
+                InputSystem.QueueMouseMove(target);
+                queuedMovementObserved = Mouse.current.position.ReadValue() == target;
+                if (!queuedMovementObserved) throw Error("native_drag_move_unconfirmed");
+                if (Validate(true) is string rejection) throw Error(rejection);
+            }
+            catch { injectionFailed = true; throw; }
+        }
 
         public void Press()
         {
@@ -1050,8 +1139,8 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
 
         public string? ValidateMousePass(Event input, Vector2 physicalPoint)
         {
-            EventType expected = PressedThisDispatch ? EventType.mouseDown : EventType.mouseUp;
-            if (!queuedEdgeThisDispatch || input.rawType != expected || input.type != expected ||
+            EventType expected = movedThisDispatch ? EventType.mouseDrag : PressedThisDispatch ? EventType.mouseDown : EventType.mouseUp;
+            if (!(queuedEdgeThisDispatch || movedThisDispatch) || input.rawType != expected || input.type != expected ||
                 physicalPoint.x != (float)pixelX || physicalPoint.y != (float)pixelY)
                 return "native_mouse_pass_changed";
             if (ForeignLeftEdges(Mouse.current.leftButton))
@@ -1059,6 +1148,10 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
                 foreignInput = true;
                 return "native_input_ownership_lost";
             }
+            if (movedThisDispatch && ValidateInput(true) is string rejection) return rejection;
+            if (dragEnd != null && GatewayNativeWindowInputContract.RejectSliderInput(observedPress,
+                ReadSliderState(), ownedSliderLatch) is string sliderError)
+            { foreignInput |= observedPress; return sliderError; }
             return ValidateTarget(afterLayout: true);
         }
 
@@ -1068,6 +1161,8 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
             observedPress = true;
             try
             {
+                if (dragEnd != null && capture.ContextCurrent && capture.TargetPresent)
+                { ownedSliderLatch = ReadSliderState(); guiUncertain |= !ownedSliderLatch.Valid; }
                 ownedHotControl = GUIUtility.hotControl;
                 if (ownedHotControl != 0 && !capture.OwnsHotControl(ownedHotControl))
                     guiUncertain = true;
@@ -1088,7 +1183,22 @@ internal sealed partial class VerseGatewayNativeWindowInput : IDisposable
         public void CompletePointer(bool successfulGesture)
         {
             Exception? cleanupFailure = null;
-            try { RestoreGuiOwnership(); }
+            if (dragEnd != null && pointerClaimed && Mouse.current.position.ReadValue() != target) foreignInput = true;
+            try
+            {
+                RestoreGuiOwnership();
+                if (dragEnd != null)
+                {
+                    var current = ReadSliderState();
+                    if (!GatewayNativeWindowInputContract.CanRestoreSliderLatch(ownedSliderLatch, current,
+                        capture.ContextCurrent && capture.TargetPresent, foreignInput)) throw Error("native_slider_ownership_lost");
+                    if (current != default)
+                    {
+                        SliderDraggingId!.SetValue(null, 0); RangeDraggingId!.SetValue(null, 0);
+                        RangeDragEnd!.SetValue(null, Enum.ToObject(RangeDragEnd.FieldType, (byte)0));
+                    }
+                }
+            }
             catch (Exception exception) { cleanupFailure = exception; }
             try
             {

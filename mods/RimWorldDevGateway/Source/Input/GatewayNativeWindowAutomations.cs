@@ -4,6 +4,7 @@ internal static class GatewayNativeWindowAutomations
 {
     public const string CaptureName = "native-window.capture";
     public const string ClickName = "native-window.click";
+    public const string DragName = "native-window.drag";
     public const string ReplaceTextName = "native-window.replace-text";
     public const string BeginScopeName = "native-pointer-scope.begin";
     public const string EndScopeName = "native-pointer-scope.end";
@@ -16,8 +17,48 @@ internal static class GatewayNativeWindowAutomations
         Func<string, GatewayAutomationContext, IGatewayDeferredAutomationOperation>? endScope = null,
         Func<string, double, double, GatewayAutomationContext, string, IGatewayDeferredAutomationOperation>? scopedClick = null,
         Func<string, string, string, GatewayAutomationContext, IGatewayDeferredAutomationOperation>? replaceText = null,
-        Func<GatewayAutomationAvailability>? textAvailability = null)
+        Func<GatewayAutomationAvailability>? textAvailability = null,
+        Func<string, double, double, double, double, GatewayAutomationContext, string?, IGatewayDeferredAutomationOperation>? drag = null,
+        Func<GatewayAutomationAvailability>? dragAvailability = null)
     {
+        if (drag != null)
+        {
+            string[] coordinates = { "startPixelX", "startPixelY", "endPixelX", "endPixelY" };
+            var properties = new Dictionary<string, object?>
+            {
+                ["version"] = new Dictionary<string, object?> { ["type"] = "integer", ["const"] = 1 },
+                ["windowHandle"] = new Dictionary<string, object?> { ["type"] = "string", ["minLength"] = 1, ["maxLength"] = 200 },
+                ["pointerScopeHandle"] = new Dictionary<string, object?> { ["type"] = "string", ["minLength"] = 1, ["maxLength"] = 200 }
+            };
+            foreach (string name in coordinates) properties[name] = new Dictionary<string, object?> { ["type"] = "number" };
+            registry.RegisterBuiltIn(new GatewayAutomationDescriptor(DragName, "1.0",
+                "Press, move once while held and release within one exact current native window; require observed native MouseDrag.",
+                new Dictionary<string, object?> { ["type"] = "object", ["additionalProperties"] = false,
+                    ["required"] = new[] { "version", "windowHandle" }.Concat(coordinates).ToArray(), ["properties"] = properties },
+                new[] { "inspected-native-input-provider", "exact-current-window", "neutral-input" }, true),
+                (context, arguments) =>
+                {
+                    if (!arguments.TryGetValue("version", out var version) || Number(version) != 1 ||
+                        arguments.Keys.Any(key => !properties.ContainsKey(key)) || coordinates.Any(key => !arguments.ContainsKey(key)) ||
+                        !arguments.TryGetValue("windowHandle", out var rawHandle) || rawHandle is not string handle ||
+                        string.IsNullOrWhiteSpace(handle) || handle.Length > 200) throw Invalid("Drag requires an exact window and all four endpoint coordinates.");
+                    string? scope = null;
+                    if (arguments.TryGetValue("pointerScopeHandle", out var rawScope))
+                    {
+                        if (rawScope is not string value || string.IsNullOrWhiteSpace(value) || value.Length > 200)
+                            throw Invalid("The optional pointerScopeHandle must identify one owned scope.");
+                        scope = value;
+                    }
+                    double startX = Number(arguments[coordinates[0]]), startY = Number(arguments[coordinates[1]]),
+                        endX = Number(arguments[coordinates[2]]), endY = Number(arguments[coordinates[3]]);
+                    context.AddArtifact("native-drag-request", "native-input-request", new Dictionary<string, object?>
+                    {
+                        ["windowHandle"] = handle, ["startPixelX"] = startX, ["startPixelY"] = startY,
+                        ["endPixelX"] = endX, ["endPixelY"] = endY, ["pointerScopeHandle"] = scope
+                    });
+                    return drag(handle, startX, startY, endX, endY, context, scope);
+                }, dragAvailability ?? availability);
+        }
         if (replaceText != null)
         {
             registry.RegisterBuiltIn(new GatewayAutomationDescriptor(ReplaceTextName, "1.0",

@@ -468,7 +468,10 @@ public sealed class GatewayRuntimeHost : MonoBehaviour, IEndToEndNativeCaravanOb
             scopedClick: (handle, x, y, context, scopeHandle) => RequireNativeWindows().Begin(handle, x, y, context, scopeHandle),
             replaceText: (handle, control, text, context) => RequireNativeWindows().BeginReplaceText(handle, control, text, context),
             textAvailability: () => new GatewayAutomationAvailability(nativeWindows?.TextUnavailableReason == null && nativeWindows != null,
-                nativeWindowInitializationFailure ?? nativeWindows?.TextUnavailableReason ?? "native_input_initializing"));
+                nativeWindowInitializationFailure ?? nativeWindows?.TextUnavailableReason ?? "native_input_initializing"),
+            drag: (handle, x1, y1, x2, y2, context, scope) => RequireNativeWindows().BeginDrag(handle, x1, y1, x2, y2, context, scope),
+            dragAvailability: () => new GatewayAutomationAvailability(nativeWindows?.DragUnavailableReason == null && nativeWindows != null,
+                nativeWindowInitializationFailure ?? nativeWindows?.DragUnavailableReason ?? "native_input_initializing"));
     }
 
     private VerseGatewayNativeWindowInput RequireNativeWindows() => nativeWindows ??

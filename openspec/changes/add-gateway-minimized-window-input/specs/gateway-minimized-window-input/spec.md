@@ -2,6 +2,28 @@
 
 Owner: repository tooling **RimWorld Dev Gateway**, `mods/RimWorldDevGateway`.
 
+### Requirement: Drag inside one exact native window
+
+The Gateway SHALL provide a bounded native-window.drag automation and NativeWindowDragActionStep
+with finite rendered-pixel start/end coordinates inside the same captured current window. The
+gesture SHALL press, make one held pointer movement, and release through the existing input lane.
+It SHALL require the actual native MouseDown, MouseDrag and MouseUp passes with post-layout
+provenance; writing a pointer coordinate or observing outer dispatch alone SHALL NOT prove drag
+delivery. Ordinary clicks SHALL retain their existing two-edge behavior. No direct widget calls,
+product setters, arbitrary gesture timelines or desktop input are included.
+
+#### Scenario: Adjust a native slider through a held move
+- **WHEN** the caller drags from a slider handle to another point in the exact window
+- **THEN** the native control receives one observed MouseDrag while the owned left button is held
+- **AND** a one-pixel vertical move at the same horizontal value is a valid explicit interaction
+- **AND** retained receipts distinguish queued movement, observed native drag, release and cleanup from the control's actual result
+
+#### Scenario: A drag loses its current window or input ownership
+- **WHEN** geometry, context, projection or input ownership changes before a remaining drag phase
+- **THEN** target-dependent input stops and only the already owned press, pointer and slider latch are cleaned
+- **AND** unrelated slider/input state is preserved and incomplete cleanup remains a failure
+- **AND** successful scoped drags retain their final pointer until the existing pointer scope ends, while standalone drags restore their original pointer
+
 ### Requirement: Inspect an exact owned caravan through native World controls
 
 The Gateway SHALL expose typed named automations and matching E2E steps for a native World-view

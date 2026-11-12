@@ -5,6 +5,57 @@ namespace RimWorldDevGateway.Tests;
 [TestFixture]
 public sealed class NativeClickOperationTests
 {
+    [TestCase("cancel-before-move")]
+    [TestCase("changed-before-move")]
+    [TestCase("missing-native-drag")]
+    [TestCase("move-throws")]
+    [TestCase("cancel-after-move")]
+    [TestCase("changed-before-release")]
+    public void InterruptedDragRetainsObservedPhasesAndCleansTheOwnedPress(string fault)
+    {
+        var input = new RecordingInput(); var operation = new GatewayNativeClickOperation(input, drag: true);
+        operation.BeforeDispatch(); operation.AfterDispatch(true);
+        if (fault == "cancel-before-move") operation.Advance(true);
+        if (fault == "changed-before-move") input.Rejection = "stale_window_instance";
+        if (fault == "move-throws") input.ThrowOn = "move-held";
+        operation.BeforeDispatch();
+        var nativePass = new GatewayNativeMousePassGate();
+        if (fault != "missing-native-drag") { nativePass.BeforePass(true, null, false); nativePass.AfterPass(true); }
+        operation.AfterDispatch(nativePass.Dispatched);
+        if (fault is "cancel-after-move" or "changed-before-release")
+        {
+            if (fault == "cancel-after-move") operation.Advance(true);
+            else input.Rejection = "stale_window_instance";
+            operation.BeforeDispatch(); operation.AfterDispatch(true);
+        }
+        var result = operation.Advance(false)!;
+        Assert.That(result, Is.Not.Null);
+        var receipt = (IReadOnlyDictionary<string, object?>)result.Result!;
+        Assert.That(receipt["pressDispatched"], Is.True);
+        Assert.That(receipt["dragDispatched"], Is.EqualTo(fault is "cancel-after-move" or "changed-before-release"));
+        Assert.That(receipt["releaseDispatched"], Is.False);
+        Assert.That(receipt["cleanupComplete"], Is.True);
+        Assert.That(input.Events.TakeLast(2), Is.EqualTo(new[] { "release", "restore" }));
+        if (fault == "missing-native-drag") Assert.That(result.Error?.Code, Is.EqualTo("native_input_not_dispatched"));
+    }
+
+    [Test]
+    public void DragRequiresASeparateNativeHeldMovementBeforeRelease()
+    {
+        var input = new RecordingInput();
+        var operation = new GatewayNativeClickOperation(input, drag: true);
+        operation.BeforeDispatch(); operation.AfterDispatch(true);
+        operation.BeforeDispatch();
+        Assert.That(input.Events, Is.EqualTo(new[] { "validate:False", "press", "validate:True", "move-held" }));
+        operation.AfterDispatch(true);
+        Assert.That(operation.Advance(false), Is.Null);
+        operation.BeforeDispatch(); operation.AfterDispatch(true);
+        var result = operation.Advance(false)!;
+        Assert.That(result.Error, Is.Null);
+        Assert.That(((IReadOnlyDictionary<string, object?>)result.Result!)["dragDispatched"], Is.True);
+        Assert.That(input.Events.TakeLast(3), Is.EqualTo(new[] { "validate:True", "release", "restore" }));
+    }
+
     [Test]
     public void ClickCompletesOnlyAfterNativePressAndReleaseDispatch()
     {
@@ -148,13 +199,14 @@ public sealed class NativeClickOperationTests
         Assert.That(operation.Advance(true), Is.SameAs(outcome));
     }
 
-    private sealed class RecordingInput : IGatewayNativeClickBackend
+    private sealed class RecordingInput : IGatewayNativeDragBackend
     {
         public List<string> Events { get; } = new();
         public string? Rejection { get; set; }
         public string? ThrowOn { get; set; }
         public string? Validate(bool ownsButton) { Events.Add("validate:" + ownsButton); return Rejection; }
         public void Press() => Record("press");
+        public void MoveHeld() => Record("move-held");
         public void Release() => Record("release");
         public void RestorePointer() => Record("restore");
         private void Record(string action)

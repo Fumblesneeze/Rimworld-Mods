@@ -6,6 +6,67 @@ namespace RimWorldDevGateway.Waylith.Tests;
 [TestFixture]
 public sealed class NativeWindowStepTests
 {
+    [Test]
+    public void DragRefusesAnUnownedPointerScopeBeforeAdmission()
+    {
+        var registry = new GatewayAutomationRegistry(); int calls = 0;
+        GatewayNativeWindowAutomations.Register(registry, () => Array.Empty<GatewayNativeWindowDescriptor>(),
+            (_, _, _, _) => throw new AssertionException("Drag must not click."), () => GatewayAutomationAvailability.AvailableNow,
+            drag: (_, _, _, _, _, _, _) => { calls++; return new PendingClick(); });
+        var operation = new GatewayEndToEndNativeWindowDriver(new UnsupportedDriver(), registry).Begin(
+            new NativeWindowDragActionStep("drag", "window", 10, 20, 10, 21, pointerScopeHandle: "foreign"), Context());
+        Assert.That(operation.GetOutcome().FailureCode, Is.EqualTo("native_pointer_scope_not_owned"));
+        Assert.That(calls, Is.Zero);
+    }
+
+    [TestCase(0)]
+    [TestCase(1)]
+    [TestCase(2)]
+    [TestCase(3)]
+    public void DragStepRequiresEveryCoordinateToBeFinite(int coordinate)
+    {
+        var values = new[] { 10d, 20d, 30d, 40d }; values[coordinate] = double.NaN;
+        Assert.Throws<ArgumentOutOfRangeException>(() => new NativeWindowDragActionStep("drag", "window", values[0], values[1], values[2], values[3]));
+    }
+
+    [Test]
+    public void ExpectedDragFailureRequiresItsExactErrorAndConfirmedCleanup()
+    {
+        var registry = new GatewayAutomationRegistry(); var native = new PendingClick { Complete = true, FailureCode = "native_input_not_dispatched" };
+        GatewayNativeWindowAutomations.Register(registry, () => Array.Empty<GatewayNativeWindowDescriptor>(),
+            (_, _, _, _) => throw new AssertionException("Drag must not click."), () => GatewayAutomationAvailability.AvailableNow,
+            drag: (_, _, _, _, _, _, _) => native);
+        var context = Context();
+        var operation = new GatewayEndToEndNativeWindowDriver(new UnsupportedDriver(), registry).Begin(
+            new NativeWindowDragActionStep("rejected drag", "window", 10, 20, 10, 21, "native_input_not_dispatched"), context);
+        registry.Advance();
+        Assert.That(operation.GetOutcome().Passed, Is.True);
+        Assert.That(context.RunDeferredCleanup(), Is.EqualTo(DeferredCleanupStatus.Completed));
+    }
+
+    [Test]
+    public void DragStepRetainsEndpointsAndOwnsItsOneDeferredCleanup()
+    {
+        var registry = new GatewayAutomationRegistry(); var native = new PendingClick(); int calls = 0;
+        GatewayNativeWindowAutomations.Register(registry, () => Array.Empty<GatewayNativeWindowDescriptor>(),
+            (_, _, _, _) => throw new AssertionException("Drag must not click."), () => GatewayAutomationAvailability.AvailableNow,
+            drag: (window, x1, y1, x2, y2, _, scope) =>
+            {
+                calls++; Assert.That((window, x1, y1, x2, y2, scope), Is.EqualTo(("window-1", 55d, 90d, 55d, 91d, (string?)null)));
+                return native;
+            });
+        var context = Context();
+        var operation = new GatewayEndToEndNativeWindowDriver(new UnsupportedDriver(), registry).Begin(
+            new NativeWindowDragActionStep("drag", "window-1", 55, 90, 55, 91), context);
+        Assert.That(operation.IsCompleted, Is.False); Assert.That(calls, Is.EqualTo(1));
+        Assert.That(context.RunDeferredCleanup(), Is.EqualTo(DeferredCleanupStatus.Pending));
+        registry.Advance(); Assert.That(native.StopObserved, Is.True);
+        native.Complete = true; registry.Advance();
+        Assert.That(context.RunDeferredCleanup(), Is.EqualTo(DeferredCleanupStatus.Completed));
+        Assert.That(operation.GetOutcome().Artifacts["endPixelY"], Is.EqualTo("91"));
+        Assert.That(registry.ListRuns(), Has.Count.EqualTo(1));
+    }
+
     [TestCase("")]
     [TestCase("-12.5")]
     public void TextReplacementUsesOneRetainedRunAndItsOwnedCleanup(string text)
