@@ -10,7 +10,7 @@ Add a single native held-move drag for exact captured windows, exposing the actu
 through existing named automation and E2E input ownership for native sliders. Ordinary clicks remain
 unchanged; native drag delivery and the visible control result require separate evidence.
 
-The unaccepted native caravan slice also guards late native contents failures, preserves visible
+The native caravan slice also guards late native contents failures, preserves visible
 Health rows beside clipped neighbours, drains frame-grown owned camera history incrementally,
 refuses restoration that could cancel foreign world activities, and partitions the existing
 cleanup deadline so lost input dispatch cannot consume fixture cleanup time.

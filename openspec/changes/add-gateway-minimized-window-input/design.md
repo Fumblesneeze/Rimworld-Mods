@@ -551,7 +551,10 @@ Implement the independently reviewed first-workflow plan retained at
 `artifacts/Implementation/gateway-world-controls/plan.md` (SHA256
 `09934902E20EA4A5CD694738D275604D8DBBF8330296FBD10DED69012C8C9DC4`). Exact installed1.7.5005
 Assembly-CSharp research hash is82387F78262461E53BB06A67C3945912B876D1FDB07235122BBB6E59D073F125;
-hashes identify research/builds, not a runtime admission allowlist. This is a new unaccepted slice.
+hashes identify research/builds, not a runtime admission allowlist. The singular reviewed native
+workflow is accepted at8f8bbaa, with scope and exact evidence in the owning tasks and local
+`artifacts/Implementation/gateway-world-controls/native-verification.md`. Wider native matrices
+and product ingestion remain separate.
 
 Keep semantic World, caravan jump/selection and Items/Health commands separate from a single
 observed Health-row pointer target. World uses MainButtonWorker_ToggleWorld.InterfaceTryActivate;

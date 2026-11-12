@@ -859,3 +859,18 @@ The same native control now replaces the modal editor. Full S138, seven-language
 remain open. Caravan consumer planning has resumed as an artifact-only assignment. The separate
 corrected Gateway run reached an earlier unsettled World-view refusal at selection, with successful
 cleanup; its Health correction remains unaccepted pending diagnosis and a fresh native run.
+
+The focused Gateway correction is now accepted at8f8bbaa. The fixture passively waits for actual
+native terrain generation before selection; no renderer invocation or retry manufactures readiness.
+Group20261112T201834681Z-3afe38a6aae74ce58eb7248b52ae203c passed47 steps, with all8 causal captures
+personally inspected by root: Items/Health, retained detail, stale-row refusal, fresh recovery and
+restored map. Exact build, classified logs, unchanged normal hashes and graceful cleanup are in
+`artifacts/Implementation/gateway-world-controls/native-verification.md`.
+
+The independently reviewed S138 consumer plan has one reconciliation: inherit the30s World wait,
+making100 counted steps/1875s under2100s, launcher2400. The World-controls author now owns only
+NativeToleranceCaravanTests.cs, its local DrugTolerance test README, the S138 OpenSpec scenario and
+local evidence packet. Root retains shared/runtime registration, commits, final independent review,
+installation and the actual paired A-zero/B-Any caravan scheduled-use acceptance. The author cannot
+claim that product result from the accepted Gateway inspection. Remaining S138/S139 and all139/P0–P8
+obligations remain allocated.

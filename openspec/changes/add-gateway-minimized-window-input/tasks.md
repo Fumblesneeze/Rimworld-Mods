@@ -136,11 +136,11 @@ This closes only these focused text prerequisites; section3's broader native mat
 
 ### Native caravan prerequisite — 2026-11-12
 
-- [ ] 4.1 Implement the reviewed native World view lease and exact same-Game/World camera/view restoration with focused vertical RED/GREEN and retained cancellation/partial-cleanup evidence.
-- [ ] 4.2 Implement exact caravan capture/selection and tutorial-aware native Items/Health commands; preserve input restrictions and stale object/scene refusal.
-- [ ] 4.3 Add the narrow observed native Health-row target on the existing minimized input lane with complete layout provenance, transient-window identity, stale rejection and owned cleanup tests.
-- [ ] 4.4 Expose the same named automations through existing gateway_mutation and host-safe E2E steps; author the singular Gateway native scenario with repeated-same-caravan detail retention and counted budgets.
-- [ ] 4.5 Independently review the frozen compiled slice, resolve findings, and run the reviewed exact Gateway scenario in a fresh minimized process with root's personal causal screenshot inspection and complete cleanup evidence.
+- [x] 4.1 Implement the reviewed native World view lease and exact same-Game/World camera/view restoration with focused vertical RED/GREEN and retained cancellation/partial-cleanup evidence.
+- [x] 4.2 Implement exact caravan capture/selection and tutorial-aware native Items/Health commands; preserve input restrictions and stale object/scene refusal.
+- [x] 4.3 Add the narrow observed native Health-row target on the existing minimized input lane with complete layout provenance, transient-window identity, stale rejection and owned cleanup tests.
+- [x] 4.4 Expose the same named automations through existing gateway_mutation and host-safe E2E steps; author the singular Gateway native scenario with repeated-same-caravan detail retention and counted budgets.
+- [x] 4.5 Independently review the frozen compiled slice, resolve findings, and run the reviewed exact Gateway scenario in a fresh minimized process with root's personal causal screenshot inspection and complete cleanup evidence.
 
 The reviewed artifact plan is `artifacts/Implementation/gateway-world-controls/plan.md`, SHA256
 `09934902E20EA4A5CD694738D275604D8DBBF8330296FBD10DED69012C8C9DC4`.
@@ -148,13 +148,20 @@ The implemented Gateway sequence has47 steps and915s allowance under960s, includ
 final native detail closure and a30s native terrain-generation wait; the reviewed proposal had840s.
 The separate future S138 consumer plan is retained under
 `artifacts/Implementation/megamod-p0/s138-caravan-plan/`; its original1845s budget requires this30s
-readiness addition before implementation. Implementation, review and live acceptance remain unaccepted here. Product
+readiness addition before implementation. The singular Gateway workflow is accepted below. Product
 runtime and its ingestion fixture are outside this Gateway implementation lease; the tooling
 scenario cannot close the product's normal-world-tick behavior.
 
-The five accepted implementation-review findings are being corrected within4.1–4.5: unlimited
+The five implementation-review findings were corrected within4.1–4.5: unlimited
 total owned camera-history length with bounded per-advance draining; foreign-world-activity
 admission before restoration;15s input/10s view cleanup shares within the existing30s aggregate;
 individual known-clipped-row exclusion; and completed exact detail-contents callback proof before
 publication. Focused production-lifecycle RED/GREEN and revised source hashes support re-review.
-All five tasks remain unchecked until the reviewed native acceptance evidence exists.
+
+Reviewed8f8bbaa passed the exact native caravan scenario in
+group20261112T201834681Z-3afe38a6aae74ce58eb7248b52ae203c:47 steps,8 root-inspected captures.
+Native World selection, Items, detailed Health, same-caravan detail retention, stale-row refusal,
+fresh-row recovery and map restoration were observed. Complete classified logs, exact build/process
+identity, unchanged normal configuration and graceful cleanup are retained in
+`artifacts/Implementation/gateway-world-controls/native-verification.md`. This closes4.1–4.5's
+singular tooling prerequisite; section3's broader native matrix and all product ingestion remain open.
