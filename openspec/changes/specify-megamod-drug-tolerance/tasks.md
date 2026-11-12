@@ -112,6 +112,19 @@ build/source/job/process/action/log/cleanup records are local in
 This accepts those cap/shared-chemical workflows only. Flake, full accumulation/clearance, save
 contexts and all remaining route/composition/layout obligations stay open; no full task is checked.
 
+The reviewed51c839a D/E save-context batch passed176+125 steps; root personally inspected all33
+captures on product SHA256`0702F1D6C230C6A98CBF15065B9C804D7D84BDCDF73B77B0B3CFFA36E4102969`.
+Native settings stored dormant save-off beneath inherited global-on, survived reload, and then
+controlled actual ordinary doses as inheritance changed. A separate run selected an ordinary
+drink under Any, applied zero through the native editor, saved/reloaded during drinking, and
+finished the same serialized dose/job while the next untouched pawn was rejected under zero.
+Fresh loaded identities and native one-tick initialization progress are retained alongside the
+visible outcomes. Both runs completed cleanup, graceful exit and unchanged normal configuration.
+Exact evidence and the scoped playability pass are local in
+`artifacts/Implementation/megamod-p0/s138-native-save-context/integration.md`.
+These one-save workflows do not prove two-save switching/main-menu scope, other routes or full
+feature acceptance. All remaining obligations below stay open.
+
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.
 - [ ] 2.3 RED/GREEN admitted map/caravan scheduled restriction composed directly with S024, preserving native false, interval/quantity/history, no scheduled joy exception and the attached stock-pickup coupling without a substitute-refill promise.

@@ -961,3 +961,12 @@ ships Waylith CLR; installed-file inspection does not establish a live process's
 `p0-dispatch.md` records exact paths and deployment-before-source-release ownership. Native
 Human/static-curve binding, applied-save exclusions, full F0–F5 admission, all139 features and
 the P0–P8 gates remain required. No prior native evidence is reused to accept a changed runtime.
+
+Revision21 after51c839a — the corrected save-context fixture models the native initialization
+tick and observes fresh loaded objects without lifecycle-pumping getters. D's native dormant
+override/inheritance workflow is accepted for its exact one-save scope; E runs on the same frozen
+deployment. Two disjoint compiled lanes now advance the age/flag/rate body proof and full-grown
+Human input selection/origin reader. The latter reuses the existing F0 DTO through a narrow
+host-safe extraction, with root retaining the Defs project link. Explicit file/output leases are
+in `p0-dispatch.md`. Broader native stages/BodySize, curve initialization, current applied exclusions,
+F0–F5 composition, all139 features and every P0–P8 acceptance gate remain open as allocated.

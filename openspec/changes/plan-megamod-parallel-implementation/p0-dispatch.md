@@ -688,3 +688,16 @@ Use the explicit full-grown native Def reference and current ordered list, with 
 tests over opaque identities; no native LifeStageAge construction in host tests. Curve initialization,
 stage/BodySize execution and controller registration are excluded. Root releases any compiled paths
 and project links only after the D/E deployment freeze; source authoring remains test-first then.
+
+After51c839a, D's reviewed native save/inheritance workflow passed176steps and root inspected
+all21 causal captures. E has deployed the same immutable package in its fresh isolated process.
+The rate lease above and the independently reviewed Human-origin plan are now released for
+compiled implementation. Human scope is exactly new `Core/HumanAdultInput.cs`, new
+`Runtime/NativeDrugGenerationHumanInput.cs`, its new Unit `HumanAdultInputTests.cs`, and the
+extraction of the two existing input declarations plus one constant alias from
+`Runtime/DrugGenerationFactInputs.cs`. Preserve the existing Runtime namespace and API. Root owns
+the one new Core file link in `Megamod.Defs.csproj`. Human leases only focused Unit and affected
+F0 Defs outputs; rate leases only its focused Harmony outputs. No shared helper, native stage/
+BodySize proof, curve preparation, runtime registration, product build/install, game or commit is
+delegated. Each lane retains focused RED/GREEN and obtains independent review; root integrates
+the batch and records remaining native premises. No task or positive generator obligation is removed.
