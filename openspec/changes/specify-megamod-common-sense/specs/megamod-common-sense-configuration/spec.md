@@ -1,8 +1,8 @@
 # Common Sense feature configuration and disablement
 
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), **1.7 beta**.
-S024 specification only. This capability governs the four sibling behavior capabilities and does
-not claim that the original mod is compatible with the beta.
+This capability governs the four sibling S024 behavior capabilities. Scheduled potential mood is
+the first selected implementation slice; this does not claim the original mod is beta-compatible.
 
 ## ADDED Requirements
 
@@ -27,6 +27,24 @@ The mod SHALL present these preferences in ordered feature sections using the fo
 | Recreation and care | Patient treats; Complete recreation before repeating; Social-drink economy; Meditation economy | Each on |
 | Recreation and care | Sleeping mood movement | Off |
 | Idle movement | Weather-aware wandering; Considerate room destinations | Each off |
+
+The first implementation slice registers only `practicalNeeds.scheduledPotentialMood`: Boolean,
+default on, common global/save scope, Recreation and care section (`recreation-care`, order 10).
+The remaining inventory remains an obligation, not a set of inert controls. Scheduled mood changes
+SHALL affect the next eligible selection without cancelling or reclassifying an executing dose.
+Active canonical `avilmask.commonsense` SHALL apply the ordinary effective-off policy to this
+setting with a bounded warning and intact global, save and inheritance choices. An inactive
+installation does not suppress it; a later startup without that provider resolves retained values.
+
+#### Scenario: Scheduled mood uses the existing policy threshold
+- **WHEN** the player enables potential-mood checking in Recreation and care
+- **THEN** subsequent scheduled selections also use potential mood against the existing native row's mood threshold
+- **AND** no second threshold editor or policy-row control is added.
+
+#### Scenario: Scheduled mood override remains dormant beneath inheritance
+- **WHEN** the player stores a save-off override, restores Use global, and changes the global default
+- **THEN** the save follows the current inherited value, while unchecking Use global restores the retained override after reload
+- **AND** the main menu cannot modify that save through either save control or its callback.
 
 Filth limits accept nonnegative whole numbers up to 1,000,000,000 as in the source UI; zero is labeled
 All currently eligible, not disabled. Every pass is finite regardless of this value. Other specified

@@ -1,7 +1,7 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **20**, 2026-11-11. Status: **P0 implementation dispatched; native acceptance incomplete**.
+Plan revision **22**, 2026-11-12. Status: **P0 implementation and selected S024 composition; native acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
@@ -998,3 +998,20 @@ introduced. Whole-percent slider stops preserve a distinct Any endpoint, while p
 exact existing fractions and malformed encodings. Earlier modal/native-layout evidence is historical;
 the reviewed slider/editor/layout batch requires fresh native observation. All remaining features,
 S138/S139 compositions and P0–P8 obligations remain allocated.
+
+Revision 22 — the native slider correction has scoped reviewed acceptance, followed by caravan
+tolerance and all seven owned slider-language catalogs. Exact-build records are in S138 tasks;
+no complete feature or part is accepted. Move only S024's scheduled potential-mood condition and
+its common setting forward from P4-A to compose with S138 at the existing scheduled boundary.
+This slice needs C01/C02, native policy identity and the implemented S138 consumer, not S021 cargo,
+patient treats or other unimplemented P4 producers. Those obligations remain in their original parts.
+
+The reviewed source packet is `artifacts/Implementation/megamod-p0/s024-scheduled-mood-plan/`.
+The original plan is superseded for three specific gaps: existing save fixtures must follow the real
+shared patch receipt, independent tolerance needs a fresh history-empty native-permitted control,
+and raw read exceptions must cross the real production conversion boundary. Root owns contracts,
+central registration, the additive settings measurement, package/compile coordination and final
+native observation. The feature lane owns only the exact packet paths. No C01/C02/Gateway rewrite,
+second threshold control, medical producer or generic restriction registry is allocated.
+Changed runtime invalidates affected older S138 evidence; only focused composed workflows are run
+after integrated review. All 139 features, S139's unresolved publication work and P0–P8 gates remain.

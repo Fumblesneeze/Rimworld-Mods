@@ -59,6 +59,13 @@ native `DrugStatsUtility.GetToleranceGiver`. Native false remains false. Schedul
 combines native result, S024's potential-mood predicate and the owned tolerance predicate, while
 the later native timing/overdose decisions remain authoritative.
 
+The S024 scheduled-mood batch moves this one native hook into a fixed shared owner. S138 retains a
+read-only dependency on its current structural receipt inside the atomic group; S138 rollback never
+removes a hook still needed by mood checking. Its full editor/geometry/persistence/joy/social
+availability continues to gate tolerance. Either consumer's setting or local read failure removes
+only its own extra restriction; a shared boundary failure revokes both scheduled additions and
+S138's atomic capability. No new universal ingestion check, rule registry or stored state is added.
+
 `JoyGiver_TakeDrug` inherits `JoyGiver_Ingest.CanIngestForJoy(Pawn,Thing)`. On this direct
 self-recreation route, the native positive DrugDesire/mental-state policy exception skips only the
 additional tolerance veto; earlier ordinary eligibility remains required. Native
@@ -163,7 +170,7 @@ Runtime registration and integration with the separately owned geometry service 
 Independent review and scoped native editor, route and persistence evidence are recorded with
 their exact tested builds in tasks; the full integrated acceptance remains pending. The final
 activation marker and all
-geometry/allocation/editor/scheduled/direct-joy/social candidates belong to one C01 group; the
+geometry/allocation/editor/direct-joy/social candidates and shared scheduled dependency belong to one C01 group; the
 existing persistence support remains independently active. These scoped results do not accept
 the whole S138 feature.
 

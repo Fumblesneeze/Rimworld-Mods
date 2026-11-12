@@ -9,6 +9,13 @@ interrupting the work. No runtime implementation or gameplay acceptance is claim
 
 ## Status and next work
 
+Implementation revision 22 selects the specified S024 scheduled potential-mood condition and its
+direct S138 composition as the next batch. The original source remains read-only inspiration.
+The existing native mood threshold and common settings serve this behavior; no extra slider or
+independent settings system is planned. S138's same-slider correction, caravan route and seven
+owned language catalogs have scoped exact-build observations in its tasks. All other S024
+behaviors, complete feature acceptance and the 139-feature roadmap remain open.
+
 Implementation planning now has a [shared-component design](../../../../openspec/changes/plan-megamod-parallel-implementation/design.md),
 [roadmap](../../../../openspec/changes/plan-megamod-parallel-implementation/roadmap.md) and
 [governing tasks](../../../../openspec/changes/plan-megamod-parallel-implementation/tasks.md).

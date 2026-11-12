@@ -1,5 +1,22 @@
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), **1.7 beta**.
-Specification only. All implementation and acceptance tasks remain unchecked.
+Scheduled potential mood is the first selected implementation slice. All full-feature tasks and
+native acceptance remain unchecked.
+
+## Selected scheduled-mood batch
+
+Scope: only task 4.3's scheduled potential-mood condition, its common setting and S138 scheduled
+composition. The reviewed source/plan packet is retained under
+`artifacts/Implementation/megamod-p0/s024-scheduled-mood-plan/`. Root owns central registration,
+integration, package/build operations and final native observation; the leased feature lane owns
+rules/adapters, focused tests, seven catalogs and executable native scenarios. Existing save-context
+receipt probes receive only the narrow real-owner updates needed by the shared hook. No patient
+treat, inventory/medical producer, XML integration or complete S024 feature is implied.
+
+- [ ] S024-M1 Implement the strict current/potential rule and one default-on inherited setting with focused nonzero RED/GREEN, preserving native calculation and unrelated permissions.
+- [ ] S024-M2 Compose S024 and S138 through one admitted native scheduled owner; prove independent enable/read-failure behavior, S138 rollback isolation, shared revocation and recovery through production boundaries.
+- [ ] S024-M3 Author native map, caravan, layout/recovery and setting-inheritance/language workflows; use fresh history-empty controls and audit emitted action/wait/capture budgets.
+- [ ] S024-M4 Integrate and independently review the batch, resolve findings, run affected focused checks and canonical package validation, then personally observe the reviewed native workflows.
+- [ ] S024-M5 Record exact build/action/result evidence and scoped playability conclusions; reconcile coverage while retaining every other S024 and S138 obligation.
 
 ## 1. Pin native and external boundaries
 

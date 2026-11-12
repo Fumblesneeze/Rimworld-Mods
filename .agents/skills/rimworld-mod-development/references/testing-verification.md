@@ -100,6 +100,14 @@ Prefer action → wait → observation steps that exercise the same native path 
   completed jobs to a pool and clears/reuses their fields, so a retained `Job` reference is not
   historical evidence. Store immutable load ID, owner, Def/giver, targets, count and relevant flags
   before completion; compare later observations to that snapshot without changing native pooling.
+- For independent restrictions, use a fresh control that still satisfies the native prerequisites.
+  A previously consumed dose may already be blocked by native interval/history, so its later refusal
+  cannot prove another restriction survived a setting or availability change. Retain passive native
+  permission and final decision observations for the same actual attempt, plus the physical outcome;
+  do not clear history or invoke the decision merely to manufacture a passing control.
+  Also include a successful action while the new restriction is enabled and relevant. A disabled
+  feature or unrestricted threshold proves only its bypass, and cannot catch an adapter that rejects
+  every relevant candidate despite a correct detached rule.
 - Prove fault injection is reached before judging failure handling. Install an unarmed interceptor
   before a successful native baseline, retain actual hit/phase counters, then arm only the intended
   field or owned callback. A registered Harmony detour, especially a closed generic added after

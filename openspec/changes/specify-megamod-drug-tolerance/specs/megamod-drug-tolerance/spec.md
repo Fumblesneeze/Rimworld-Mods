@@ -60,10 +60,23 @@ ingestion and risk restrictions as well as the enabled tolerance limit. With S02
 checking enabled, both its mood condition and the tolerance condition SHALL hold. A tolerance
 choice SHALL not alter dose quantity, schedule interval, chemical effects, inventory targets or
 consumption history. This feature SHALL not grant permission or promise addiction safety.
+Each added condition SHALL remain independently controlled: disabling or losing the potential-mood
+reading removes only that condition, while disabling or losing tolerance removes only tolerance.
+A tolerance-only editor/layout failure SHALL not remove supported S024 mood checking. Loss of the
+shared scheduled decision boundary makes both scheduled additions unavailable and prevents S138
+from presenting its atomic editor/enforcement capability as available.
 
 #### Scenario: Mood or interval still rejects
 - **WHEN** tolerance is below the chosen limit but potential mood or the ordinary interval rejects a dose
 - **THEN** the pawn does not take it through scheduled use.
+
+#### Scenario: Potential mood is disabled while tolerance still rejects
+- **WHEN** potential-mood checking is off and native scheduling otherwise permits a fresh dose with empty history, but its numeric tolerance limit rejects it
+- **THEN** tolerance still withholds the physical dose without changing native history or applying ingestion effects.
+
+#### Scenario: Tolerance is unavailable while potential mood still rejects
+- **WHEN** the tolerance editor or another tolerance-only requirement is unavailable but supported enabled potential-mood checking rejects an otherwise native-permitted dose
+- **THEN** tolerance adds no hidden veto and the independent mood condition still withholds that dose.
 
 #### Scenario: Separate caravans retain native scheduled consumption and history
 - **WHEN** two separate caravans each hold two Beer, with the same ordinary daily schedule and no prior dose history, and the player selects numeric zero for one pawn's policy while the other retains Any
@@ -241,6 +254,7 @@ SHALL not silently widen an invalid limit to Any, clamp it or rewrite valid neig
   native permission rather than treating the unknown value as zero or pretending to enforce a limit.
 - **AND** the initial adapter gives a localized player message and diagnostic at most once per Game,
   retains the saved choice, and does not retain pawn permission or prevent later valid readings.
+- **AND** a native read exception is converted by the tolerance consumer without revoking a healthy shared scheduled boundary or removing supported potential-mood checking.
 
 ### Requirement: Feature configuration does not replace policy state
 The feature's built-in enable default SHALL be on. Its enable switch SHALL use common
@@ -269,6 +283,8 @@ the retained choices at subsequent eligible decisions.
 The feature SHALL be unavailable if its intended routine-use rules or policy controls cannot be supported.
 Report a bounded diagnostic and visible explanation, leaving ordinary
 native behavior available rather than claiming protection. Stored choices SHALL remain intact.
+This removes S138's own restrictions; independent supported owned conditions, including S024
+potential mood, still apply. A local reading failure does not erase an unrelated healthy condition.
 When the original tolerance mod is active, startup SHALL issue a bounded warning identifying the
 overlap and attempt best-effort suppression through the same ordinary feature-off behavior and
 timing. Stored preferences SHALL not be rewritten. An installed but inactive original SHALL not

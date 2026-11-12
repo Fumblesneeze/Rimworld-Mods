@@ -874,3 +874,31 @@ local evidence packet. Root retains shared/runtime registration, commits, final 
 installation and the actual paired A-zero/B-Any caravan scheduled-use acceptance. The author cannot
 claim that product result from the accepted Gateway inspection. Remaining S138/S139 and all139/P0–P8
 obligations remain allocated.
+
+## Revision 22 — scheduled potential mood and direct tolerance composition
+
+S138's caravan consumer passed at `4d4d57e` (148 steps, 13 inspected captures). The corrected
+seven-language slider case passed at `90f9245` (392 steps, 49 inspected captures). Root retained
+the exact causal results and cleanup in the feature ledgers; these are scoped historical results.
+
+The next coherent batch is S024-M1–M5: scheduled potential mood, its one common preference, and
+S138 composition at one shared native decision hook. Its exact source research, disjoint file
+allocation, revised review dispositions and four scenario designs are under
+`artifacts/Implementation/megamod-p0/s024-scheduled-mood-plan/`. The prior artifact-only plan is
+superseded by revision 3, manifest `972C89EFA076FF6A739CD873E0CB86F6BB98AA3448A8E6D8A574D1AC708AD868`.
+Independent re-review found no issues; source implementation is now released within these leases.
+
+`world_controls_plan` owns the feature lane defined in that packet, including the two narrowly
+allocated old save-fixture receipt probes. Root owns MegamodMod, the target index, OpenSpec and
+roadmap, the additive NativeDiagnosticSettingsView projection, canonical product/install outputs,
+commits and final native verification. Unit/Harmony focused test outputs may be leased to the
+implementer; product/E2E compiles require an explicit coordinated output lease. No implementation
+agent launches acceptance games or claims acceptance from its handoff. C01/C02, Gateway, release
+metadata and unrelated fixtures remain outside this batch. Source contracts and signatures are
+frozen in the implementation handoff before central integration.
+
+The reviewed plan corrections require truthful shared-receipt ownership, a fresh native-eligible
+zero control while mood is off, and actual exception conversion through the production boundary.
+Native scenarios prove physical stock/effects and independently available restrictions on the
+reviewed composed build. Patient treats, S124/S134, full S024/S138, S139 and all part gates remain
+open. This move does not remove any feature or replace native observation with host tests.

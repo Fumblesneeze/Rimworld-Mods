@@ -4,7 +4,8 @@ Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), *
 S024 replaces specified Common Sense behavior. [Research](../../../mods/megamod/docs/refinement/2026-11-02-common-sense-research.md)
 pins public/installed 1.6 inputs, selected 1.7 native comparisons, defaults, consumers and deliberate
 corrections. Five observable capabilities separate the large source's behaviors without giving any
-to another owner. No runtime implementation or native acceptance occurs in this change.
+to another owner. Scheduled potential mood is the first selected implementation slice; all remaining
+behaviors and final native acceptance remain allocated separately.
 
 ## Goals / Non-Goals
 
@@ -85,6 +86,46 @@ Optional Simple Sidearms forgetting occurs only after successful owned unloading
 a complete admitted signature; missing provider hooks cannot cause a pickup/drop loop.
 
 ### Food and needs preserve actual permission and effects
+
+#### Scheduled-mood implementation batch
+
+The initial slice implements only scheduled potential mood, its common setting and direct S138
+tolerance composition. Map and caravan selections share the native
+`Pawn_DrugPolicyTracker.AllowedToTakeScheduledNow(ThingDef)` boundary. Reuse the existing admitted
+decision wrapper under one process-lifetime scheduled owner with exactly two direct consumers;
+do not create a second patch, general rule registry or internal Harmony stack.
+
+Install that owner when either feature first becomes effectively enabled, before S138's atomic
+group. S138 acquires a read-only dependency candidate which validates and rechecks the current
+shared receipt but does not remove shared patches on rollback. Its own geometry, editor, joy,
+social and persistence readiness still govern all tolerance restrictions. Healthy mood checking
+continues when tolerance is off or unavailable; healthy tolerance continues when mood is off or its
+local reading is unavailable. A lost shared boundary revokes both scheduled additions and S138's
+atomic capability. Keep the owner through ordinary setting changes without patch churn. The fixed
+tolerance callback reads the current runtime field, including the initial not-yet-created state.
+
+Read actual current native mood and `Need_Mood.CurInstantLevelPercentage`; retain native thought
+calculation and tick caching rather than copying its formula or clearing its cache. Read the already
+resolved tracker policy field after successful native permission, verify current Game/database/row/
+drug identity, and revalidate after the potential getter. No extra policy creation, row repair,
+permission cache or global polling is needed. Convert native read exceptions at the production
+consumer boundary to that consumer's unavailable result and bounded per-Game notice; do not erase
+the other healthy restriction or misreport a consumer failure as shared-hook failure.
+
+`practicalNeeds.scheduledPotentialMood` is Boolean, default true, GlobalAndSave, category
+`recreation-care`, order 10, `NextEligibleOccurrence`. It uses the common renderer and inherited
+settings store. Canonical active `avilmask.commonsense` supplies ordinary effective-off for this
+implemented setting with retained preferences and a bounded best-effort warning. No additional
+policy-row control is introduced; the existing native mood threshold supplies the chosen value.
+
+The source packet and independently reviewed plan are retained under
+`artifacts/Implementation/megamod-p0/s024-scheduled-mood-plan/`. Focused native workflows distinguish
+recovering-mood rejection, actual permitted ingestion, independent settings, caravan consumption
+and tolerance-layout unavailability/recovery. Fresh controls with empty dose history establish native
+permission before attributing rejection to either added predicate. Failure tests exercise the real
+production exception-conversion boundary, not only an unavailable return value. Existing save-context
+receipt observations follow the new real owner. No patient-treat, medical/dependency producer or full
+S024 acceptance follows from this slice.
 
 Perishable ranking consumes remaining rot progress, not a refrigerated spoil-time forecast. Retain
 native medical potency where applicable, explicit Stuff/material filters and exact recipe eligibility.
@@ -219,7 +260,7 @@ is edited by this draft.
 
 ## Migration Plan
 
-No runtime migration in this prose change. Deserialize and round-trip dormant owned saved state even
+No runtime migration is introduced by the scheduled-mood slice. Deserialize and round-trip dormant owned saved state even
 when runtime admission fails; retain orders, quantities and entity choices without executing them.
 Admission gates activation and action-capable reconciliation, not retention. Rebuild candidate facts
 and reconcile physical quantities safely before supported actions resume, without replay. Unsafe

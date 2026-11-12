@@ -194,6 +194,14 @@ Task 3.4 remains open for its remaining contexts; this is a scoped language gate
 
 ## 4. Independent review and integrated native acceptance
 
+The next affected runtime batch implements S024 scheduled potential mood and the required direct
+S138 conjunction. One shared native hook replaces S138's exclusive ownership; S138 retains a
+current dependency receipt in its atomic group. Independent settings, local read failure, shared
+revocation, rollback and tolerance-layout recovery need new evidence on the composed build. Old
+save-context receipt probes follow the new real owner without broadening or weakening their claims.
+The reviewed planning packet is `artifacts/Implementation/megamod-p0/s024-scheduled-mood-plan/`;
+this allocation accepts no changed runtime from older results. Patient treats and S124/S134 remain open.
+
 The focused `megamod.drug-tolerance.native-caravan-scheduled` consumer is allocated after the
 reviewed native slider and Gateway caravan prerequisites. It compares separate0/Any caravans through
 actual world ticks and native Items/Health, including one ordinary Any dose and later same-day interval

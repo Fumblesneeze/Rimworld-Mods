@@ -1,7 +1,7 @@
 # Practical needs and recreation
 
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), **1.7 beta**.
-S024 Common Sense replacement; specification only. Source-derived values and proposed corrections
+S024 Common Sense replacement; scheduled potential mood is selected for implementation. Source-derived values and proposed corrections
 remain recorded under CS-Q1–4; ordinary costs, policy and actual job execution remain required.
 
 ## ADDED Requirements
@@ -76,6 +76,20 @@ All other ordinary scheduled-use conditions remain, including timing, policy per
 ability to take the drug. No mood need means no extra mood restriction. The feature does not change
 the policy or extend scheduled permission to joy, medical or forced use. S029's future drug-policy
 corrections compose in the same decision without competing internal patches.
+This applies to actual scheduled selections both on-map and in caravans, including drugs without
+an applicable tolerance effect. Comparisons SHALL use unrounded native percentages and be strict:
+equality rejects. A threshold of 100% adds no mood restriction. The native potential-mood calculation
+and its normal cache/update behavior SHALL remain authoritative; no substitute formula, forced cache
+refresh or artificial mood gain is introduced.
+
+An invalid relevant threshold or mood percentage (nonfinite or outside 0–100%), failed native read,
+or stale current pawn/policy/row context SHALL make only this extra mood restriction unavailable.
+Report a bounded localized explanation at most once per Game for a failed applicable reading; do
+not substitute zero or claim the restriction succeeded. Missing mood or an unrestricted threshold
+need not evaluate potential mood. Supported S138 tolerance SHALL remain independently effective,
+and disabling or losing S138 alone SHALL not disable healthy mood checking. Changes affect the next
+native selection, without cancelling, reclassifying or adding a final veto to an executing dose;
+dose quantity, interval, stock target and consumption history remain native.
 
 #### Scenario: Mood is already recovering
 - **WHEN** current mood is low but potential mood already reaches the policy threshold
@@ -84,6 +98,31 @@ corrections compose in the same decision without competing internal patches.
 #### Scenario: Other policy condition rejects use
 - **WHEN** both mood values are below the threshold but the interval or another policy rule rejects the drug
 - **THEN** the pawn does not take it through this preference.
+
+#### Scenario: Both mood values permit a scheduled dose
+- **WHEN** potential-mood checking is enabled, the native mood threshold is below 100%, both current and potential mood are strictly below it, and all other scheduled conditions permit use
+- **THEN** the pawn can consume the ordinary physical dose with its native effects and history
+- **AND** a 100% threshold bypass alone does not establish this relevant-threshold behavior.
+
+#### Scenario: Either added restriction independently withholds a fresh dose
+- **WHEN** native scheduling otherwise permits a dose with empty history and only one of potential mood or tolerance rejects it
+- **THEN** that enabled available restriction withholds the dose even if the other feature is disabled or unavailable
+- **AND** disabling both removes their added restrictions without granting permission over another native rejection.
+
+#### Scenario: Caravan mood is already recovering
+- **WHEN** actual world ticks consider an otherwise permitted caravan dose whose current mood is below the threshold but potential mood reaches it
+- **THEN** the dose remains physical and no ingestion effects or history are granted
+- **AND** a separate eligible subject below both mood thresholds can consume its ordinary physical dose, preserving the native interval thereafter.
+
+#### Scenario: A local reading fails while the other restriction is healthy
+- **WHEN** an applicable mood or tolerance reader throws while the shared scheduled boundary and the other consumer remain valid
+- **THEN** only the failed reading becomes unavailable for that selection, with its bounded explanation
+- **AND** the healthy consumer can still withhold a native-permitted dose without losing its admitted boundary.
+
+#### Scenario: Tolerance layout is unavailable
+- **WHEN** the tolerance editor cannot fit but scheduled potential-mood checking remains supported and enabled
+- **THEN** the tolerance feature adds no hidden restriction while potential mood continues to govern subsequent scheduled selections
+- **AND** restoring a supported layout can restore retained tolerance choices without resetting dose history or mood.
 
 ### Requirement: Patient recreation deliveries respect the recipient
 With patient treats enabled, a valid sick-pawn visit SHALL be able to deliver allowed enjoyable food or a recreational drug to the patient through ordinary feeding, or fall back to an ordinary visit when no suitable treat is available.

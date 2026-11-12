@@ -1,12 +1,16 @@
 # Governing implementation tasks
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **20**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
+Plan revision **22**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
 This is the aggregate coordination checklist. Each chunk's linked feature tasks hold its behavior
 slices; expand assignments into focused spec → RED/GREEN → code → review work before dispatch.
 A handoff gate below verifies that work; it does not replace those tasks or accept gameplay.
 
 Documentation completion and implementation are separate. All aggregate runtime gates remain open.
+Revision 22 selects only S024 scheduled potential mood, its common setting and direct S138
+composition ahead of the remaining P4-A work. Follow S024-M1–M5 in its owning tasks and the exact
+revised packet/leases in p0-dispatch. Reviewed slider, caravan and language observations remain
+scoped to their tested builds; changed scheduled ownership requires new focused native evidence.
 Revision20 advances S071's concrete native automatic-clearance path and S138's native persistence/
 controls and enforcement prerequisites. The current p0-dispatch leases govern shared outputs and
 root integration. The complete feature/part obligations are unchanged.
