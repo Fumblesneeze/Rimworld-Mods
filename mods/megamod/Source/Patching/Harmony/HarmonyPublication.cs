@@ -107,6 +107,29 @@ internal static class HarmonyPublication
         finally { Monitor.Exit(gate); }
     }
 
+    // Retained body readers need publication identity without constructing callback metadata.
+    internal static bool InspectIdentity(MethodBase target, Func<Identity, bool> inspect)
+    {
+        object gate = Gate;
+        if (Monitor.IsEntered(gate) || !Monitor.TryEnter(gate)) return false;
+        try
+        {
+            if (StateField!.GetValue(null) is not Dictionary<MethodBase, byte[]> state)
+                throw new InvalidOperationException("The provider's publication state shape changed.");
+            if (!Monitor.TryEnter(state)) return false;
+            byte[]? identity;
+            try
+            {
+                state.TryGetValue(target, out identity);
+                if (identity != null && (identity.Length == 0 || identity.Length > MaximumStateBytes))
+                    throw new InvalidOperationException("Published metadata exceeds the inspection boundary.");
+            }
+            finally { Monitor.Exit(state); }
+            return inspect(new Identity(target, identity));
+        }
+        finally { Monitor.Exit(gate); }
+    }
+
     internal readonly record struct Operation(OpCode Code, object? Operand);
 
     internal sealed class Identity
@@ -114,6 +137,8 @@ internal static class HarmonyPublication
         private readonly MethodBase target;
         private readonly byte[]? bytes;
         internal Identity(MethodBase target, byte[]? bytes) { this.target = target; this.bytes = bytes; }
+        internal bool HasPublication => bytes != null;
+        internal bool SamePublication(Identity other) => target == other.target && ReferenceEquals(bytes, other.bytes);
         // The inspected provider serializes into a fresh array and replaces this dictionary entry
         // only after publishing the detour. This identity supplements a validated snapshot; it
         // never proves effective semantics and never executes/deserializes foreign metadata.

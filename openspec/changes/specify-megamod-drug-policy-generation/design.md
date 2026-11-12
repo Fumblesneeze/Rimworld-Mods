@@ -446,6 +446,34 @@ is an explicit current capability limit, not a claim that generic runtime code i
 incompatible. Stage collection/helper semantics still require a separately proved passive
 publication/body path or actual selected-runtime code-isolation authority before positive use.
 
+## Passive published-body reader checkpoint
+
+`HarmonyPublishedBody` reads an already published nongeneric managed replacement without adding
+an observer or replaying composition. `HarmonyPublication.InspectIdentity` supplies only the raw
+publication identity under the existing composition monitor; existing metadata parsing and callers
+are unchanged. Checked retained detour/box/compile-update monitors are acquired nonblockingly.
+The reader accepts the inspected baked DynamicMethod resolver representation with no exception
+regions or ABI glue. It copies resolver IL/local signatures, decodes bounded operands and preserves
+existing runtime token handles and declaring-type context without loading foreign module tokens.
+It never uses builder buffers as the executable body's representation. Unknown shapes return a
+specific unavailable capability; no owner, provider-version or assembly-hash ban is introduced.
+
+The work bounds are 65536 IL bytes, 8192 bytes per local/standalone signature, 4096 token-scope slots,
+256 switch destinations and a 65535 stack bound. A limit refuses the capture rather than truncating
+it. Collections are detached read-only projections. Publication receipts detect target republishing,
+detour/target/resolver changes and token-scope changes; contention/reentry is unavailable. An empty
+patch-set wrapper is still a publication, and absent metadata never authorizes original-IL fallback.
+Ordinary assembly replacements remain explicitly unsupported in this checkpoint: no honest actual
+provider-produced branch was exercised, and no global generator option or provider map is mutated
+to manufacture one. Decoder validity is representation evidence, not effect approval.
+
+Focused owned nongeneric tests cover actual outputs, factory/transpiler and inner-attribute
+non-execution, baked-versus-builder divergence, republishing, token/type-initializer inertness,
+branches/locals, limits, EH refusal and monitor contention. This unregistered infrastructure leaf
+does not extend the generic-refusing observation helper or admit List/NullOrEmpty/stage consumers.
+Generic-family alias/currentness, native Waylith call edges/inlining, ABI glue, constructor/static
+origin, current native facts and positive C1/generation obligations remain separately required.
+
 ## Risks / Trade-offs
 
 - A helpful suggestion can be mistaken for a guarantee → precise reasons, visible assumptions,

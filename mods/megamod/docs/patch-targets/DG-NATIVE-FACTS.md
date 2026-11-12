@@ -329,6 +329,32 @@ fallback=native-policy-controls`. No per-tick/pawn log and no foreign unpatching
 read-only adapter itself performs no logging/registration. The separate unregistered F1 helper uses
 the ordinary PatchCandidate rollback lifecycle and retains a target-level failure reason.
 
+## Passive managed-body evidence checkpoint
+
+The unregistered `Patching/Harmony/HarmonyPublishedBody.cs` reader adds no patch and leaves the
+finite generic-refusing observer unchanged. It uses the existing provider composition gate plus
+checked retained detour monitors to copy an already baked DynamicMethod resolver's IL, local
+signature and existing token identities. It does not replay composition, instantiate foreign
+attributes, invoke callbacks, initialize referenced types or use mutable builder buffers as body
+evidence. Its target receipt detects republishing and representation changes, with bounded refusal
+under contention/reentry. This is managed publication evidence only, not a native entry-point proof.
+
+The current scope is nongeneric canonical runtime method declarations, an existing publication,
+the inspected active managed detour shape, identical managed/ABI target and EH-free baked resolver.
+Original-IL fallback, assembly-generated replacements, forwarded token scopes, unknown token forms,
+generic roots and unproved glue are unavailable capabilities. Limits are65536 IL bytes,8192 bytes
+per signature,4096 token slots,256 switch destinations and65535 stack bound, without truncation.
+No hash/version/foreign-owner allowlist is used. Retained bodies expose inert opcode/token data;
+their semantic effects and any reachable helper bodies still require separate admission.
+
+Owned Harmony tests include the independently corrected inner-callback attribute positive control,
+no factory/transpiler replay, currentness, immutable snapshots, baked-versus-builder divergence,
+inert type/field tokens, actual branches/locals, limit/EH refusal and each retained monitor. Evidence
+is under `s139-native-facts/stage-membership/passive-observation/implementation.md` in the local
+implementation artifacts. Generic-family alias/currentness, Waylith call-edge/inlining, static and
+constructor premises, stage membership and complete C1/generation/native acceptance remain open.
+No task or player workflow is accepted by this supporting reader checkpoint.
+
 ## Verification matrix
 
 | Case | Expected result | Tier / retained state |

@@ -461,3 +461,29 @@ SHALL describe limited best-effort disablement, not compatibility or rollback of
 #### Scenario: Creation support is unavailable
 - **WHEN** the game cannot support complete verified policy creation
 - **THEN** Generate explains its unavailability and native policy editing remains usable.
+
+### Requirement: Passive published-body evidence is inert and bounded
+An owned passive reader used to prepare S139 admission SHALL read the already published managed
+replacement rather than replaying composition or substituting original IL. It SHALL preserve the
+actual baked body and operand identities, report unsupported representations and work limits, and
+invalidate a retained target publication when it is republished. Successful reading alone SHALL
+not approve effects, generic-family execution, native call edges or generation availability.
+
+#### Scenario: Inspect a published replacement without replay
+- **WHEN** an owned nongeneric method has an admitted readable baked replacement
+- **THEN** reading captures the replacement's body without rerunning transpilers, factories, foreign attribute constructors, callbacks or referenced type initializers
+- **AND** later edits to its emission builder do not replace evidence of its already baked resolver body.
+
+#### Scenario: Republish after a capture
+- **WHEN** the captured method is patched or unpatched into a new publication
+- **THEN** its old receipt is no longer current, its detached snapshot remains unchanged, and unrelated nongeneric publication alone does not invalidate it.
+
+#### Scenario: Unsupported or busy publication
+- **WHEN** a method is unpublished, outside the reader's nongeneric declaration scope, busy, or uses unproved EH, ABI, provider or runtime representation
+- **THEN** the read is unavailable with an explicit reason and does not install an observer, execute composition, or fall back to original IL
+- **AND** ordinary method execution and other owners' patches are preserved.
+
+#### Scenario: Inspection work exceeds its bound
+- **WHEN** a published body exceeds 65536 IL bytes, 8192 bytes per inspected signature, 4096 token slots, 256 switch destinations or a 65535 stack bound
+- **THEN** the reader refuses the whole capture rather than truncating body or operand evidence
+- **AND** this inspection limit creates no drug-count, dose or risk balance cap.
