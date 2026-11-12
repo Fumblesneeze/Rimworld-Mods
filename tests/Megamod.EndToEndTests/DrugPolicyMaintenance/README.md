@@ -7,12 +7,13 @@ off, no preset filter, and the exact current shared baseline. Native Assign/Mana
 Beer-checkbox change/restoration provide the player workflow; initial native policies are not
 constructed by setup.15 operations/4 screenshots cost345 seconds plus180 reserve within900;
 launcher1200. Its compiled sequence verifies those counts. Shared baseline availability does not
-certify applied save exclusions or generator facts/Create. Independent review and native acceptance
-remain pending in the catalog-publication ledger.
+certify applied save exclusions or generator facts/Create. Independent review and the26-step native
+run passed at805580c; root inspected all4 captures. The affected initial-preset run passed43steps
+with all10 captures inspected. Exact evidence is in the catalog-native-verification ledger.
 
 Owner fumblesneeze.megamod; S029 task2.5.3. The initial and save/reload workflows have historical
 scoped native acceptance recorded in the owning tasks. The changed shared catalog publication and
-current S138-aware checkbox geometry require a fresh affected native run. Root owns
+current S138-aware checkbox geometry passed the fresh affected native run at805580c. Root owns
 shared-step availability, fixture/project registration, review, canonical deployment and live runs.
 
 Exact test: `megamod.drug-policy.initial-preset-native-controls`.

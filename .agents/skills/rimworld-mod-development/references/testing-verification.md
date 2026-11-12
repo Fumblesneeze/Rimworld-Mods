@@ -79,7 +79,11 @@ Prefer action → wait → observation steps that exercise the same native path 
   windows can round calculated rectangles before rendering; compare the consumed projection and
   exact window identity rather than assuming raw rectangle equality. When one such assumption fails,
   inspect the remaining sequence together before retrying. Derive click points from the actual
-  native control rectangle, including asymmetric one-button dialogs; a window's center is not
+  native control rectangle, including active owned column reservations or argument transforms
+  applied before native layout. A former outer-window-width formula can target a neighboring
+  control after another integrated feature reserves space. Read the current geometry/measurement
+  without invoking preparation, drawing or action callbacks, and verify the actual clicked result.
+  Include asymmetric one-button dialogs; a window's center is not
   necessarily its button's center. After acknowledgement, wait for that exact window to disappear
   before capturing or interacting with a dialog beneath it. An accepted input receipt does not
   establish that the intended control received the click.
@@ -96,6 +100,10 @@ Prefer action → wait → observation steps that exercise the same native path 
 - Preserve native fixture data contracts. Generated human pawns may participate in later relation
   generation, so use native human-style names (`NameTriple`) instead of replacing them with
   `NameSingle` before generating additional humans. Direct setup must not create the tested result.
+  Before reusing an observation getter for another item kind, inspect its eligibility gates:
+  `JobDriver_Ingest.GainingNutritionNow` excludes non-nutritive drugs. Observe their actual native
+  chewing-toil identity with the same job and physical source instead; never add nutrition or
+  change a Def to make an observer succeed.
 
 - Budget every group honestly. Its frame, game-tick, and wall-time caps must exceed the sum of all
   sequential per-step maxima plus bounded action/screenshot/assertion/save-load overhead. A combined
@@ -108,7 +116,8 @@ Prefer action → wait → observation steps that exercise the same native path 
   conditions: do not derive a frame ceiling from an assumed refresh rate. For a paused UI workflow
   with no established frame-rate ceiling, explicitly defer the frame stop to the finite wall budget
   while retaining the independent tick limit. Recalculate after adding captures or controls, and make
-  the launcher allowance cover the selected scenario plus startup and cleanup.
+  the launcher allowance cover the selected scenario plus startup and cleanup. If an individual
+  scenario cap changes, update every documented combined sum that includes it in the same diff.
 - Keep later cases inert. Arrange or activate hunger, bills, jobs, and other autonomous triggers only
   when that iterator begins; zero work priorities do not disable ingest/think-tree behavior.
 - Assert physical units with `stackCount` across spawned, carried, inventory, holder, and embedded

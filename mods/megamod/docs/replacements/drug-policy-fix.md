@@ -113,6 +113,15 @@ must obey guarded additive policy.
 
 ## Verification and acceptance
 
+Shared initial catalog checkpointc091d3c was independently reviewed with2 focused Unit and12 Defs
+checks. On805580c's reviewed build, initial preset controls passed43steps and ordinary startup-off
+controls passed26steps. Root inspected all14 causal captures: valid preset choices, checkbox edit/
+restoration and assignment, then ordinary native editing with preset filtering off while supporting
+checks retained the same complete initial catalog. Full logs and cleanup passed; exact evidence is
+`artifacts/Implementation/megamod-p0/s139-native-facts/catalog-native-verification.md`. This accepts
+the changed initial publication path and scoped ordinary startup-off controls, not applied drug
+exclusions, generator authority, original-provider suppression or full maintenance.
+
 [Proposal/design/tasks](../../../../openspec/changes/specify-megamod-drug-policy-maintenance/) define
 the implementation sequence and final acceptance. Only the initial preset native-controls task 2.5.3
 and unchanged-catalog preset persistence task 2.5.4 are checked; the complete replacement remains

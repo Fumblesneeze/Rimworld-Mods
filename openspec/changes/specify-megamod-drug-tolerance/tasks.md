@@ -92,6 +92,15 @@ This closes only those scoped workflow observations. Positive numeric boundaries
 save override/switching/resume, party events and all other unrun compositions remain open. No full
 feature task is checked from these results.
 
+Positive-boundary A at805580c passed61 native steps; root inspected all8 causal captures. At the
+explicitly seeded0.2 precondition, paused native Undraft produced actual final rejections while
+retaining the Beer. Real native decay then lowered tolerance and an ordinary later job consumed
+that exact dose, with visible drinking, empty inventory and native Alcohol effects. Exact raw
+values, job/loadID/source identity, reviewed build and complete cleanup/log evidence are in
+`artifacts/Implementation/megamod-p0/s138-native-boundaries/positive-native-verification.md`.
+This accepts strict positive equality and natural-decay re-eligibility only. It does not prove
+natural accumulation, Any-versus100, shared chemicals or any remaining broader task.
+
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.
 - [ ] 2.3 RED/GREEN admitted map/caravan scheduled restriction composed directly with S024, preserving native false, interval/quantity/history, no scheduled joy exception and the attached stock-pickup coupling without a substitute-refill promise.

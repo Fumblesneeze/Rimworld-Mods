@@ -13,9 +13,11 @@ Current F0 integration changes the initial publication source: `NativeDrugCatalo
 publishes one `DrugCatalogRead` with ordered identities/flags independently of the S029 startup
 master; preset membership derives from it and adds this patch's availability. The shared definition
 lifetime still owns invalidation, and no save-exclusion authority is inferred. Focused host evidence
-is under `artifacts/Implementation/megamod-p0/s139-native-facts/catalog-publication.md`; review and
-affected native preset acceptance for this changed startup path are pending. Historical live runs
-above do not accept the revised runtime.
+is under `artifacts/Implementation/megamod-p0/s139-native-facts/catalog-publication.md`. Independent
+review passed; reviewed checkpoint805580c passed43 initial-preset and26 startup-off native steps.
+Root inspected all14 causal captures and complete logs/cleanup. Exact changed-build evidence is
+`artifacts/Implementation/megamod-p0/s139-native-facts/catalog-native-verification.md`; historical
+live runs above are not relabeled for this revised runtime.
 
 ## Ownership and traceability
 

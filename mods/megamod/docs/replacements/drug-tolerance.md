@@ -108,6 +108,11 @@ is under `s138-native-social-routes/native-verification.md` and
 `s138-native-settings-routes/native-verification.md` in the same local evidence root. These are
 scoped social and global-setting results; party events and other configuration/lifecycle cases remain.
 DT-Q1–4 retain their remaining obligations; these slices do not accept all native routes or S138.
+The reviewed positive-boundary A run at805580c passed61steps/all8 root-inspected captures: an
+actual native decision rejected seeded20% equality, then native decay enabled an ordinary later
+same-Beer ingestion. Exact evidence is `s138-native-boundaries/positive-native-verification.md`
+under the same local root. Initial seeded tolerance is not natural-accumulation evidence; Any/100,
+shared chemicals and remaining route/lifecycle gates are still open.
 Independent review and integrated product checks are retained separately from live evidence. The
 orchestrator must personally observe the reviewed build's actual native policy edits, routine
 consumption/refusal, patient treats, medical independence, persistence and configuration transitions

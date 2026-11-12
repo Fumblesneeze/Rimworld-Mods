@@ -198,13 +198,13 @@ scenario1440 and launcher1800. Local plan/review/source evidence is under
 `artifacts/Implementation/megamod-p0/s138-native-social-routes/`, including root's native-verification.md.
 These results accept the exercised table route and global toggle timing only; full S138 stays open.
 
-`megamod.drug-tolerance.native-positive-boundary` is independently reviewed and integrated for
-compile/discovery. It seeds one20% tolerance precondition after a native drafted-hold prelude,
+`megamod.drug-tolerance.native-positive-boundary` passed61 steps on reviewed checkpoint805580c;
+root personally inspected all8 causal captures. It seeds one20% tolerance precondition after a native drafted-hold prelude,
 then uses paused native Undraft to observe an actual equality rejection. Native health intervals
 must lower the tolerance before an ordinary later scheduled job consumes the original Beer.
 Passive decision/health/ingestion observations retain raw boundary values and exact job/source
 provenance; no later severity/tick/job/result writes manufacture the outcome. The seed itself is
 not evidence of accumulated tolerance. Exact budget20 native operations/8 screenshots/210 wait
-seconds =750 fixed plus180 reserve, within1440; launcher1800, game-tick cap9000. Native acceptance
-is pending. Read `artifacts/Implementation/megamod-p0/s138-native-boundaries/positive-boundary-handoff.md`.
+seconds =750 fixed plus180 reserve, within1440; launcher1800, game-tick cap9000. Exact native evidence
+is in `artifacts/Implementation/megamod-p0/s138-native-boundaries/positive-native-verification.md`.
 Any-versus-numeric100 and shared-Psychite workflows remain separate subsequent cases.
