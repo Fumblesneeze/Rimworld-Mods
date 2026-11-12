@@ -23,6 +23,7 @@
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Runtime/NativeDrugCatalog.cs" Link="Product/NativeDrugCatalog.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyMaintenance/Core/DrugCatalogRead.cs" Link="Product/Core/DrugCatalogRead.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyGeneration/Core/DrugPolicySuggestions.cs" Link="Product/DrugPolicyGeneration/Core/DrugPolicySuggestions.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/DrugPolicyGeneration/Core/HumanAdultInput.cs" Link="Product/DrugPolicyGeneration/Core/HumanAdultInput.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyGeneration/Runtime/NativeDrugGenerationFacts.cs" Link="Product/DrugPolicyGeneration/Runtime/NativeDrugGenerationFacts.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyGeneration/Runtime/DrugGenerationFactInputs.cs" Link="Product/DrugPolicyGeneration/Runtime/DrugGenerationFactInputs.cs" />
     <Compile Include="../../mods/megamod/Source/Features/DrugPolicyGeneration/Runtime/NativeDrugPolicyCreation.cs" Link="Product/DrugPolicyGeneration/Runtime/NativeDrugPolicyCreation.cs" />

@@ -17,46 +17,11 @@ public sealed record DrugGenerationFactInputHandles(
     HumanAdultInput HumanAdult,
     SimpleCurve EffectFactorCurve);
 
-// Opaque identities avoid constructing native LifeStageAge (whose initializer can load UI assets)
-// in a host fixture. Root's native adapter must read all values from those actual current objects.
-public sealed record HumanLifeStageInput(
-    object EntryIdentity, object DefinitionIdentity, float MinimumAge,
-    int DevelopmentalStage, float BodySizeFactor);
-
-public sealed class HumanAdultInput
-{
-    public HumanAdultInput(object humanIdentity, object raceIdentity, object lifeStagesIdentity,
-        int raceIntelligence, float raceBaseBodySize, IEnumerable<HumanLifeStageInput> lifeStages,
-        object adultEntryIdentity)
-    {
-        HumanIdentity = humanIdentity ?? throw new ArgumentNullException(nameof(humanIdentity));
-        RaceIdentity = raceIdentity ?? throw new ArgumentNullException(nameof(raceIdentity));
-        LifeStagesIdentity = lifeStagesIdentity ?? throw new ArgumentNullException(nameof(lifeStagesIdentity));
-        RaceIntelligence = raceIntelligence;
-        RaceBaseBodySize = raceBaseBodySize;
-        AdultEntryIdentity = adultEntryIdentity ?? throw new ArgumentNullException(nameof(adultEntryIdentity));
-        LifeStages = Array.AsReadOnly((lifeStages ?? throw new ArgumentNullException(nameof(lifeStages)))
-            .Take(DrugGenerationFactInputs.MaximumListEntries + 1).ToArray());
-        if (LifeStages.Count > DrugGenerationFactInputs.MaximumListEntries)
-            throw new ArgumentException("The supplied life-stage read exceeds its declared capture bound.");
-        if (LifeStages.Any(stage => stage == null || stage.EntryIdentity == null || stage.DefinitionIdentity == null) ||
-            LifeStages.Count(stage => ReferenceEquals(stage.EntryIdentity, adultEntryIdentity)) != 1)
-            throw new ArgumentException("The supplied adult entry must occur exactly once in the supplied life-stage read.");
-    }
-    public object HumanIdentity { get; }
-    public object RaceIdentity { get; }
-    public object LifeStagesIdentity { get; }
-    public int RaceIntelligence { get; }
-    public float RaceBaseBodySize { get; }
-    public IReadOnlyList<HumanLifeStageInput> LifeStages { get; }
-    public object AdultEntryIdentity { get; }
-}
-
 // This receipt says only that the declared captured inputs still match supplied CURRENT handles.
 // It never claims supported pharmacology, finalized Human/static-field binding, or Create authority.
 public sealed class DrugGenerationFactInputs : IDisposable
 {
-    internal const int MaximumListEntries = 4096;
+    internal const int MaximumListEntries = HumanAdultInput.MaximumListEntries;
     private DrugCatalogRead? catalog;
     private Graph? captured;
     private bool stale;
