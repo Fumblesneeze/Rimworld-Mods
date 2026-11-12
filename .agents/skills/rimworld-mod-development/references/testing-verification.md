@@ -92,6 +92,14 @@ Prefer action → wait → observation steps that exercise the same native path 
   necessarily its button's center. After acknowledgement, wait for that exact window to disappear
   before capturing or interacting with a dialog beneath it. An accepted input receipt does not
   establish that the intended control received the click.
+  Keep observation-only window capture separate from input geometry admission. Exact type/ID and
+  cleanup ownership are sufficient to observe a titled native console; retain untitled-window,
+  content-origin, dimensions and current-scale guards on every path that actually derives input
+  coordinates or replaces text.
+- Snapshot native job identity and consumed fields while the job is active. RimWorld returns
+  completed jobs to a pool and clears/reuses their fields, so a retained `Job` reference is not
+  historical evidence. Store immutable load ID, owner, Def/giver, targets, count and relevant flags
+  before completion; compare later observations to that snapshot without changing native pooling.
 - Prove fault injection is reached before judging failure handling. Install an unarmed interceptor
   before a successful native baseline, retain actual hit/phase counters, then arm only the intended
   field or owned callback. A registered Harmony detour, especially a closed generic added after

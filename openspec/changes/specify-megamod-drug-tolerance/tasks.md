@@ -125,15 +125,16 @@ Exact evidence and the scoped playability pass are local in
 These one-save workflows do not prove two-save switching/main-menu scope, other routes or full
 feature acceptance. All remaining obligations below stay open.
 
-The next isolated main-menu/two-save scenario is authored, independently reviewed and compiled.
-It saves A, uses native Quit/Options to attempt both disabled save controls at Entry, creates and
-saves an independent B through native DevQuicktest, then loads each save and observes its distinct
-settings and ordinary scheduled-use outcome. The process-owned fixture is selected alone. Its
-reviewed cleanup restores globals independently of current-Game ownership; exact source, counted
-budgets and integration status are retained under
-`artifacts/Implementation/megamod-p0/s138-native-save-switch/integration.md`.
-The Gateway Entry-menu prerequisite has passed independent re-review, focused checks and owning
-builds. Exact singular discovery also passes; no native run or task closure is claimed yet.
+The reviewed0fda103 main-menu/two-save scenario passed138 native steps in singular group
+`20261112T170527895Z-afe306595d914625a445ee7ffccec646`. Root personally inspected all14 captures:
+native Quit/Options left save controls disabled at Entry; native DevQuicktest produced an independent
+B; native loading restored A's save-on restriction and retained Beer, then B's save-off choice and
+actual ordinary drinking, Alcohol effects and empty Gear. Global-on remained unchanged. The native
+console, complete classified logs, fresh loaded identities, exact package/process/config hashes and
+completed graceful cleanup are retained in
+`artifacts/Implementation/megamod-p0/s138-native-save-switch/integration.md`. The preceding failed
+run exposed a fixture-only titled-console assumption, corrected and independently re-reviewed before
+this GREEN. This accepts the scoped menu/two-save workflow, not the remaining feature obligations.
 
 - [ ] 2.1 RED/GREEN Any/numeric comparisons, equality, no hediff, unknown-reader result and shared-chemical facts in the honest Unit tier; no artificial loaded mods or representative Def database.
 - [ ] 2.2 RED/GREEN owned choice persistence and S029 integration in appropriate scoped tiers: copy independence, valid zero, absent field, invalid/nonfinite/version data, catalog additions/removals, duplicate rows and restoration after partial commit failure.

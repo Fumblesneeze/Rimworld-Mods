@@ -82,6 +82,12 @@ checks support the existing native workflow gate; they do not replace it.
 
 ## Evidence discipline
 
+Both `current.json` and an active `session.json` can contain the bearer token. Never dump either
+file into tool output or copy it into durable evidence. Use the typed run/status operations for
+process identity; if a diagnostic must inspect a manifest, project only explicitly allowlisted
+non-secret fields. Treat a stopped session as a credential-free tombstone only after the launcher's
+credential cleanup has verified sanitization, not merely because its filename is `session.json`.
+
 Use direct mutation only for arrangement/diagnosis. For the claim itself retain:
 
 1. before state visible to a player;
