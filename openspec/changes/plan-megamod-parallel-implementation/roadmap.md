@@ -941,3 +941,13 @@ lane prepares social-drink/drinkless scenarios under ignored artifacts. Root own
 integration, build freezes, native execution, observation and logical commits. S139's catalog
 authority, remaining decay/dose/profile/calendar proofs and final UI/publication remain allocated;
 incident-only content receipts cannot substitute for drug-catalog authority.
+
+Revision21 continuation after3666ca0 — the initial shared catalog, pawn projection and scoped
+positive-tolerance boundary are checkpointed. Root batches numeric100/Any and Tea-to-Yayo native
+verification while two disjoint S139 lanes prepare seven-method initialization proof and consumed
+definition-input currentness. The latter starts as an artifact-only draft lease; its author no
+longer serves as that implementation's independent reviewer. Exact scopes and source-freeze
+release conditions are in `p0-dispatch.md`. The shared initial catalog is not an applied-save
+exclusion receipt, and detached input snapshots do not prove native Human/static-curve binding.
+Root retains integration and final observation. This sequencing preserves all139 features and
+every remaining F0–F5, native composition and P0–P8 acceptance obligation.

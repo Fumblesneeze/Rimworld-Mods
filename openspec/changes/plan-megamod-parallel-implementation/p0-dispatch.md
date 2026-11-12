@@ -622,3 +622,29 @@ social/drinkless and global off/on timing have scoped native acceptance. Full ga
 - Root owns F0 catalog/currentness research and its subsequent explicitly recorded integration,
   central files, package/install outputs, native acceptance and logical commits. The existing
   initial native baseline is not relabeled as applied C03 drug-exclusion authority.
+
+Revision21 continuation after3666ca0: the shared initial catalog, pawn projection and positive
+tolerance boundary are checkpointed; scoped native observations do not close full S029/S138/S139.
+
+- `tolerance_native_routes` owns the artifact-only numeric100/Any and Tea-to-Yayo scenario batch
+  and its independent review. Root owns the compiling counterparts and exact-ID execution.
+- `generation_admission` continues the seven-method zero-range initialization slice using the
+  existing `DrugGenerationObservedBodies` bundle unchanged. Its current drafts are uncompiled;
+  root explicitly releases the two source/test files after the native package is staged. The
+  helper, calculator and initialization stages each retain focused RED/GREEN, then one affected
+  regression/review batch. Native initialization premises and later F1/F2 obligations remain open.
+- `catalog_publication_review` changes from reviewer to a distinct F0 implementation lane. Its
+  initial lease is only ignored `s139-native-facts/fact-inputs` plans and drafts for consumed-input
+  snapshots and focused Defs tests. Capture must use the same shared catalog identity and explicit
+  caller-supplied native handles, retain every consumed known identity/value and refuse unsupported
+  shapes. Human adult inputs and the effect-factor curve require separately established native
+  binding; detached snapshots cannot certify it. No duplicate Def database, general reflection
+  graph, applied-exclusion authority, compiled edits or runtime registration is authorized by this
+  draft lease. Root releases an exact compiled file scope after reviewing the draft.
+- Root retains finalized native binding, central runtime composition, shared output coordination,
+  reviewed build/package identity, native action/capture inspection and logical commits. No worker
+  launches games or installs packages. Source work may resume only after the immutable reviewed
+  native deployment is running, without modifying its installed files.
+
+This division groups related fixes and verification while keeping source ownership disjoint.
+Every remaining native case, original feature and P0–P8 obligation remains allocated.
