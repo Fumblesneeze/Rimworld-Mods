@@ -9,6 +9,13 @@ interrupting the work. No runtime implementation or gameplay acceptance is claim
 
 ## Status and next work
 
+Revision30, 2026-11-14: the bounded discovery session is implemented with110 focused host checks
+and independent review. Refresh preserves repaint admission after a reproduced review regression;
+cancel/refresh rejects stale receipts and progress remains partial/failed/cancelled as appropriate.
+This is a detached implementation checkpoint: native GUI isolation and automatic page-reading
+integration remain active work, with D1–D3 and all full-feature acceptance still open. No known-mod
+list or registration prerequisite narrows the universal search requirement.
+
 Revision29, 2026-11-14: the query checkpoint8579276 is committed. S141-R1–R3 now build and verify
 the reusable generic recorder on an actual unfamiliar page's ordinary native draw. Automatic
 startup discovery, tab traversal, native chooser integration and reveal remain required next work;

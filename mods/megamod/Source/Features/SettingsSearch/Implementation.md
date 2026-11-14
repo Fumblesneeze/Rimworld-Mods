@@ -1,4 +1,4 @@
-# S141 query and native recorder checkpoints
+# S141 query, recorder and discovery-session checkpoints
 
 Owner `fumblesneeze.megamod`. Supplied-text matching and the ordinary-draw recorder are implemented;
 the recorder has scoped native verification below. Nothing is registered with the native chooser.
@@ -64,3 +64,18 @@ Evidence is under
 `artifacts/Implementation/megamod-p0/settings-search/recorder/`. The native fixture uses test-only
 instrumentation; no production hooks, search preference, UI, automatic discovery or reveal are
 registered by this component checkpoint. Every remaining universal-discovery obligation is retained.
+
+`SettingsDiscoverySession` now owns detached admission/progress for every supplied page descriptor,
+including equal-value descriptors with independent ordinal identity. It admits one in-flight work
+receipt and at most one callback per monotonically numbered repaint. Refresh invalidates old
+receipts/results while preserving that repaint watermark; cancellation retains finished observations
+and rejects late completion. Capture failure discards the page's provisional observations, and
+successful callbacks remain Partial. Default limits are96 callbacks/page,500ms/page and100ms/callback;
+time is supplied by the native caller and can stop only later callbacks, not preempt one in progress.
+The session defensively copies captured record lists and publishes immutable progress snapshots.
+
+Eight actual focused RED/GREEN slices, including the independent review's same-repaint refresh
+regression, pass110 affected discovery/capture/query/chooser checks. Evidence is under
+`artifacts/Implementation/megamod-p0/settings-search/discovery/core/`; review is under
+`discovery/review/`. This host checkpoint is not automatic discovery or native acceptance. D1–D3
+remain open until integration with the neutral reader and the required native workflow are verified.

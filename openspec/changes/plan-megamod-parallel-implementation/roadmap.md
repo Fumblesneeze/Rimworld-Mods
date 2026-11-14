@@ -1,12 +1,19 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **29**, 2026-11-14. Status: **implementation active; generic native settings recorder batch; focused English batches; aggregate acceptance incomplete**.
+Plan revision **30**, 2026-11-14. Status: **implementation active; automatic generic settings discovery batch; focused English batches; aggregate acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
 
 ## How to execute and revise this plan
+
+Revision30 follows verified recorder checkpoint58e87c9 with S141-D1–D3: bounded discovery sessions,
+neutral native page reads and provider-completed collection acquisition. The exact state-isolation
+contract must precede hidden runtime dispatch; the detached queue can proceed independently.
+One callback per repaint replaces the unmeasured4ms scheduling premise after the recorder pilot's
+5.1376ms whole-callback observation. All mod pages remain eligible, every later tab/reveal/lifecycle
+obligation stays allocated, and the completed recorder evidence proves only its unchanged component.
 
 Revision29 advances S141-R1–R3 after the reviewed detached query checkpoint8579276. Implement the
 generic recorder on ordinary page draws first so native forwarding and publication can be proved

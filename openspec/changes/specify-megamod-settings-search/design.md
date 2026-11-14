@@ -145,6 +145,67 @@ cleanup restores it through the same control. Test instrumentation may surround 
 and pass real tooltip arguments to the recorder; it must not draw a synthetic replacement page or
 manufacture search results. This verifies the recorder component only, not SS-01/SS-03 acceptance.
 
+### Automatic discovery session (plan revision30)
+
+The next tranche schedules generic discovery for every supplied real page identity. A detached
+session copies the page descriptors, keeps equal titles/packages independent, permits one in-flight
+callback and at most one newly admitted callback per repaint, and publishes only the matching
+current work receipt. Refresh replaces the catalog and invalidates all older receipts/results;
+it preserves the last admitted repaint watermark, so neither refresh nor cancel/refresh permits
+a second callback during the same native repaint. The caller supplies monotonic repaint IDs.
+cancel stops future callbacks and rejects an in-flight completion while retaining earlier finished
+observations with honest status. Runtime language/save/world/page changes use the same invalidation.
+Page callbacks may be continued across repaints for observed navigation; completing a page still
+means Partial observations, never proof of all custom or conditional controls.
+
+Pilot work limits are policy, not framework ceilings:96 exploration callbacks per page,500ms
+cumulative callback time and100ms for any single callback. The ordinary native pilot measured a
+maximum5.1376ms for its simple page's entire callback; these limits provide explicit headroom while
+further representative measurements remain required. The session admits only one callback per
+repaint, rather than claiming that an indivisible foreign callback fits a4ms budget. It cannot
+preempt a callback; an overrun is detected after return and stops further calls to that page.
+Reaching a continuation limit retains bounded observations with an explicit stop reason. Buffer
+retention overflow stops that page; failed captures discard that page's provisional observations.
+Tab-state/depth and restoration budgets remain the native traversal adapter's later obligations.
+
+Native neutral-draw dispatch is withheld until its exact engine state/editor/window-write contract
+is pinned. Source inspection already establishes that ordinary GUI collection snapshots must be
+isolated before a draw so reused scroll/editor objects are not mutated; public Text settings alone
+do not restore shared style mutations. Startup collection creation must preserve the provider-
+completed chooser list, with normal page access retained for any collection or draw failure. This
+does not permit filtering eligibility to known packages or substituting visited-only discovery.
+
+The exact1.7.5005 neutral contract is retained in the local discovery/neutral-contract matrix.
+Implementation isolates explicitly named GUI collections by saving their entries, clearing before
+the hidden callback, then restoring the same entries/objects. It must not leave original scroll or
+text-editor objects reachable to hidden native controls. Capture/restore known scalar latches,
+native reusable GUIContent values, Text style alignment/wrapping and the mouse-over scroll stack.
+Resolve field shapes first; do not clone all static fields or inspect foreign settings. A pilot
+cap of65536 aggregate retained native collection/array entries bounds snapshot work; an excess is
+an explicit reader gap before mutation, not a framework or package eligibility limit.
+
+The first state-isolation component workflow uses an owned native text-field fixture: type through
+the real control, preserve its focus/editor/cursor/selection while an isolated callback uses the
+same control ID, restore exact shared text styles on success and exception, then continue typing
+without a refocus click. This establishes only native state restoration; hidden rendering, native
+widget/write guards and unfamiliar/provider-page discovery still require the integrated D2/D3 run.
+
+Hidden geometry has independent group/clip/matrix state and never forwards drawing/window/input
+state changes to the visible backend. Preserve native slider/string/ref-buffer outputs, suppress
+slider rounding before its sound path, and stop native Add/ImmediateWindow/TryRemove/settings-write
+and clipboard writes before effects. Unknown lazy tooltip getters are not invoked. A caught
+forbidden-action exception must still leave failure latched. Exact native frame-loop inspection
+supports idle-input admission rather than global input shadowing: defer on actual held/down/up/
+repeat, all five mouse buttons, motion/scroll or IME; a focused idle editor alone does not block.
+Foreign direct device pumping, I/O or arbitrary field assignment cannot be rolled back generically.
+
+For startup page acquisition, use a fresh detached native Dialog_Options with soundAppear and
+soundAmbient null, call its normal PostOpen under the same isolation, and materialize the final
+cachedModsWithSettings there. Do not call PreOpen, add, draw or close that carrier. This preserves
+provider PostOpen contributions without ordinary window/selection/persistence effects; provider
+callbacks still have the same explicit arbitrary-effect limits. Normal Options opening refreshes
+from its actual completed collection. The source's deferred enumerable must not escape isolation.
+
 Implementation must pin native/provider page enumeration, GUI/tab/scroll capture and reveal
 semantics, budgets, custom-control failure detection and representative real mod fixtures. Those are
 implementation research tasks; they cannot be resolved by restricting product scope to those fixtures.

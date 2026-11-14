@@ -45,6 +45,10 @@ it has no production hooks/UI yet. The following full-feature tasks remain open.
 
 ## 2. Implement and fix focused batches
 
+- [ ] S141-D1 Implement bounded discovery-session admission, continuation, immutable progress, cancel/refresh and stale-result rejection with focused nonzero RED/GREEN; all supplied independent page identities remain eligible.
+- [ ] S141-D2 Pin and implement the exact neutral engine/widget/write isolation contract, inspect provider-completed page collection acquisition and author the automatic unfamiliar-page native workflow. Do not register hidden callbacks from incomplete guards.
+- [ ] S141-D3 Integrate/review the session with the neutral reader, test and fix the focused batch, and personally inspect automatic generic reads without native-value/GUI-state changes. Keep complete tab traversal, chooser/reveal and all remaining S141 obligations explicit.
+
 - [ ] 2.1 Retain nonzero detached Unit RED/GREEN for terms/phrases/exclusions/fields, typo bounds, Unicode/rich text, duplicate identities, stable ranking, empty/partial results and lifecycle invalidation.
 - [ ] 2.2 Implement bounded generic capture/tab navigation, neutral input and guaranteed cleanup with host-safe policy tests plus native scenarios for callbacks, unchanged settings, capture failures, cancellation, budgets and honest coverage status.
 - [ ] 2.3 Integrate one native chooser search with S047 page matches and original page/tab/current-layout reveal; test S047 disabled, duplicate provider pages, conditional controls, stale/ambiguous targets and manual fallback.

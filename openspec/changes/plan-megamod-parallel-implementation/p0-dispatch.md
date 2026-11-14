@@ -1018,3 +1018,39 @@ diagnostics and normal edit/close/reopen/restoration. Exact local evidence is
 close. Root retains automatic generic discovery, native chooser integration, provider/tab/scroll
 identity and reveal, all other152 entries and final language task12.5. No runtime hooks are registered
 by this reusable component checkpoint; a visited-pages-only product scope is not substituted.
+
+## Next automatic discovery contract preparation
+
+Before revision30 runtime dispatch, `settings_hidden_scope_contract` owns artifact-only analysis
+under `artifacts/Implementation/megamod-p0/settings-search/discovery/neutral-contract/`. It inspects
+the exact native input/widget/GUI state and original reader, specifies the smallest explicit
+neutral-draw isolation boundary and proposes executable unchanged-state cases. No tracked edit,
+build/install or native launch is leased. Root retains the all-page collection/session design and
+all implementation/acceptance authority until the shared callback contract is frozen. This is
+preparation for automatic all-mod discovery, not a replacement by visited-page indexing.
+
+## Revision30 — automatic discovery sessions
+
+`settings_discovery_core` owns only `Source/Features/SettingsSearch/Core/SettingsDiscoverySession.cs`,
+its matching Megamod.Unit fixture and local `settings-search/discovery/core/` evidence. The frozen
+session API is in its dispatch; it holds the focused Unit output lease through handoff, with no
+product/E2E build, installation, native run or commits. The neutral-contract lane remains artifact-
+only until root freezes its native API and exact guards. Root owns provider collection research,
+shared design, runtime dispatch, centralized hooks, native scenarios, review/build coordination,
+actual acceptance and commits. No remaining feature is dropped or a provider whitelist substituted.
+
+The neutral-contract artifact research is complete. `settings_gui_state` now owns only the
+explicit native state-isolation implementation draft under `settings-search/discovery/state/`,
+using the frozen Capture/Isolate/Dispose API in its dispatch. It does not apply tracked runtime
+code before root retains the focused native RED and grants that lease. Root owns hidden backend,
+control/write guards, provider catalog, test instrumentation and native scenarios; no canonical
+outputs or launches are delegated. Native contract gaps stay explicit and do not become a whitelist.
+
+The core lane has handed off its two frozen files and released Unit outputs. Eight actual
+RED/GREEN slices pass110 affected checks; independent review's same-repaint refresh defect is
+fixed and re-reviewed. Refresh invalidates catalog/work generations but preserves the last admitted
+repaint ID. The host checkpoint does not close D1–D3 before integrated native acceptance.
+
+Root retained the focused state component's native inert-stub RED after real native text entry
+and personally inspected its focused-field capture. The state lane may now apply only
+`Runtime/SettingsGuiStateScope.cs`; root owns its native workflow, review and all build/run outputs.
