@@ -2,7 +2,9 @@
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`, RimWorld **1.7 beta**.
 The planning baseline was an inert scaffold and 137 researched feature changes. P0 implementation
-is now underway; no complete feature or part has passed final native acceptance. The
+is currently paused; no complete feature or part has passed final native acceptance. Revision 23
+retains 152 entries (140 drafts and twelve intake sources requiring their own specifications).
+The new intake and S141 search draft do not resume code or native verification. The
 [foundation](../add-megamod-foundation/design.md) defines product boundaries; the
 [reconciled decisions](../../../mods/megamod/docs/refinement/2026-11-07-decision-reconciliation-audit.md)
 and individual feature specs define behavior. This design coordinates their implementation.

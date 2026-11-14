@@ -1,15 +1,15 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **22**, 2026-11-12. Status: **P0 implementation and selected S024 composition; native acceptance incomplete**.
+Plan revision **23**, 2026-11-14. Status: **implementation paused; source intake and owned-settings search specified; native acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
 
 ## How to execute and revise this plan
 
-There are **139 feature drafts, 27 primary chunks
-and nine integration parts**. A chunk is a bounded
+There are **152 feature entries: 140 drafts and 12 intake entries, 27 primary chunks
+and nine integration parts**. New intake needs a per-source owned specification before code. A chunk is a bounded
 assignment spanning related source-derived features, not a single TDD step. At dispatch, split it
 into one-behavior slices with exact requirement IDs, file leases and test/scenario IDs in its owning
 feature tasks. The foundation's five capabilities are cross-cutting obligations, not extra S IDs.
@@ -183,7 +183,7 @@ observe current state and localized/quality-aware presentation. Exercise S133/S1
 unloading through S132 gear presentation; visible cargo, accepted quantity and native inventory must
 agree through partial unload/cancellation. Run the accumulated interaction set
 selected from the dependency ledger, including a disabled feature with unrelated consumers of the
-same shared service still enabled. Reconcile all 139 coverage rows and unresolved/deferred scenarios.
+same shared service still enabled. Reconcile all 152 coverage rows and unresolved/deferred scenarios.
 Perform the final accumulated semantic/playability review. This is development acceptance, not a
 release/publication instruction or a substitute for a later deliberate release regression matrix.
 
@@ -226,6 +226,8 @@ revision; do not tuck them into a chunk without recording them.
 | S034 | [Readable Numbers — `7h0m4s.RimworldReadableNumbers`](../specify-megamod-readable-numbers/proposal.md) |
 | S047 | [Mod Options Sort — `Superniquito.ModOptionsSort`](../specify-megamod-mod-settings-navigation/proposal.md) |
 | S071 | [Better Message Placement (Continued) — `Mlie.BetterMessagePlacement`](../specify-megamod-message-placement/proposal.md) |
+| S141 | [Needle-inspired owned settings search — `ZIPender.Needle`](../specify-megamod-settings-search/proposal.md) |
+| S148 | [DragSelect — `telardo.DragSelect`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ### P0-C — Content selection
 
@@ -236,6 +238,7 @@ revision; do not tuck them into a chunk without recording them.
 | S038 | [Cherry Picker — `Owlchemist.CherryPicker`](../specify-megamod-content-selection/proposal.md) |
 | S138 | [Only If 'Tolerance' Below in Drug Policy — `seohyeon.onlyIfToleranceBelow`](../specify-megamod-drug-tolerance/proposal.md) |
 | S139 | [Safe Drug Policy Generator — `seohyeon.bestdrugpolicy`, idea-only reference](../specify-megamod-drug-policy-generation/proposal.md) |
+| S149 | [Resource Dictionary — `Scorpio.ResourceDictionary`; intake, shared content settings, spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ### P1-A — Shared Thing facts and queries
 
@@ -271,6 +274,7 @@ revision; do not tuck them into a chunk without recording them.
 | S014 | [**Original:** Whole-list workbench linking](../specify-megamod-linked-workbenches/proposal.md) |
 | S017 | [Better Workbench Management — `falconne.BWM`](../specify-megamod-workbench-management/proposal.md) |
 | S018 | [Everybody Gets One - Continued — `Memegoddess.EverybodyGetsOne`](../specify-megamod-adaptive-production/proposal.md) |
+| S145 | [Meal Ingredient Filter — `NachoToast.MealIngredientFilter`; intake, bill-count spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ### P2-B — Ingredients, workers and recipes
 
@@ -320,6 +324,7 @@ revision; do not tuck them into a chunk without recording them.
 | S036 | [Architect Menu Optimizer — `MRK.architectmenuoptimizer`](../specify-megamod-architect-menu/proposal.md) |
 | S067 | [Add Deconstruct Button To Floor Category — `geodesicdragon.deconstructfloorcategory`](../specify-megamod-floor-order-shortcuts/proposal.md) |
 | S136 | [Floor Pipette Tool — `ferny.FloorPipetteTool`, Workshop3706877822](../specify-megamod-floor-sampling/proposal.md) |
+| S150 | [Designator Shapes — `Merthsoft.DesignatorShapes`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ### P3-D — Item processing and material counts
 
@@ -408,6 +413,7 @@ revision; do not tuck them into a chunk without recording them.
 | S104 | [No Burn Metal — `Unon.NoBurnMetal`](../specify-megamod-metal-fire-resistance/proposal.md) |
 | S105 | [Permeable Terrain — `Owlchemist.PermeableTerrain`](../specify-megamod-terrain-filth-lifetimes/proposal.md) |
 | S112 | [Scattered Stones 1.7 — `Owlchemist.ScatteredStones`](../specify-megamod-scattered-stones/proposal.md) |
+| S147 | [Uniform Growing Zone Tool — `asmallrabbit.UniformGrowZone`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ### P6-A — Mood, social behavior and autonomy
 
@@ -434,6 +440,7 @@ revision; do not tuck them into a chunk without recording them.
 | S081 | [Spray Transfer — `Spray.Transfer`](../specify-megamod-burst-retargeting/proposal.md) |
 | S090 | [Is This A Weapon? — `S4.IsThisAWeapon`](../specify-megamod-weapon-classification/proposal.md) |
 | S091 | [Keep Burning, Corpse! — `tixiv.KeepBurningCorpse`](../specify-megamod-corpse-fire-continuity/proposal.md) |
+| S143 | [Insects Aren't Raiders — `tk421storm.InsectsArentRaiders`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ### P6-C — Power and world information
 
@@ -448,6 +455,9 @@ revision; do not tuck them into a chunk without recording them.
 | S102 | [More power info — `arl85.MorePowerInfo`](../specify-megamod-power-inspection/proposal.md) |
 | S110 | [Right-Click Gizmo Indicator — `CheaterEater.RightClickGizmoIndicator`](../specify-megamod-right-click-indicators/proposal.md) |
 | S113 | [Scenario Searchbars — `nimrag.scenariosearchbar`](../specify-megamod-scenario-search/proposal.md) |
+| S140 | [Linkable Descriptions — `sk.linkabledescriptions`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
+| S146 | [Which Mod's Scenario Is This? — `szkkka.whichmodsscenarioisthis`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
+| S152 | [Relevant Stats In Description — `Mlie.RelevantStatsInDescription`; intake, shared descriptions spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ### P7-A — Arrivals, trading areas and vacuum protection
 
@@ -485,8 +495,32 @@ revision; do not tuck them into a chunk without recording them.
 | S128 | [RimHUD Passion Icons — `DanZinagri.RimHUDPassionIcons`, Workshop 3829500081](../specify-megamod-passion-display/proposal.md) |
 | S131 | [Quality Colors (Continued) — `DawnsGlow.qualcolor`, Workshop 3513846773](../specify-megamod-quality-colors/proposal.md) |
 | S132 | [RPG Style Inventory Revamped — `Sandy.RPGStyleInventory.avilmask.Revamped`, Workshop 2478833213](../specify-megamod-gear-presentation/proposal.md) |
+| S142 | [Xenotype Descriptions — `lakinmanheim.xenotypedescriptions`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
+| S144 | [Gear Tab - Compare & Swap — `DOORAJP.GearPage`; intake, Assign entry and Simple Sidearms required](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
+| S151 | [Clothing Sorter — `Mlie.ClothingSorter`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ## Plan revisions and execution records
+
+### Revision 23 — 2026-11-14 intake while implementation is paused
+
+Add S140–S152 once, retaining S053 RePowered and S059 Best Mix as existing entries. S141 now
+specifies Needle-inspired owned settings search; the other twelve are intake, with full sequential
+source research and separate owned OpenSpec contracts required before any implementation lease.
+See the [decision and identity record](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md). The current total is 140 drafts
+plus 12 intake entries, with the same 27 chunks/nine parts. Historical dated counts below stay unchanged.
+
+Gear comparison/swapping enters through Assign with genuine optional Simple Sidearms integration;
+the broader Assign redesign waits for user requirements. Resource Dictionary shares the content
+settings surface with S038 while keeping substitution distinct from removal. S152 later consumes
+owned S052/S053/S098 stat contributions directly. Native 1.7 designation overlap, shape/fertility
+composition, bill counting and scenario provenance are explicit refinement obligations.
+
+Affected handoff gates include these new IDs and require their missing specifications. Later
+composition adds S148 trade/loading gestures to P7, S150/S147 accepted-cell previews to P5, S149
+resource mappings to content/recipe consumers, and S151 clothing categories to later gear/filter
+views. Their actual contracts must be reconciled before either consumer is claimed integrated.
+No part, runtime task, current S024 batch, code lease or game launch is resumed by this revision.
+
 
 | Revision | Evidence / decision | Allocation and dependency changes | Evidence/assignment impact |
 |---|---|---|---|

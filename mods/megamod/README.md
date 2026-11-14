@@ -4,7 +4,7 @@ One RimWorld mod for independently engineered quality-of-life features, with sha
 and guarded game patches. Package ID: `fumblesneeze.megamod`. Author: Fumblesneeze.
 Initial target: **RimWorld 1.7 beta**.
 
-**Current state: implementation in progress; no whole feature accepted yet.** Initial shared settings,
+**Current state: implementation paused; no whole feature accepted yet.** Initial shared settings,
 patch admission and content-policy rules have focused host tests. Drug-preset controls and unchanged-
 catalog save/reload have narrow reviewed native evidence. Tolerance editing and selected scheduled,
 recreation and manual drinking routes also have scoped native evidence; wider feature workflows
@@ -25,8 +25,11 @@ Read [AGENTS.md](AGENTS.md) and the [foundation proposal](../../openspec/changes
 The [shared design](../../openspec/changes/plan-megamod-parallel-implementation/design.md),
 [implementation roadmap](../../openspec/changes/plan-megamod-parallel-implementation/roadmap.md) and
 [governing tasks](../../openspec/changes/plan-megamod-parallel-implementation/tasks.md) coordinate
-139 feature drafts in 27 chunks across nine integration parts, including tolerance conditions and
-safe-policy generation. Listed research/design prerequisites still apply; this is not delivered gameplay.
+152 feature entries (140 drafts and twelve intake sources) in 27 chunks across nine integration parts.
+The [2026-11-14 additions](docs/refinement/2026-11-14-source-additions.md) include a Needle-inspired
+owned-settings search draft, Assign-based gear comparison with Simple Sidearms support, and resource
+substitution alongside content selection. New intake needs full per-source specifications before code.
+Listed research/design prerequisites still apply; this is not delivered gameplay or a resume request.
 Implementers inspect referenced mods, independently implement our observable contracts through
 focused tests and review, and author native verification scenarios. After all chunks in a part are
 ready, the orchestrator runs and personally inspects the integrated workflows in isolated minimized
