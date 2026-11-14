@@ -16,12 +16,14 @@ Select exact IDs through `e2e_run_start`; do not invoke a full repository or fea
 | B | `megamod.practical-needs.native-caravan-potential-mood` | 3000 / 3300 | 3000 |
 | C | `megamod.practical-needs.native-scheduled-mood-independent-availability` | 2700 / 3000 | 6000 |
 | D English | `megamod.practical-needs.native-potential-mood-settings` | 1300 / 1500 | 1200 |
-| D other baseline locales | same ID, select actual language separately | attribute 1300; counted case ceiling 720 / launcher 900 | 1200 |
+| D other baseline locales, final whole-suite gate | same ID, select actual language separately | attribute 1300; counted case ceiling 720 / launcher 900 | 1200 |
 
-D runs separately in English, German, Spanish, French, ChineseSimplified, Russian and Japanese.
-The fixture observes the actual language; it never changes the language database. English alone
-performs the actual native save/reload. The other six runs prove the native translated setting row,
-retained dormant choice and real pointer-dwell tooltip without repeating the generic two-save suite.
+D is verified in English during implementation. All seven baseline languages remain authored;
+the German, Spanish, French, ChineseSimplified, Russian and Japanese native runs belong to the
+final whole-suite language gate. The fixture observes the actual language; it never changes the
+language database. English alone performs the actual native save/reload. The final six locale runs
+prove the native translated setting row, retained dormant choice and real pointer-dwell tooltip
+without repeating the generic two-save suite.
 
 ## Preconditions and action provenance
 
@@ -78,6 +80,20 @@ existing production metadata reader. Observers never call eligibility, draw a wi
 skip an original, swallow a native exception or manufacture a job. Native errors and observation
 failures fail the fixture and preserve partial evidence.
 
+Map job loadIDs are anchored at native selection and visible drinking. The Ingested prefix checks
+the exact current/selected/visible job and carried source, then records immutable loadID, JobDef,
+giver type and player-forced status. Native completion clears and pools Job objects; terminal dose
+checks therefore use the active-ingestion receipt instead of rereading the completed object's fields.
+Reference identity, original/postfix/finalizer completion, 2-to-1 physical stock, exact native
+history and positive Alcohol/tolerance remain required, including repeated checks later in A and C.
+
+After one native ingestion receipt closes, a checkpoint retains bounded dose/decision/split records
+before terminal assertions. The already-counted pause and real Health/Gear captures follow, then
+the named dose assertion checks the observed result. This preserves those receipts and views if a
+terminal dose assertion fails. Earlier guard failures still stop immediately; this is not a general
+failure-screenshot service. Map transfer splits remain stock until native ingestion destroys the
+carried dose, while caravan partial-ingestion returns remain cleanup-owned evidence only.
+
 Every map Needs, Gear or Health observation first selects exactly that pawn through the native
 selection action, then opens the inspect tab. Camera framing and policy-list selection do not
 satisfy the inspect action's sole-pawn-selection precondition. The existing Draft/Undraft selection
@@ -91,6 +107,9 @@ allowance; the enclosing scenario deadline is enforced, not a separate save/load
 The 90-second reserve includes synchronous evidence/assertions and cleanup. Each settings visit
 permits at most three native track clicks; each adds one click and one fresh capture. The source
 asserts the complete emitted base count plus the actual scroll branches at successful completion.
+Each map dose now emits one additional checkpoint and one separate terminal assertion: A gains
+four total E2E step records and C gains two. They add no native operations, screenshots or wait
+deadlines, so the counts and worst-case budgets below are unchanged.
 
 | Case | Actions/captures excluding save | Screenshots | Wait seconds | Save/load | Reserve | Worst total |
 | --- | --- | --- | --- | --- | --- | --- |

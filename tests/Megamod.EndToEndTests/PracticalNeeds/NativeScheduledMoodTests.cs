@@ -345,10 +345,10 @@ internal sealed partial class ScheduledMoodFixture
         {
             RequireCurrent(); var job = subject.Pawn.CurJob;
             if (job?.def != JobDefOf.Ingest || subject.Pawn.jobs.curDriver is not JobDriver_Ingest driver || !driver.GainingNutritionNow) return false;
-            EndToEndAssert.True(subject.SelectedJob != null && ReferenceEquals(job, subject.SelectedJob) && !job.playerForced &&
+            EndToEndAssert.True(subject.SelectedJob != null && ReferenceEquals(job, subject.SelectedJob) && job.loadID == subject.SelectedJobLoadId && !job.playerForced &&
                 job.jobGiver?.GetType() == typeof(JobGiver_TakeDrugsForDrugPolicy) && subject.Stock.Contains(job.targetA.Thing) &&
                 subject.Stock.Contains(subject.Pawn.carryTracker.CarriedThing) && !doses.Any(d => d.Subject == subject));
-            subject.VisibleJob = job; subject.VisibleSource = subject.Pawn.carryTracker.CarriedThing;
+            subject.VisibleJob = job; subject.VisibleJobLoadId = job.loadID; subject.VisibleSource = subject.Pawn.carryTracker.CarriedThing;
             return true;
         }, 60, 1200);
         yield return Pause("pause the actual drinking action before the physical dose");
@@ -358,16 +358,20 @@ internal sealed partial class ScheduledMoodFixture
         {
             foreach (var step in SetGlobal(true, true)) yield return step;
             yield return new AssertionStep("new setting changes future selection only", _ => EndToEndAssert.True(
-                ReferenceEquals(subject.Pawn.CurJob, subject.VisibleJob) && ReferenceEquals(subject.Pawn.carryTracker.CarriedThing, subject.VisibleSource)));
+                ReferenceEquals(subject.Pawn.CurJob, subject.VisibleJob) && subject.Pawn.CurJob.loadID == subject.VisibleJobLoadId &&
+                ReferenceEquals(subject.Pawn.carryTracker.CarriedThing, subject.VisibleSource)));
         }
         yield return Run("finish that unchanged native ingestion job");
-        yield return Wait("observe one physical dose, native Alcohol and ordinary history", () =>
-        { RequireCurrent(); if (doses.Count(d => d.Subject == subject && d.Closed) != 1) return false; AssertDose(subject); return true; }, 60, 1200);
+        yield return Wait("observe one closed native ingestion receipt", () =>
+        { RequireCurrent(); return doses.Count(d => d.Subject == subject && d.Closed) == 1; }, 60, 1200);
+        yield return new CheckpointStep(subject.Pawn.LabelShort + " native dose receipts before terminal assertions", _ => Evidence());
         yield return Pause("pause the completed native dose");
         foreach (var step in Inspect(subject, EndToEndPawnInspectTab.Health)) yield return step;
-        yield return Shot(subject.Pawn.LabelShort + " actual Alcohol effects after the dose");
+        yield return Shot(subject.Pawn.LabelShort + " actual Health after native ingestion");
         foreach (var step in Inspect(subject, EndToEndPawnInspectTab.Gear)) yield return step;
-        yield return Shot(subject.Pawn.LabelShort + " one Beer remains after exactly one dose");
+        yield return Shot(subject.Pawn.LabelShort + " actual Gear after native ingestion");
+        yield return new AssertionStep("verify one physical dose, native Alcohol, history and active-job provenance", _ =>
+        { RequireCurrent(); AssertDose(subject); });
     }
 
     private IEnumerable<EndToEndStep> CaravanWorkflow()
@@ -528,22 +532,34 @@ internal sealed partial class ScheduledMoodFixture
     {
         var dose = doses.Single(d => d.Subject == s);
         EndToEndAssert.True(dose.Closed && dose.Original && dose.Postfix && dose.Error == null && dose.IngestedCalls == 1 &&
-            dose.IngestedClosed && dose.IngestedOriginal && dose.IngestedPostfix && dose.IngestedError == null && dose.Before == 2 && dose.After == 1 &&
-            dose.HistoryBefore.Count == 0 && dose.HistoryAfter.Count == 1 && dose.HistoryAfter[0].Drug == beer.defName &&
-            dose.HistoryAfter[0].Tick == dose.Tick && dose.HistoryAfter[0].Day == day && dose.HistoryAfter[0].Count == 1 &&
-            dose.HighBefore == 0 && dose.ToleranceBefore == 0 && dose.HighAfter > 0 && dose.ToleranceAfter > 0 && dose.HistoryAfter.SequenceEqual(History(s)));
-        EndToEndAssert.True(dose.Decision.Subject == s && dose.Decision.Closed && dose.Decision.NativeAllowed && dose.Decision.Result);
+            dose.IngestedClosed && dose.IngestedOriginal && dose.IngestedPostfix && dose.IngestedError == null,
+            "Exactly one successful original native ingestion must close: " + DoseEvidence(dose));
+        EndToEndAssert.Equal(2, dose.Before, s.Pawn.LabelShort + " physical stock before ingestion");
+        EndToEndAssert.Equal(1, dose.After, s.Pawn.LabelShort + " physical stock after ingestion");
+        EndToEndAssert.True(dose.HistoryBefore.Count == 0 && dose.HistoryAfter.Count == 1 && dose.HistoryAfter[0].Drug == beer.defName &&
+            dose.HistoryAfter[0].Tick == dose.Tick && dose.HistoryAfter[0].Day == day && dose.HistoryAfter[0].Count == 1 && dose.HistoryAfter.SequenceEqual(History(s)),
+            "The exact native Beer history must be created once at ingestion and remain unchanged: " + DoseEvidence(dose) + "; currentHistory=" + string.Join(",", History(s)));
+        EndToEndAssert.True(dose.HighBefore == 0 && dose.ToleranceBefore == 0 && dose.HighAfter > 0 && dose.ToleranceAfter > 0,
+            "Native ingestion must create Alcohol and tolerance from zero: " + DoseEvidence(dose));
+        EndToEndAssert.True(dose.Decision.Subject == s && dose.Decision.Closed && dose.Decision.NativeAllowed && dose.Decision.Result,
+            "The dose must belong to its exact completed native-allowed permitting decision: " + DoseEvidence(dose));
         if (CaravanCase)
         {
             EndToEndAssert.True(dose.Scope != null && dose.Scope.Closed && dose.Scope.Original && dose.Scope.Error == null &&
-                dose.Scope.Parent is { Closed: true, Original: true, Error: null } && dose.Decision.Scope == dose.Scope && dose.Source == s.Source && dose.NutritionWanted == 0);
+                dose.Scope.Parent is { Closed: true, Original: true, Error: null } && dose.Decision.Scope == dose.Scope && dose.Source == s.Source && dose.NutritionWanted == 0,
+                "The caravan dose must complete inside its original native schedule/tick scope: " + DoseEvidence(dose));
             var split = splits.Single(p => p.Dose == dose);
             EndToEndAssert.True(split.Source == s.Source && split.Before == 2 && split.Requested == 1 && split.After == 1 &&
-                split.Result != null && split.Result != s.Source && split.ResultCount == 1 && split.ResultHolder == null && split.Closed && split.Original && split.Error == null);
+                split.Result != null && split.Result != s.Source && split.ResultCount == 1 && split.ResultHolder == null && split.Closed && split.Original && split.Error == null,
+                "The caravan partial-ingestion split must retain exact source/count/holder provenance: " + SplitEvidence(split));
         }
         else EndToEndAssert.True(dose.Job == s.SelectedJob && dose.Job == s.VisibleJob && dose.Source == s.VisibleSource &&
-            !dose.Job!.playerForced && dose.Job.jobGiver?.GetType() == typeof(JobGiver_TakeDrugsForDrugPolicy));
-        Held(s, 1); EndToEndAssert.True(Severity(s, alcohol) > 0 && Severity(s, alcoholTolerance) > 0);
+            dose.JobLoadId == s.SelectedJobLoadId && dose.JobLoadId == s.VisibleJobLoadId && dose.JobDefinition == JobDefOf.Ingest &&
+            dose.JobPlayerForced == false && dose.JobGiverType == typeof(JobGiver_TakeDrugsForDrugPolicy),
+            "The dose must retain the exact selected, visibly executing native job's active-ingestion provenance: " + DoseEvidence(dose));
+        Held(s, 1); EndToEndAssert.True(Severity(s, alcohol) > 0 && Severity(s, alcoholTolerance) > 0,
+            s.Pawn.LabelShort + " must retain positive Alcohol and tolerance after ingestion; alcohol=" + Severity(s, alcohol).ToString("R") +
+            "; tolerance=" + Severity(s, alcoholTolerance).ToString("R"));
     }
 
     private void CleanupObjects()
@@ -588,9 +604,24 @@ internal sealed partial class ScheduledMoodFixture
             "; threshold=" + s.Entry.onlyIfMoodBelow.ToString("R") + "; preparedPotential=" + s.PreparedPotential.ToString("R") + "; actualThoughts=" + s.Thoughts +
             "; drafted=" + s.Pawn.Drafted + "; liveStock=" + s.Stock.Where(t => !t.Destroyed).Sum(t => t.stackCount) + "; history=" + string.Join(",", History(s));
         result["decisions"] = string.Join("\n", decisions.Select(d => $"{d.Subject.Pawn.ThingID}; tick={d.Tick}; phase={d.Phase}; nativeAllowed={d.NativeAllowed}; finalShould={d.Result}; current={d.CurrentMood:R}; potential={d.Potential:R}; reads={d.PotentialCalls}; moodOn={d.MoodEnabled}; moodAvailable={d.MoodAvailable}; toleranceOn={d.ToleranceEnabled}; toleranceAvailable={d.ToleranceAvailable}; scope={d.Scope.Kind}; closed={d.Closed}; error={d.Error}"));
-        result["doses"] = string.Join("\n", doses.Select(d => $"{d.Subject.Pawn.ThingID}; tick={d.Tick}; source={d.Source.ThingID}; units={d.Before}->{d.After}; job={d.Job?.loadID}; closed={d.Closed}; alcohol={d.HighBefore:R}->{d.HighAfter:R}; tolerance={d.ToleranceBefore:R}->{d.ToleranceAfter:R}; history={string.Join(",", d.HistoryAfter)}"));
+        result["doses"] = string.Join("\n", doses.Select(DoseEvidence));
+        result["splits"] = string.Join("\n", splits.Select(SplitEvidence));
+        result["stock"] = string.Join("\n", subjects.SelectMany(s => s.Stock.Select(t =>
+            $"{s.Pawn.ThingID}; thing={t.ThingID}; count={t.stackCount}; destroyed={t.Destroyed}; holder={t.ParentHolder?.GetType().FullName ?? "none"}; " +
+            $"inExactInventory={ReferenceEquals(t.holdingOwner, s.Pawn.inventory.innerContainer)}; inExactCarry={ReferenceEquals(t.holdingOwner, s.Pawn.carryTracker.innerContainer)}")));
         return result;
     }
+    private static string DoseEvidence(Dose d) => $"{d.Subject.Pawn.ThingID}; tick={d.Tick}; source={d.Source.ThingID}; units={d.Before}->{d.After}; " +
+        $"activeJob={d.JobLoadId}/{d.JobDefinition?.defName}/{d.JobGiverType?.FullName}/forced={d.JobPlayerForced}; " +
+        $"selectedJob={d.Subject.SelectedJobLoadId}; visibleJob={d.Subject.VisibleJobLoadId}; visibleSource={d.Subject.VisibleSource?.ThingID}; " +
+        $"sameSelectedJob={ReferenceEquals(d.Job, d.Subject.SelectedJob)}; sameVisibleJob={ReferenceEquals(d.Job, d.Subject.VisibleJob)}; " +
+        $"closed={d.Closed}; original={d.Original}; postfix={d.Postfix}; error={d.Error ?? "none"}; " +
+        $"ingestedCalls={d.IngestedCalls}; ingestedClosed={d.IngestedClosed}; ingestedOriginal={d.IngestedOriginal}; ingestedPostfix={d.IngestedPostfix}; ingestedError={d.IngestedError ?? "none"}; " +
+        $"decisionTick={d.Decision.Tick}; decisionClosed={d.Decision.Closed}; nativeAllowed={d.Decision.NativeAllowed}; finalShould={d.Decision.Result}; nutritionWanted={d.NutritionWanted:R}; " +
+        $"alcohol={d.HighBefore:R}->{d.HighAfter:R}; tolerance={d.ToleranceBefore:R}->{d.ToleranceAfter:R}; historyBefore={string.Join(",", d.HistoryBefore)}; historyAfter={string.Join(",", d.HistoryAfter)}";
+    private static string SplitEvidence(Split s) => $"{s.Subject.Pawn.ThingID}; doseTick={s.Dose?.Tick}; source={s.Source.ThingID}; " +
+        $"sourceCount={s.Before}->{s.After}; requested={s.Requested}; result={s.Result?.ThingID}; resultCount={s.ResultCount}; resultHolder={s.ResultHolder?.GetType().FullName ?? "none"}; " +
+        $"closed={s.Closed}; original={s.Original}; postfix={s.Postfix}; error={s.Error ?? "none"}";
     private void VerifyBudget()
     {
         int scrolls = moodControls.ScrollClicks + toleranceControls.ScrollClicks;
@@ -680,7 +711,7 @@ internal sealed partial class ScheduledMoodFixture
             EndToEndAssert.True(__runOriginal && __result.def == JobDefOf.Ingest && !__result.playerForced && __result.count == 1 &&
                 s.Stock.Contains(__result.targetA.Thing) && __state.LastDecision is { Result: true, Closed: true });
             EndToEndAssert.True(s.SelectedJob == null, "Only one native dose job may be selected per subject.");
-            s.SelectedJob = __result; s.SelectedDecision = __state.LastDecision;
+            s.SelectedJob = __result; s.SelectedJobLoadId = __result.loadID; s.SelectedDecision = __state.LastDecision;
         });
     }
     private static Exception? EndMap(Exception? __exception, bool __runOriginal, NativeScope? __state)
@@ -776,7 +807,12 @@ internal sealed partial class ScheduledMoodFixture
             {
                 EndToEndAssert.True(s!.SelectedJob != null && ReferenceEquals(s.Pawn.CurJob, s.SelectedJob) &&
                     ReferenceEquals(s.VisibleJob, s.SelectedJob) && ReferenceEquals(s.VisibleSource, __instance) &&
-                    s.SelectedDecision is { Result: true, Closed: true } && f.doseScope == null && f.doses.All(d => d.Subject != s));
+                    s.Pawn.CurJob.loadID == s.SelectedJobLoadId && s.Pawn.CurJob.loadID == s.VisibleJobLoadId &&
+                    s.Pawn.CurJob.def == JobDefOf.Ingest && !s.Pawn.CurJob.playerForced &&
+                    s.Pawn.CurJob.jobGiver?.GetType() == typeof(JobGiver_TakeDrugsForDrugPolicy) && s.Pawn.CurJob.count == 1 &&
+                    ReferenceEquals(s.Pawn.CurJob.targetA.Thing, __instance) && ReferenceEquals(s.Pawn.carryTracker.CarriedThing, __instance) &&
+                    s.SelectedDecision is { Result: true, Closed: true } && f.doseScope == null && f.doses.All(d => d.Subject != s),
+                    "Capture map provenance only while the exact selected and visible native one-dose job is actively ingesting its carried Beer.");
                 dose = new(s, __instance, null, s.SelectedDecision!, f); f.doses.Add(dose); f.doseScope = dose;
             }
             EndToEndAssert.Equal(0, dose!.IngestedCalls); dose.IngestedCalls++; dose.NutritionWanted = __1;
@@ -810,7 +846,8 @@ internal sealed partial class ScheduledMoodFixture
             var s = f.subjects.Single(subject => subject.Stock.Contains(__instance));
             EndToEndAssert.True(f.running && __0 == 1 && f.splits.Count < f.subjects.Count * 4);
             if (f.CaravanCase) EndToEndAssert.True(f.doseScope?.Subject == s && f.doseScope.Source == __instance && f.doseScope.IngestedCalls == 1 && !f.doseScope.IngestedClosed);
-            else EndToEndAssert.True(s.SelectedJob != null && ReferenceEquals(s.Pawn.CurJob, s.SelectedJob), "A map split must belong to the selected native dose job.");
+            else EndToEndAssert.True(s.SelectedJob != null && ReferenceEquals(s.Pawn.CurJob, s.SelectedJob) && s.Pawn.CurJob.loadID == s.SelectedJobLoadId,
+                "A map split must belong to the selected native dose job lifetime.");
             split = new(s, f.doseScope, __instance, __0); f.splits.Add(split);
         }); __state = split;
     }
@@ -899,6 +936,7 @@ internal sealed partial class ScheduledMoodFixture
         internal readonly Caravan? Caravan; internal readonly PlanetTile Tile; internal readonly int PolicyId; internal readonly NativeRow[] Rows;
         internal readonly HashSet<Thing> Stock = new(); internal readonly string Thoughts; internal readonly float PreparedPotential;
         internal string? Choice; internal string Handle = null!; internal Job? SelectedJob, VisibleJob; internal Thing? VisibleSource; internal Decision? SelectedDecision;
+        internal int SelectedJobLoadId = -1, VisibleJobLoadId = -1;
         internal Subject(Pawn pawn, DrugPolicy policy, DrugPolicyEntry entry, Thing source, Caravan? caravan, PlanetTile tile, string thoughts, float potential)
         {
             Pawn = pawn; Policy = policy; Entry = entry; Source = source; Caravan = caravan; Tile = tile; PolicyId = policy.id;
@@ -936,11 +974,14 @@ internal sealed partial class ScheduledMoodFixture
     private sealed class Dose
     {
         internal readonly Subject Subject; internal readonly Thing Source; internal readonly NativeScope? Scope; internal readonly Decision Decision; internal readonly Job? Job;
+        internal readonly int? JobLoadId; internal readonly JobDef? JobDefinition; internal readonly Type? JobGiverType; internal readonly bool? JobPlayerForced;
         internal readonly int Tick, Before; internal readonly List<HistoryRecord> HistoryBefore; internal List<HistoryRecord> HistoryAfter = new();
         internal readonly float HighBefore, ToleranceBefore; internal float HighAfter, ToleranceAfter, NutritionWanted;
         internal int After, IngestedCalls; internal bool Original, Postfix, Closed, IngestedOriginal, IngestedPostfix, IngestedClosed; internal string? Error, IngestedError;
         internal Dose(Subject subject, Thing source, NativeScope? scope, Decision decision, ScheduledMoodFixture f)
         { Subject = subject; Source = source; Scope = scope; Decision = decision; Job = subject.Pawn.CurJob; Tick = Find.TickManager.TicksGame;
+            // Native completion clears and pools Job; only this active-ingestion snapshot is historical provenance.
+            JobLoadId = Job?.loadID; JobDefinition = Job?.def; JobGiverType = Job?.jobGiver?.GetType(); JobPlayerForced = Job?.playerForced;
             Before = subject.Stock.Where(t => !t.Destroyed).Sum(t => t.stackCount); HistoryBefore = History(subject);
             HighBefore = Severity(subject, f.alcohol); ToleranceBefore = Severity(subject, f.alcoholTolerance); }
     }

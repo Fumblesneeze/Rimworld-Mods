@@ -110,6 +110,10 @@ Prefer action → wait → observation steps that exercise the same native path 
   completed jobs to a pool and clears/reuses their fields, so a retained `Job` reference is not
   historical evidence. Store immutable load ID, owner, Def/giver, targets, count and relevant flags
   before completion; compare later observations to that snapshot without changing native pooling.
+  Anchor selection, visible work and ingestion to that same lifetime ID. Retain bounded passive
+  receipts and existing post-action views before terminal assertions so an assertion failure does
+  not discard its diagnostic evidence. Keep physical stock, effects and native history checks;
+  a job receipt cannot replace them.
 - For independent restrictions, use a fresh control that still satisfies the native prerequisites.
   A previously consumed dose may already be blocked by native interval/history, so its later refusal
   cannot prove another restriction survived a setting or availability change. Retain passive native
