@@ -1066,3 +1066,16 @@ personally inspected all five captures, including unchanged focus/text after suc
 subsequent typing without refocus and console. Exact-run cleanup/config hashes passed; only this
 component claim is verified. D1–D3, hidden backend/control guards, automatic collection/discovery,
 tab/reveal and complete S141 acceptance remain open.
+
+Root retained the hidden-backend inert-stub RED after an actual native button click: expected
+text metrics(140,22), observed(0,6); cleanup passed. The backend author may now apply only
+`Runtime/SettingsHiddenBackend.cs` from the frozen artifact, while the independent reviewer
+reviews that artifact and root's focused native workflow. Root retains build/install/game outputs
+and acceptance. No generic page callback or production hook is authorized by this component alone.
+
+The hidden backend is frozen and reviewed. Review's one-frame screenshot gap was fixed by keeping
+the bounded test probe active until ScreenshotStep completed; prevention is retained in the testing
+skill. Root's fresh English run passed17steps/four personally inspected captures with19 hidden
+repaints, no visible hidden label/fill and subsequent deliberate native checkbox input. Cleanup and
+normal hashes passed. The artifact author and reviewer leases are released; root retains remaining
+control/write guards, real catalog/automatic callbacks, coverage/reveal integration and acceptance.

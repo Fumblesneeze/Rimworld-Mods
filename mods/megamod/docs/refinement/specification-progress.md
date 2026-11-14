@@ -18,6 +18,10 @@ list or registration prerequisite narrows the universal search requirement.
 The first native state component also passed24 steps with five personally inspected captures:
 typed text/focus survived success and exception, then subsequent native typing worked without
 refocus. This scoped result does not accept hidden drawing or automatic foreign-page discovery.
+The following hidden-backend component passed17steps/four personally inspected captures: native
+label capture produced no visible hidden text/fill through19repaints, and the original checkbox
+remained editable. Control/write guards, automatic unfamiliar/provider-page discovery, tabs and
+chooser/reveal remain active work; no complete feature or part is accepted by these components.
 
 Revision29, 2026-11-14: the query checkpoint8579276 is committed. S141-R1–R3 now build and verify
 the reusable generic recorder on an actual unfamiliar page's ordinary native draw. Automatic

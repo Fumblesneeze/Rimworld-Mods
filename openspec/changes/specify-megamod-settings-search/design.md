@@ -213,6 +213,15 @@ excess or unbalanced structure fails that capture, not package eligibility. This
 policy rather than a native framework limit. Unsupported render-target/font/language mutations
 latch a fixed failure even if a callback catches the immediate exception.
 
+The first hidden-backend component workflow uses a native button to request isolated repaints
+of a real native label and a conspicuous colored fill. Keep the probe active through screenshot
+completion, bounded to128 fixture repaints, so a one-frame leak cannot disappear before evidence.
+Capture must retain the label and native text
+metrics while neither hidden draw appears over the visible panel. Diagnostics check fractional
+nested group origins and balanced cleanup; a subsequent deliberate native checkbox click must
+still change the original visible control. This component fixture does not yet establish foreign
+callbacks, transformed text metrics, scroll/control guards, every draw method or reveal geometry.
+
 For startup page acquisition, use a fresh detached native Dialog_Options with soundAppear and
 soundAmbient null, call its normal PostOpen under the same isolation, and materialize the final
 cachedModsWithSettings there. Do not call PreOpen, add, draw or close that carrier. This preserves

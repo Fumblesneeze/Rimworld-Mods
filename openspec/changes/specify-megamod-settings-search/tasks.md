@@ -8,6 +8,10 @@ The state component has reviewed English native RED/GREEN,24steps/five personall
 captures and successful subsequent typing without refocus. Its same-ID editor/style probes are
 diagnostic support; full hidden controls/scroll/write guards and all-mod integration remain open.
 See `discovery/root/verification.md` under local implementation evidence. D1–D3 stay unchecked.
+The hidden-backend first component workflow also passed17steps/four personally inspected captures,
+with its probe active through screenshot completion for19repaints. Native label observation stayed
+invisible and subsequent checkbox input worked. Remaining metric/geometry/failure/control/provider
+integration cases are explicitly unverified; this result does not close the neutral-reader tasks.
 
 ## Selected query and discovery-contract batch
 

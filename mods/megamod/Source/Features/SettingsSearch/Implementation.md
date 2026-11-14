@@ -96,3 +96,19 @@ scroll restoration, budget/shape refusal, every captured field or arbitrary fore
 Those remain required in the integrated reader batch. Evidence and exact reviewed source/build
 identities are in `artifacts/Implementation/megamod-p0/settings-search/discovery/root/verification.md`.
 No automatic hooks or additional player settings are registered by this checkpoint.
+
+`SettingsHiddenBackend` supplies private group/matrix/clip/window state and suppresses backend
+rendering commands. Native metric delegation requires the exact initialized engine backend and
+leases only its text-layout scale, restoring it before return. Unsupported state-changing backend
+calls and structural/geometry failures latch a fixed diagnostic; callers must reject failure or
+unbalanced state. The256-open-structure cap is pilot policy. No native backend ownership, event,
+input or foreign callback admission is implied by this helper.
+
+Its reviewed first English native workflow passed17steps/four personally inspected captures after
+inert-stub RED. The real button requested hidden native label/fill drawing, sustained for19repaints
+through screenshot completion. The label was recorded while no hidden text/magenta fill appeared;
+subsequent real input changed the original checkbox. Native text sizing, fractional nested group
+origins, balance and scope restoration passed supporting assertions. Review's transient screenshot
+gap was fixed and the prevention saved to the testing skill. This does not yet verify every metric,
+scale, transform, draw method, failure path, custom backend or real foreign page. Those and native
+control/write guards, provider catalog and automatic dispatch remain D2/D3 integration work.

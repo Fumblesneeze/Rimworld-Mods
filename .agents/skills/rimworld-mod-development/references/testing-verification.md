@@ -73,6 +73,12 @@ Wait for the owned CLI session to finish before inspecting those files; use a ty
 operation when progress detail is necessary. A file-sharing abort is harness evidence, not a
 gameplay failure or acceptance, and its cleanup must be checked before retrying the exact case.
 
+For transient rendering behavior, align the screenshot with the frame under test. A ScreenshotStep
+after a callback-completed wait reads a newer rendered frame and can miss a one-frame visual leak.
+Either retain an exact-frame capture with frame provenance or keep the bounded fixture draw active
+until screenshot completion, then stop it and assert its budget/failure state. An end-state image
+after the transient draw stopped cannot prove that nothing was drawn during that callback.
+
 Before the ordinary reset, remove all roofs, including overhead mountain, through the scenario-owned
 test seam; then clear disposable state and alerts. For a plain quickstart, pass `-Quicktest` and omit
 `-Scenario`; the resulting evidence label `none` is not a literal scenario argument. Fixture setup and
