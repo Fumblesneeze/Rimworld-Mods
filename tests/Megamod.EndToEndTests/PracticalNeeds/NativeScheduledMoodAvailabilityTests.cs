@@ -84,8 +84,13 @@ internal sealed partial class ScheduledMoodFixture
         yield return Wait("observe the disposable display request on a later native frame", () => Screen.width == 1280 && Screen.height == 1024, 5);
         foreach (var step in Policies()) yield return step;
         yield return new CameraActionStep("frame recovering, bypass and fresh-zero subjects", pawns.Select(p => p.ThingID), paddingPixels: 220);
-        yield return Inspect(A, EndToEndPawnInspectTab.Needs); yield return Shot("A actual recovering-mood needs before availability change");
-        foreach (var s in subjects) { yield return Inspect(s, EndToEndPawnInspectTab.Gear); yield return Shot(s.Pawn.LabelShort + " original two Beer before native time"); }
+        foreach (var step in Inspect(A, EndToEndPawnInspectTab.Needs)) yield return step;
+        yield return Shot("A actual recovering-mood needs before availability change");
+        foreach (var s in subjects)
+        {
+            foreach (var step in Inspect(s, EndToEndPawnInspectTab.Gear)) yield return step;
+            yield return Shot(s.Pawn.LabelShort + " original two Beer before native time");
+        }
         BeginPhase("available both on");
         foreach (var s in new[] { A, B }) foreach (var step in Undraft(s)) yield return step;
         yield return Run("ordinary native selections before layout failure");
@@ -102,7 +107,8 @@ internal sealed partial class ScheduledMoodFixture
             EndToEndAssert.True(!tolerance.Available && scheduled.Available && scheduled.PotentialMood.Available && Rejections(A, true, true) >= 2);
             EndToEndAssert.True(subjects[2].Pawn.Drafted && History(subjects[2]).Count == 0);
         });
-        yield return Inspect(A, EndToEndPawnInspectTab.Gear); yield return Shot("A retains two physical Beer while S138 is unavailable and B consumed");
+        foreach (var step in Inspect(A, EndToEndPawnInspectTab.Gear)) yield return step;
+        yield return Shot("A retains two physical Beer while S138 is unavailable and B consumed");
         // A's Any choice would legitimately consume once S024 turns off. Hold A through its native gizmo
         // so the only new eligibility control in that window is the untouched history-empty C.
         yield return new SelectionActionStep("select A for native drafted hold during fresh control", new[] { A.Pawn.ThingID }, additive: false);
@@ -124,8 +130,10 @@ internal sealed partial class ScheduledMoodFixture
         yield return Wait("two original-native-true fresh zero refusals prove S138 remains independently active", () =>
         { RequireCurrent(); Held(fresh, 2); return Rejections(fresh, false, true) >= 2; }, 45, 600);
         yield return Pause("pause fresh independent tolerance evidence");
-        yield return Inspect(fresh, EndToEndPawnInspectTab.Gear); yield return Shot("fresh zero retains both original Beer with empty native dose history");
-        yield return Inspect(fresh, EndToEndPawnInspectTab.Health); yield return Shot("fresh zero has no new Alcohol effects after native-eligible refusals");
+        foreach (var step in Inspect(fresh, EndToEndPawnInspectTab.Gear)) yield return step;
+        yield return Shot("fresh zero retains both original Beer with empty native dose history");
+        foreach (var step in Inspect(fresh, EndToEndPawnInspectTab.Health)) yield return step;
+        yield return Shot("fresh zero has no new Alcohol effects after native-eligible refusals");
         yield return new AssertionStep("retain distinct causal availability outcomes", _ =>
         { Held(A, 2); AssertDose(B); Held(fresh, 2); EndToEndAssert.Equal(1, doses.Count); });
         foreach (var step in Console()) yield return step;

@@ -15,8 +15,8 @@ Select exact IDs through `e2e_run_start`; do not invoke a full repository or fea
 | A | `megamod.practical-needs.native-scheduled-mood-composition` | 2700 / 3000 | 6000 |
 | B | `megamod.practical-needs.native-caravan-potential-mood` | 3000 / 3300 | 3000 |
 | C | `megamod.practical-needs.native-scheduled-mood-independent-availability` | 2700 / 3000 | 6000 |
-| D English | `megamod.practical-needs.native-potential-mood-settings` | 1200 / 1500 | 1200 |
-| D other baseline locales | same ID, select actual language separately | attribute 1200; counted case ceiling 720 / launcher 900 | 1200 |
+| D English | `megamod.practical-needs.native-potential-mood-settings` | 1300 / 1500 | 1200 |
+| D other baseline locales | same ID, select actual language separately | attribute 1300; counted case ceiling 720 / launcher 900 | 1200 |
 
 D runs separately in English, German, Spanish, French, ChineseSimplified, Russian and Japanese.
 The fixture observes the actual language; it never changes the language database. English alone
@@ -78,29 +78,41 @@ existing production metadata reader. Observers never call eligibility, draw a wi
 skip an original, swallow a native exception or manufacture a job. Native errors and observation
 failures fail the fixture and preserve partial evidence.
 
+Every map Needs, Gear or Health observation first selects exactly that pawn through the native
+selection action, then opens the inspect tab. Camera framing and policy-list selection do not
+satisfy the inspect action's sole-pawn-selection precondition. The existing Draft/Undraft selection
+and gizmo actions remain separate player actions.
+
 ## Exact deadline accounting
 
 Each emitted native action/capture allows 15 seconds; each ordinary screenshot allows 30 seconds.
-Explicit wait deadlines are fully added. Native save/load has a separate 300-second allowance.
+Explicit wait deadlines are fully added. Native save/load has a separate 300-second budget
+allowance; the enclosing scenario deadline is enforced, not a separate save/load timeout.
 The 90-second reserve includes synchronous evidence/assertions and cleanup. Each settings visit
 permits at most three native track clicks; each adds one click and one fresh capture. The source
 asserts the complete emitted base count plus the actual scroll branches at successful completion.
 
 | Case | Actions/captures excluding save | Screenshots | Wait seconds | Save/load | Reserve | Worst total |
 | --- | --- | --- | --- | --- | --- | --- |
-| A | 76 + 2s, s <= 12 | 19 | 330 | 0 | 90 | 2490 |
+| A | 88 + 2s, s <= 12 | 19 | 330 | 0 | 90 | 2670 |
 | B | 80 + 2s, s <= 3 | 15 | 480 | 0 | 90 | 2310 |
-| C | 101 + 2s, s <= 3 | 17 | 230 | 0 | 90 | 2435 |
-| D English | 24 + 2s, s <= 6 | 6 | 41 | 300 | 90 | 1151 |
-| D other locale | 17 + 2s, s <= 3 | 4 | 11 | 0 | 90 | 566 |
+| C | 111 + 2s, s <= 3 | 17 | 230 | 0 | 90 | 2585 |
+| D English | 27 + 2s, s <= 6 | 7 | 41 | 300 | 90 | 1226 |
+| D other locale | 20 + 2s, s <= 3 | 5 | 11 | 0 | 90 | 641 |
 
 The frozen planning counts were ceilings, not emitted-sequence evidence. Root accepted C's scenario/
 launcher change from 2400/2700 to 2700/3000 when the complete scale, manager, fresh-control and Draft
 actions were counted. Root accepted English D's change from 1080/1200 to 1200/1500 to include the
-actual native save/load deadline. D also includes an inert-margin input, fresh capture and three-second
-clearance wait before its help dwell, proving the tooltip follows that input. A's 19 screenshots and maximum 100 operations exceed its preliminary
-18/90 estimates but fit its unchanged 2700/3000 bounds. No native wait was shortened to fit a total;
-these are harness budgets, not product gameplay timing changes.
+native save/load budget allowance. D also includes an inert-margin input, fresh capture and three-second
+clearance wait before its help dwell, proving the tooltip follows that input. The explicit selections
+before all 12 map inspections in A and all 10 in C are included in the current counts. A's 19
+screenshots and maximum 112 operations exceed its preliminary 18/90 estimates but fit its unchanged
+2700/3000 bounds; C's maximum 117 operations also fit 2700/3000. No native wait was shortened to fit a total;
+these are harness budgets, not product gameplay timing changes. D now also opens, captures and
+closes the actual native developer console, adding three operations and one screenshot in every
+language. Its English scenario ceiling is 1300 seconds to retain the full 1226-second counted
+maximum; the 1500-second launcher and other-language 720/900 bounds remain sufficient. Console
+cleanup is registered before acquisition and remains independent of save-binding cleanup.
 
 ## Cleanup and remaining gates
 

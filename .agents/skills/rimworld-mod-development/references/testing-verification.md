@@ -180,6 +180,10 @@ Prefer action → wait → observation steps that exercise the same native path 
   a stale or partial loaded Game must not skip safe renderer-scroll or other process-state restoration.
 - Frame related actors/Things with the camera, then select only the evidence target before a full-frame
   screenshot. RimWorld multi-selection hides the ordinary single-Thing inspect pane.
+  Every native pawn-inspect action requires that exact pawn to already be the sole selection;
+  camera framing and policy-list selection do not establish it. Have a shared inspection sequence
+  emit native sole selection followed by the tab action, including when switching subjects. Expand
+  every call when counting actions and deadlines; keep Draft/Undraft selection/gizmo pairs intact.
   Distinguish the selected pawn's inner Health/Gear pane from the main Inspect tab: native selection
   can reopen Inspect on later GUI frames after a successful pane close. Use actual native save
   eligibility and closed owned settings/editor windows for save boundaries; do not require a benign

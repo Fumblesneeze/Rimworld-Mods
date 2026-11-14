@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using LudeonTK;
 using Megamod.EndToEndTests.Diagnostics;
 using Megamod.Features.PracticalNeeds.Core;
 using Megamod.Settings;
@@ -16,7 +17,7 @@ namespace Megamod.EndToEndTests.PracticalNeeds;
 // The runner selects each actual baseline language; this fixture never changes language.
 [RimWorldEndToEndTest("megamod.practical-needs.native-potential-mood-settings", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "fumblesneeze.megamod",
-    MaxFrames = int.MaxValue, MaxGameTicks = 1200, MaxWallClockSeconds = 1200)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 1200, MaxWallClockSeconds = 1300)]
 public sealed class NativePotentialMoodSettingsTests : IRimWorldEndToEndTest
 {
     private static readonly FieldInfo Binding = Field(typeof(SettingsRuntime), "binding");
@@ -31,7 +32,7 @@ public sealed class NativePotentialMoodSettingsTests : IRimWorldEndToEndTest
     private GlobalSettingsSnapshot globals = null!;
     private SaveSettingsSnapshot saved = null!;
     private MoodSettingControls controls = null!;
-    private bool english, reloadRequested;
+    private bool english, reloadRequested, consoleRequested;
     private int mapId, savedTick, actions, screenshots, waits, saves;
     private string? expectedOverride;
     private bool expectedInheritance = true;
@@ -43,7 +44,8 @@ public sealed class NativePotentialMoodSettingsTests : IRimWorldEndToEndTest
         binding = Binding.GetValue(settings) as SaveSettingsBinding ?? throw new InvalidOperationException("Published binding unavailable.");
         globals = settings.Store.ExportGlobals(); saved = settings.Store.ExportSave(binding);
         EndToEndAssert.True(game.PlayerHasControl && !LongEventHandler.AnyEventNowOrWaiting && settings.SaveLifecycleAvailable &&
-            !binding.IsRevoked && Find.MainTabsRoot.OpenTab == null && !Find.WindowStack.IsOpen<Dialog_ModSettings>());
+            !binding.IsRevoked && Find.MainTabsRoot.OpenTab == null && !Find.WindowStack.IsOpen<Dialog_ModSettings>() &&
+            !Find.WindowStack.IsOpen<EditWindow_Log>());
         EndToEndAssert.True(new[] { "English", "German", "Spanish", "French", "ChineseSimplified", "Russian", "Japanese" }
             .Contains(LanguageDatabase.activeLanguage.folderName));
         english = LanguageDatabase.activeLanguage.folderName == "English";
@@ -57,6 +59,11 @@ public sealed class NativePotentialMoodSettingsTests : IRimWorldEndToEndTest
         controls = new(PotentialMoodSettings.Enabled.Id, RequireGame, windows);
         var oldScroll = controls.Scroll;
         // Registered before the first native window, input scope, or save slot can be acquired.
+        context.DeferCleanup(() =>
+        {
+            if (consoleRequested)
+                foreach (var log in Find.WindowStack.Windows.OfType<EditWindow_Log>().ToArray()) log.Close(false);
+        });
         context.DeferCleanup(() =>
         {
             var errors = new List<Exception>();
@@ -89,7 +96,7 @@ public sealed class NativePotentialMoodSettingsTests : IRimWorldEndToEndTest
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
     {
-        foreach (var step in Workflow())
+        foreach (var step in Workflow().Concat(Console()))
         {
             if (step is SaveLoadActionStep) saves++;
             else if (step is ScreenshotStep) screenshots++;
@@ -101,13 +108,13 @@ public sealed class NativePotentialMoodSettingsTests : IRimWorldEndToEndTest
         {
             AssertState();
             // One initial settings visit; English adds one native reload and a second visit.
-            EndToEndAssert.Equal((english ? 24 : 17) + 2 * controls.ScrollClicks, actions);
+            EndToEndAssert.Equal((english ? 27 : 20) + 2 * controls.ScrollClicks, actions);
             EndToEndAssert.Equal(english ? 1 : 0, saves);
             EndToEndAssert.True(controls.ScrollClicks <= (english ? 6 : 3));
-            EndToEndAssert.Equal(english ? 6 : 4, screenshots);
+            EndToEndAssert.Equal(english ? 7 : 5, screenshots);
             EndToEndAssert.Equal(english ? 41 : 11, waits);
             int maximum = actions * 15 + screenshots * 30 + waits + saves * 300 + 90;
-            EndToEndAssert.True(maximum <= (english ? 1200 : 720));
+            EndToEndAssert.True(maximum <= (english ? 1300 : 720));
             return new Dictionary<string, string> { ["language"] = LanguageDatabase.activeLanguage.folderName,
                 ["actionsAndCaptures"] = actions.ToString(), ["screenshots"] = screenshots.ToString(),
                 ["explicitWaitSeconds"] = waits.ToString(), ["saveLoadSeconds"] = (saves * 300).ToString(), ["reserveSeconds"] = "90", ["totalSeconds"] = maximum.ToString(),
@@ -187,6 +194,19 @@ public sealed class NativePotentialMoodSettingsTests : IRimWorldEndToEndTest
         foreach (var step in controls.Refresh()) yield return step;
         yield return Shot("loaded Current save off is restored beside Global default on");
         foreach (var step in controls.Close()) yield return step;
+    }
+
+    private IEnumerable<EndToEndStep> Console()
+    {
+        RequireGame(); consoleRequested = true;
+        yield return new NativeDeveloperLogActionStep("open native console after potential-mood settings", true);
+        yield return new NativeWindowCaptureStep("capture actual native settings console", captures =>
+        {
+            RequireGame(); var log = Find.WindowStack.Windows.OfType<EditWindow_Log>().Single();
+            EndToEndAssert.Equal(1, captures.Count(w => w.NativeId == log.ID && w.RuntimeType == log.GetType().FullName));
+        });
+        yield return Shot("native console after potential-mood settings");
+        yield return new NativeDeveloperLogActionStep("close owned native settings console", false);
     }
 
     private void RequireGame() => EndToEndAssert.True(ReferenceEquals(Current.Game, game) && game.PlayerHasControl &&

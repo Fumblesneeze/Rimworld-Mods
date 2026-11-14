@@ -293,16 +293,26 @@ internal sealed partial class ScheduledMoodFixture
     {
         foreach (var step in Policies()) yield return step;
         yield return new CameraActionStep("frame the paired scheduled subjects", pawns.Select(p => p.ThingID), paddingPixels: 220);
-        yield return Inspect(A, EndToEndPawnInspectTab.Needs); yield return Shot("A actual current mood and native potential marker before time");
-        foreach (var s in subjects) { yield return Inspect(s, EndToEndPawnInspectTab.Gear); yield return Shot(s.Pawn.LabelShort + " owns two initial Beer"); }
+        foreach (var step in Inspect(A, EndToEndPawnInspectTab.Needs)) yield return step;
+        yield return Shot("A actual current mood and native potential marker before time");
+        foreach (var s in subjects)
+        {
+            foreach (var step in Inspect(s, EndToEndPawnInspectTab.Gear)) yield return step;
+            yield return Shot(s.Pawn.LabelShort + " owns two initial Beer");
+        }
         BeginPhase("both on");
         foreach (var s in subjects) foreach (var step in Undraft(s)) yield return step;
         yield return Run("ordinary native map thinking with both predicates enabled");
         yield return Wait("observe two fresh native-eligible rejections for each independent predicate", () =>
         { RequireCurrent(); Held(A, 2); Held(B, 2); return Rejections(A, true, true) >= 2 && Rejections(B, true, true) >= 2; }, 45, 600);
         yield return Pause("pause observed conjunction rejections");
-        foreach (var s in subjects) { yield return Inspect(s, EndToEndPawnInspectTab.Gear); yield return Shot(s.Pawn.LabelShort + " retained Beer after real rejected selections"); }
-        yield return Inspect(A, EndToEndPawnInspectTab.Needs); yield return Shot("A native recovering-mood marker after scheduled rejections");
+        foreach (var s in subjects)
+        {
+            foreach (var step in Inspect(s, EndToEndPawnInspectTab.Gear)) yield return step;
+            yield return Shot(s.Pawn.LabelShort + " retained Beer after real rejected selections");
+        }
+        foreach (var step in Inspect(A, EndToEndPawnInspectTab.Needs)) yield return step;
+        yield return Shot("A native recovering-mood marker after scheduled rejections");
         foreach (var step in SetGlobal(false, false)) yield return step;
         BeginPhase("tolerance off");
         foreach (var step in ConsumeMap(B, reenableMood: false)) yield return step;
@@ -342,7 +352,7 @@ internal sealed partial class ScheduledMoodFixture
             return true;
         }, 60, 1200);
         yield return Pause("pause the actual drinking action before the physical dose");
-        yield return Inspect(subject, EndToEndPawnInspectTab.Gear);
+        foreach (var step in Inspect(subject, EndToEndPawnInspectTab.Gear)) yield return step;
         yield return Shot(subject.Pawn.LabelShort + " selected native Beer ingestion in progress");
         if (reenableMood)
         {
@@ -354,8 +364,10 @@ internal sealed partial class ScheduledMoodFixture
         yield return Wait("observe one physical dose, native Alcohol and ordinary history", () =>
         { RequireCurrent(); if (doses.Count(d => d.Subject == subject && d.Closed) != 1) return false; AssertDose(subject); return true; }, 60, 1200);
         yield return Pause("pause the completed native dose");
-        yield return Inspect(subject, EndToEndPawnInspectTab.Health); yield return Shot(subject.Pawn.LabelShort + " actual Alcohol effects after the dose");
-        yield return Inspect(subject, EndToEndPawnInspectTab.Gear); yield return Shot(subject.Pawn.LabelShort + " one Beer remains after exactly one dose");
+        foreach (var step in Inspect(subject, EndToEndPawnInspectTab.Health)) yield return step;
+        yield return Shot(subject.Pawn.LabelShort + " actual Alcohol effects after the dose");
+        foreach (var step in Inspect(subject, EndToEndPawnInspectTab.Gear)) yield return step;
+        yield return Shot(subject.Pawn.LabelShort + " one Beer remains after exactly one dose");
     }
 
     private IEnumerable<EndToEndStep> CaravanWorkflow()
@@ -584,9 +596,9 @@ internal sealed partial class ScheduledMoodFixture
         int scrolls = moodControls.ScrollClicks + toleranceControls.ScrollClicks;
         var expected = scenario switch
         {
-            MoodScenario.Map => (Actions: 76, Screenshots: 19, Waits: 330, Scrolls: 12, Limit: 2700),
+            MoodScenario.Map => (Actions: 88, Screenshots: 19, Waits: 330, Scrolls: 12, Limit: 2700),
             MoodScenario.Caravan => (Actions: 80, Screenshots: 15, Waits: 480, Scrolls: 3, Limit: 3000),
-            _ => (Actions: 101, Screenshots: 17, Waits: 230, Scrolls: 3, Limit: 2700)
+            _ => (Actions: 111, Screenshots: 17, Waits: 230, Scrolls: 3, Limit: 2700)
         };
         EndToEndAssert.True(scrolls >= 0 && scrolls <= expected.Scrolls);
         EndToEndAssert.Equal(expected.Actions + 2 * scrolls, actions);
@@ -607,7 +619,11 @@ internal sealed partial class ScheduledMoodFixture
     private static ScreenshotStep Shot(string name) => new(name, Array.Empty<string>(), 0);
     private static TimeControlActionStep Pause(string name) => new(name, true, EndToEndGameSpeed.Normal);
     private static TimeControlActionStep Run(string name) => new(name, false, EndToEndGameSpeed.Normal);
-    private static PawnInspectTabActionStep Inspect(Subject s, EndToEndPawnInspectTab tab) => new("show actual " + tab + " of " + s.Pawn.LabelShort, s.Pawn.ThingID, tab);
+    private static IEnumerable<EndToEndStep> Inspect(Subject s, EndToEndPawnInspectTab tab)
+    {
+        yield return new SelectionActionStep("select exact inspection subject " + s.Pawn.LabelShort, new[] { s.Pawn.ThingID }, additive: false);
+        yield return new PawnInspectTabActionStep("show actual " + tab + " of " + s.Pawn.LabelShort, s.Pawn.ThingID, tab);
+    }
     private static WaitUntilStep Wait(string name, Func<bool> predicate, int seconds, int ticks = 1) => new(name, _ => predicate(), new EndToEndDeadline(int.MaxValue, ticks, TimeSpan.FromSeconds(seconds)));
     private EndToEndCaravanHealthObservation Health(Subject s) => health.ObserveHealth(s.Handle, s.Pawn.GetUniqueLoadID());
     private static bool DetailOpen() => Find.WindowStack.Windows.Any(w => w is ImmediateWindow && w.ID == -1439870015);
