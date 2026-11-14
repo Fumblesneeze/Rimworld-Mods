@@ -116,6 +116,35 @@ does not alter foreign settings or require importing Needle data.
 
 ## Open Questions
 
+### Native recorder tranche (plan revision29)
+
+Build the reusable observer before adding extra foreign draw calls. A scoped recorder surrounds
+one complete real page callback, forwards every GUI backend operation unchanged, and records text
+and literal tooltip text in current screen coordinates. It must not invoke tooltip getters,
+navigation, editors, settings writes or additional page draws. This ordinary-draw pilot does not
+replace the required automatic startup discovery, tab traversal or reveal; those remain subsequent
+work using the same recorder. No search UI or automatic runtime hooks are registered by this tranche.
+
+The detached buffer retains distinct draw occurrences even for equal labels; these are observations,
+not yet proven control identities. It publishes an immutable partial observation only after the
+whole callback returns. A thrown callback discards that capture and keeps the original exception;
+backend replacement is a failed capture and must not overwrite the foreign replacement. Unknown
+custom drawing and unvisited layouts remain unverified. Observing one repaint never establishes
+complete page coverage. Geometry is diagnostic until current-layout control resolution is implemented.
+
+Initial pilot retention limits are explicit safety policy, not engine limits: at most16384 nonempty
+text records and262144 UTF-16 units per callback. Exceeding either stops further recording, retains
+the bounded prefix with truncated status and continues forwarding drawing unchanged. These generous
+research-proposed limits will be measured on the native pilot; no callback-time or traversal budget
+is claimed by a passive observer. Failed, invalid or missing geometry cannot become a reveal target.
+
+The first English workflow opens the actual unfamiliar Pick Up And Haul page through native Options,
+observes labels and literal help during normal repaints, and compares its native values before/after
+observation. A deliberate native checkbox edit and close/reopen proves original editing still works;
+cleanup restores it through the same control. Test instrumentation may surround the native page call
+and pass real tooltip arguments to the recorder; it must not draw a synthetic replacement page or
+manufacture search results. This verifies the recorder component only, not SS-01/SS-03 acceptance.
+
 Implementation must pin native/provider page enumeration, GUI/tab/scroll capture and reveal
 semantics, budgets, custom-control failure detection and representative real mod fixtures. Those are
 implementation research tasks; they cannot be resolved by restricting product scope to those fixtures.

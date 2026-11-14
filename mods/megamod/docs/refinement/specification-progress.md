@@ -9,6 +9,14 @@ interrupting the work. No runtime implementation or gameplay acceptance is claim
 
 ## Status and next work
 
+Revision29, 2026-11-14: the query checkpoint8579276 is committed. S141-R1–R3 now build and verify
+the reusable generic recorder on an actual unfamiliar page's ordinary native draw. Automatic
+startup discovery, tab traversal, native chooser integration and reveal remain required next work;
+this component tranche does not narrow eligibility or complete the all-mod search feature. The
+reviewed recorder now passes82 focused host checks and41 native steps with seven personally
+inspected captures, unchanged foreign settings and original native edit/persistence/restoration.
+Only S141-R1–R3 close; detailed local evidence is under the recorder/root verification ledger.
+
 Revision28, 2026-11-14: S141 all-mod option search is the active batch. Detached query matching has
 focused RED/GREEN and61 affected search/chooser checks; native generic page/GUI/tab research is
 retained alongside proposed English scenarios. No runtime search is registered or accepted. The

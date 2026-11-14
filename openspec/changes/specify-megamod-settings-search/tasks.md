@@ -1,6 +1,7 @@
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), 1.7 beta.
-S141's first detached query batch is dispatched by plan revision28; native discovery/reveal and
-full feature acceptance remain open. Drafting or host checks alone accept no gameplay checkbox.
+S141's detached query checkpoint is followed by the verified ordinary-draw recorder in plan
+revision29. Automatic discovery/reveal and full feature acceptance remain open. Drafting or host
+checks alone accept no gameplay checkbox.
 
 ## Selected query and discovery-contract batch
 
@@ -26,6 +27,17 @@ handoff proposes measured-pilot inputs and English workflows; its callback budge
 unmeasured. A genuine1.7 provider-generated-page fixture remains unpinned. No checkbox closes here.
 
 ## 1. Pin universal discovery and native reveal
+
+- [x] S141-R1 Implement bounded detached draw observations with duplicate occurrence preservation, immutable publication and failed-callback discard; retain focused nonzero RED/GREEN.
+- [x] S141-R2 Implement a forwarding native GUI recorder for one complete ordinary page callback, literal tooltip observation and exact backend cleanup; no extra callbacks, runtime registration or hidden drawing yet.
+- [x] S141-R3 Independently review the recorder batch, build/package it and personally inspect the focused English unfamiliar-page workflow with unchanged native settings and subsequent normal edit/persistence. Keep automatic discovery, query UI, tabs, scroll/reveal and full S141 acceptance open.
+
+Scoped recorder evidence:82 affected Unit checks, actual native RED then reviewed English
+`megamod.settings-search.native-recorder`41/41steps, seven personally inspected captures, original
+edit/close/reopen/restoration, exact backend/failure/nesting checks and clean owned cleanup. See
+`artifacts/Implementation/megamod-p0/settings-search/recorder/root/verification.md` for exact build,
+process, input/actions, log classification, config hashes and limits. Only this component is verified;
+it has no production hooks/UI yet. The following full-feature tasks remain open.
 
 - [ ] 1.1 Inventory the actual native/provider page collection, independent identities and owned row metadata; prove generic eligibility without mod-specific registration or a package allowlist.
 - [ ] 1.2 Pin exact GUI draw/text/help/control, tab, scroll and reveal contracts with minimal semantic shape guards; record bounded draw/tab/depth/time budgets and cancellation limits before implementation.

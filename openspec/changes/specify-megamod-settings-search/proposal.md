@@ -33,7 +33,8 @@ No duplicate capability delta is introduced here.
 ## Impact
 
 Sole owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`; target **1.7 beta**.
-The first detached query tranche is active under plan revision28; no runtime search is accepted. Common settings metadata, native
-chooser integration and generic GUI capture will be affected later. Harmony remains the existing
+Plan revision29 has implemented query and ordinary-draw recorder components; no full runtime search
+is accepted. Common settings metadata, native chooser integration and automatic generic discovery
+remain later work. Harmony remains the existing
 dependency. No Needle binary/API dependency, source-settings migration, XML Extensions operation
 or Gateway product dependency is introduced. Source inspection informs independent implementation.

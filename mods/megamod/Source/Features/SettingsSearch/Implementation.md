@@ -1,9 +1,9 @@
-# S141 detached query checkpoint
+# S141 query and native recorder checkpoints
 
-Owner `fumblesneeze.megamod`. This tranche implements supplied-text matching only. Nothing is
-registered with the native chooser; it neither discovers controls nor exposes a search UI.
-Native capture, metadata projection, reveal, coverage status, lifecycle, preferences/catalogs and
-player-workflow acceptance remain open. No per-mod eligibility list exists.
+Owner `fumblesneeze.megamod`. Supplied-text matching and the ordinary-draw recorder are implemented;
+the recorder has scoped native verification below. Nothing is registered with the native chooser.
+Automatic discovery, metadata projection, reveal, coverage UI, lifecycle, preferences/catalogs and
+full-feature acceptance remain open. No per-mod eligibility list exists.
 
 `SettingsSearch` copies immutable `SettingsSearchEntry` descriptors and pre-normalizes their text.
 Each retains S047's actual opaque `SettingsPage` descriptor, path identity and occurrence; native
@@ -38,5 +38,29 @@ Five initial RED/GREEN cycles, a generated two-edit counterexample/fix and seven
 `artifacts/Implementation/megamod-p0/settings-search/query/`. The current affected search/chooser
 batch passes61/61. Review regressions cover literal sharp-S casing, supplementary-letter typo words
 and S047's empty-title fallback ranking. Independent re-review found no remaining issues; the
-canonical build/package and strict OpenSpec checks passed. Native acceptance is absent and every
-S141 gameplay gate remains open.
+canonical build/package and strict OpenSpec checks passed. That detached-query checkpoint did not
+accept native behavior; the later ordinary-draw component verification is scoped below.
+
+The next component tranche adds `SettingsCaptureBuffer` and `SettingsPageRecorder`. The buffer
+retains bounded immutable text/help observations and independent occurrences, discards a failed
+callback's records, and never calls a successful draw complete coverage. The recorder forwards the
+actual1.7 `IGuiBackend` contract unchanged around one ordinary page callback; it records only
+repaints and supplied literal tooltip text, without invoking tooltip getters or extra page draws.
+It restores its exact previous backend only while it still owns the slot. Nested scopes isolate
+their observations; callback exceptions propagate unchanged after failed-capture publication.
+
+All geometry is logical screen geometry from four transformed corners. It is not yet admitted
+visibility, stable control identity or a reveal target. Invalid bounds are omitted; a coordinate
+capture exception fails recording without suppressing the real draw. Default retention policy is
+16384 records/262144 UTF-16 units per callback, explicitly a pilot limit rather than an engine
+ceiling. Overflow retains a bounded prefix with Truncated status; it does not stop native rendering.
+
+Five focused buffer RED/GREEN slices pass with82 total capture/query/chooser checks. The native
+stub failed at the intended missing-observation assertion after the actual foreign page opened;
+reviewed full-recorder verification passed41steps with seven personally inspected captures. The
+foreign page retained its values during capture and normal edit/close/reopen remained functional.
+Callback failure, distinct backend replacement, nested isolation and publication timing passed.
+Evidence is under
+`artifacts/Implementation/megamod-p0/settings-search/recorder/`. The native fixture uses test-only
+instrumentation; no production hooks, search preference, UI, automatic discovery or reveal are
+registered by this component checkpoint. Every remaining universal-discovery obligation is retained.

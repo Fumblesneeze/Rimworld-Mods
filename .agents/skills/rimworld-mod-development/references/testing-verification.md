@@ -88,6 +88,12 @@ Prefer action → wait → observation steps that exercise the same native path 
 
 ### E2E authoring invariants learned from live failures
 
+- When testing conditional restoration of a shared GUI/backend/owner slot, substitute an object
+  distinct from both the captured baseline and the temporary owned object. Assert that exact
+  replacement survives the production cleanup, then remove only the fixture-owned replacement.
+  Assigning the baseline as the replacement cannot detect an unconditional restore bug. Keep this
+  diagnostic separate from native player-action evidence and retain callback completion checks.
+
 - Audit the complete native UI sequence before launching a new fixture: exact public/private,
   static/instance and declaring-type reflection bindings, actual layout transforms, confirmation
   dialogs, and which parent windows an action closes. Use named missing-member assertions. Native

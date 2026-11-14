@@ -995,3 +995,26 @@ The next runtime tranche must consume the provider-completed chooser collection,
 widget/scroll inputs during neutral capture, refuse capture-created window lifecycle effects, and
 resolve tab identity independently of selected-last draw order. These concrete findings replace
 guesswork; callback budgets still require a live pilot and provider-present proof remains outstanding.
+
+## Revision 29 — generic native recorder
+
+The query and research leases are closed. `settings_capture_core` owns only
+`Source/Features/SettingsSearch/Core/SettingsCapture.cs`, its matching Unit fixture and local
+`artifacts/Implementation/megamod-p0/settings-search/recorder/core/` evidence. It holds the focused
+Megamod.Unit output lease until handoff. `settings_capture_native` owns only
+`Source/Features/SettingsSearch/Runtime/SettingsPageRecorder.cs` and its local `recorder/native/`
+evidence; it may not build shared outputs until root grants a turn. Both follow the frozen capture
+API in their dispatch, inspect read-only sources and use test-first work. No game launches, central
+registration, product install or commits are delegated. Root owns the SettingsSearch E2E workflow,
+specs, integration, compile/install serialization, fresh independent review and personal native
+observation. The ordinary-page recorder is the first reusable capture component; it cannot close
+automatic all-mod discovery, original-control reveal or full S141 acceptance.
+
+The recorder author leases are now closed. Five detached RED/GREEN slices pass82 affected checks.
+Native inert-stub RED was followed by reviewed full-recorder41steps/seven personally inspected
+captures on the actual Pick Up And Haul page, including unchanged values, failure/replacement/nesting
+diagnostics and normal edit/close/reopen/restoration. Exact local evidence is
+`artifacts/Implementation/megamod-p0/settings-search/recorder/root/verification.md`. Only S141-R1–R3
+close. Root retains automatic generic discovery, native chooser integration, provider/tab/scroll
+identity and reveal, all other152 entries and final language task12.5. No runtime hooks are registered
+by this reusable component checkpoint; a visited-pages-only product scope is not substituted.

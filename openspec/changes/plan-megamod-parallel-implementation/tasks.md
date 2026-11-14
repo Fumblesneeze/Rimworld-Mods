@@ -1,12 +1,16 @@
 # Governing implementation tasks
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **28**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
+Plan revision **29**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
 This is the aggregate coordination checklist. Each chunk's linked feature tasks hold its behavior
 slices; expand assignments into focused spec → RED/GREEN → code → review work before dispatch.
 A handoff gate below verifies that work; it does not replace those tasks or accept gameplay.
 
 Documentation completion and implementation are separate. All aggregate runtime gates remain open.
+Revision29 selects S141-R1–R3, the reusable generic native recorder and an unfamiliar-page English
+pilot. Those component tasks now have reviewed41step/seven-capture native verification alongside
+82 focused host checks. This does not narrow the all-mod scope or accept automatic discovery/reveal. All other work,
+including final suite-wide language verification, remains allocated.
 Revision28 selects S141-Q1–Q4: detached all-mod query behavior and parallel artifact-only native
 discovery-contract research. The existing S047 descriptor is reused; native discovery/reveal and
 full acceptance stay open. S139's remaining premises and all other obligations stay allocated.

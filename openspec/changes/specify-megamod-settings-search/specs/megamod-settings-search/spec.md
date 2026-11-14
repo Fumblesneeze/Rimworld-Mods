@@ -1,7 +1,8 @@
 # Cross-mod settings search
 
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), 1.7 beta.
-S141, Needle-inspired universal option search. Detached query implementation started; no runtime acceptance.
+S141, Needle-inspired universal option search. Query and ordinary-draw recorder implemented;
+recorder component verified, full discovery/search/reveal acceptance open.
 The 2026-11-14 all-mod clarification supersedes the earlier owned-only draft.
 
 ## ADDED Requirements
@@ -121,6 +122,13 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
 - **WHEN** a page throws, visibly mutates settings during a draw or fails state restoration
 - **THEN** that page is reported failed, further automated calls to it stop for this session, and
   unrelated results plus normal settings access remain available with bounded diagnostics.
+
+#### Scenario: Observe an ordinary native page without adding callbacks
+- **WHEN** the generic recorder surrounds one ordinary settings-page draw
+- **THEN** it forwards that callback once, publishes bounded immutable partial observations only
+  after completion, preserves original editing/persistence, and neither invokes tooltip getters
+  nor treats the observed draw as proof of complete page coverage. A failed callback discards its
+  observations and preserves the original exception; cleanup preserves a distinct replacement backend.
 
 ### Requirement: SS-07 Common activation preserves independent browsing
 Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at NextDisplay with normal inheritance, dormant overrides and main-menu guards.

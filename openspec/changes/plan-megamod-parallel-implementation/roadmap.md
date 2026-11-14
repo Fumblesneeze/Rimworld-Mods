@@ -1,12 +1,19 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **28**, 2026-11-14. Status: **implementation active; all-mod search query batch; focused English batches; aggregate acceptance incomplete**.
+Plan revision **29**, 2026-11-14. Status: **implementation active; generic native settings recorder batch; focused English batches; aggregate acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
 
 ## How to execute and revise this plan
+
+Revision29 advances S141-R1–R3 after the reviewed detached query checkpoint8579276. Implement the
+generic recorder on ordinary page draws first so native forwarding and publication can be proved
+without simultaneously adding hidden callback/state-restoration behavior. This is a reusable
+component tranche, not a visited-pages-only product scope. Automatic all-mod discovery, tabs,
+reveal, provider access and all152 feature obligations remain allocated and unaccepted. Exact
+disjoint leases are in p0-dispatch; root owns shared outputs, native workflow and final observation.
 
 There are **152 feature entries: 140 drafts and 12 intake entries, 27 primary chunks
 and nine integration parts**. New intake needs a per-source owned specification before code. A chunk is a bounded
