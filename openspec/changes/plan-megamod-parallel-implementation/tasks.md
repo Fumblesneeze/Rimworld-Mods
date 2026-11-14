@@ -1,12 +1,16 @@
 # Governing implementation tasks
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **26**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
+Plan revision **27**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
 This is the aggregate coordination checklist. Each chunk's linked feature tasks hold its behavior
 slices; expand assignments into focused spec → RED/GREEN → code → review work before dispatch.
 A handoff gate below verifies that work; it does not replace those tasks or accept gameplay.
 
 Documentation completion and implementation are separate. All aggregate runtime gates remain open.
+Revision27 accepts only S024-M1–M5 and direct scheduled S138 composition after four focused English
+native cases,679steps/58 personally inspected captures, independent review and package checks.
+The remaining S024/S138 tasks and all152 entries stay allocated; exact local evidence is linked
+from the owning tasks and p0-dispatch.
 Revision 26 retains all catalogs but verifies implementation batches only in English, as explicitly
 requested by the user. Full rendered-language verification moves to task 12.5 at the very end.
 Revision 25 resumes S024-M1–M5 and its direct S138 composition after the user's explicit activation.

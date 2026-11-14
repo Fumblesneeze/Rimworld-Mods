@@ -1,6 +1,6 @@
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), **1.7 beta**.
-Scheduled potential mood is the first selected implementation slice. All full-feature tasks and
-native acceptance remain unchecked.
+Scheduled potential mood is the first accepted implementation slice. Full-feature tasks remain
+unchecked; acceptance below covers only the selected scheduled-mood batch.
 
 ## Selected scheduled-mood batch
 
@@ -12,11 +12,21 @@ rules/adapters, focused tests, seven catalogs and executable native scenarios. E
 receipt probes receive only the narrow real-owner updates needed by the shared hook. No patient
 treat, inventory/medical producer, XML integration or complete S024 feature is implied.
 
-- [ ] S024-M1 Implement the strict current/potential rule and one default-on inherited setting with focused nonzero RED/GREEN, preserving native calculation and unrelated permissions.
-- [ ] S024-M2 Compose S024 and S138 through one admitted native scheduled owner; prove independent enable/read-failure behavior, S138 rollback isolation, shared revocation and recovery through production boundaries.
-- [ ] S024-M3 Author native map, caravan, layout/recovery and setting-inheritance/language workflows; use fresh history-empty controls and audit emitted action/wait/capture budgets.
-- [ ] S024-M4 Integrate and independently review the batch, resolve findings, run affected focused checks and canonical package validation, then personally observe the reviewed native workflows.
-- [ ] S024-M5 Record exact build/action/result evidence and scoped playability conclusions; reconcile coverage while retaining every other S024 and S138 obligation.
+- [x] S024-M1 Implement the strict current/potential rule and one default-on inherited setting with focused nonzero RED/GREEN, preserving native calculation and unrelated permissions.
+- [x] S024-M2 Compose S024 and S138 through one admitted native scheduled owner; prove independent enable/read-failure behavior, S138 rollback isolation, shared revocation and recovery through production boundaries.
+- [x] S024-M3 Author native map, caravan, layout/recovery and setting-inheritance/language workflows; use fresh history-empty controls and audit emitted action/wait/capture budgets.
+- [x] S024-M4 Integrate and independently review the batch, resolve findings, run affected focused checks and canonical package validation, then personally observe the reviewed native workflows.
+- [x] S024-M5 Record exact build/action/result evidence and scoped playability conclusions; reconcile coverage while retaining every other S024 and S138 obligation.
+
+Accepted 2026-11-14: runtime checkpoint43f0b71, reviewed fixture corrections through91cb62c.
+Four focused English cases passed679steps with all58 captures personally inspected: map205/19,
+caravan184/15, layout/recovery241/17 and inherited-setting save/reload49/7. Exact per-case package,
+process, action/result, complete classified logs and successful cleanup are retained in
+`artifacts/Implementation/megamod-p0/s024-resume/native-verification.md`, alongside independent
+reviews and focused nonzero RED/GREEN. Canonical package validation passed72files. Native costs,
+one-unit doses, history/interval and executing jobs are preserved; no patient/medical claim follows.
+All seven catalogs are authored; full rendered-language verification remains aggregate task12.5
+under the user's English-only implementation policy. Full task4.3 and all other tasks below stay open.
 
 ## 1. Pin native and external boundaries
 

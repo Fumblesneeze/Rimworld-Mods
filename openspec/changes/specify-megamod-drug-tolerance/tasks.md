@@ -194,13 +194,19 @@ Task 3.4 remains open for its remaining contexts; this is a scoped language gate
 
 ## 4. Independent review and integrated native acceptance
 
-The next affected runtime batch implements S024 scheduled potential mood and the required direct
+The accepted focused runtime batch implements S024 scheduled potential mood and the required direct
 S138 conjunction. One shared native hook replaces S138's exclusive ownership; S138 retains a
 current dependency receipt in its atomic group. Independent settings, local read failure, shared
-revocation, rollback and tolerance-layout recovery need new evidence on the composed build. Old
+revocation, rollback and tolerance-layout recovery have focused evidence on the composed build. Old
 save-context receipt probes follow the new real owner without broadening or weakening their claims.
 The reviewed planning packet is `artifacts/Implementation/megamod-p0/s024-scheduled-mood-plan/`;
-this allocation accepts no changed runtime from older results. Patient treats and S124/S134 remain open.
+this allocation accepts no changed runtime from older results. Runtime43f0b71 with reviewed fixture
+corrections through91cb62c passed four English cases (679steps,58 personally inspected captures).
+Exact per-case product/process identity, causal views, logs and cleanup are retained in
+`artifacts/Implementation/megamod-p0/s024-resume/native-verification.md`. Host checks establish
+admission/read-failure boundaries; native map/caravan/layout workflows establish independent
+restrictions, physical doses, preserved cadence and recovery. Only S024-M1–M5 close; patient treats,
+S124/S134 and the complete S138 tasks remain open. Final all-language verification remains task12.5.
 
 The focused `megamod.drug-tolerance.native-caravan-scheduled` consumer is allocated after the
 reviewed native slider and Gateway caravan prerequisites. It compares separate0/Any caravans through
@@ -216,7 +222,7 @@ BAny consumed one Beer and showed Alcohol/tolerance, then retained its native sa
 Exact stock/split/history/tick provenance, product/process identity, complete classified logs and
 successful cleanup are in `artifacts/Implementation/megamod-p0/s138-caravan-consumer/native-verification.md`.
 The later language fixture failed after its first tooltip; its independently reviewed `90f9245`
-correction subsequently passed the seven-language gate above. S024 composition, medical consumers
+correction subsequently passed the seven-language gate above. Remaining S024 patient treats, medical consumers
 and full feature tasks remain open.
 
 - [ ] 4.1 Run affected nonzero focused suites, owning build/package checks and typed OpenSpec validation; obtain independent review and resolve each finding on the tested revision.

@@ -282,4 +282,5 @@ postcondition contract. Never use draft specs as proof that a save can safely re
 CS-Q1 keeps proposed corrective defaults and balance; CS-Q2 exact native job/ingestion/save lifecycle;
 CS-Q3 proven provider bindings and direct composition; CS-Q4 tests, target docs, UI/localization,
 shared-data measurements and final native proof. These are retained work, not questions interrupting
-the current specification pass. All implementation and acceptance tasks remain unchecked.
+the current specification pass. Only selected scheduled-mood tasks S024-M1–M5 are accepted;
+full-feature implementation and acceptance tasks remain unchecked.

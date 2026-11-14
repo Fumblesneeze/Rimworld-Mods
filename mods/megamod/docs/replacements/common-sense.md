@@ -88,13 +88,14 @@ conversion, rollback and verified postconditions. Owned save/load retains actual
 ## Implementation and coverage
 
 The first batch implements only scheduled potential mood, its default-on inherited preference and
-direct S138 tolerance composition. Focused rule, setting and read-failure checks are in progress;
-runtime integration and native map/caravan/settings workflows remain unaccepted. The existing
+direct S138 tolerance composition. Focused rule, setting and read-failure checks and independent
+review passed; the selected English map/caravan/layout/settings workflows are accepted. The existing
 native mood slider supplies the threshold, with no extra policy control. The two restrictions have
 independent settings and local failures through one shared scheduled hook. Patient treats and all
-other CS-B1–13 portions remain unimplemented. [Proposal](../../../../openspec/changes/specify-megamod-common-sense/proposal.md)
+other CS-B1–13 portions remain unimplemented. This accepts only CS-B10's scheduled-mood portion
+and its CS-B13 common setting. [Proposal](../../../../openspec/changes/specify-megamod-common-sense/proposal.md)
 records intent; [design](../../../../openspec/changes/specify-megamod-common-sense/design.md) records technical
-boundaries; [tasks](../../../../openspec/changes/specify-megamod-common-sense/tasks.md) remain unchecked.
+boundaries; [tasks](../../../../openspec/changes/specify-megamod-common-sense/tasks.md) close only S024-M1–M5.
 
 Deliberate deviations include exact total cleaning budgets, protected explicit/urgent work, one
 detour, mandatory capacity, safe inventory recovery, destination bedroom ownership, actual 0..1
@@ -124,9 +125,17 @@ pawn-specific eligibility checked at use. The shared scheduled target is
 
 The [progress ledger](../refinement/specification-progress.md) records strict artifact validation and
 independent specification review. CS-Q1–4 retain balance, native lifecycle, provider/composition and
-implementation work. No build, runtime test, game launch or compatibility acceptance is implied.
+implementation work. The selected runtime checkpoint43f0b71 and reviewed fixture corrections through
+91cb62c passed four focused English workflows (679steps,58 personally inspected captures). Exact
+per-case builds, native inputs/results, classified complete logs, unchanged normal config/prefs and
+graceful cleanup are in `artifacts/Implementation/megamod-p0/s024-resume/native-verification.md`.
+They prove independent scheduled mood/tolerance, native caravan effects/interval, layout failure and
+recovery, executing-dose completion and dormant inherited settings after native reload. Focused host
+checks cover strict boundaries, read failures and admission/recovery. No optional-provider acceptance
+or full Common Sense replacement is claimed. All translations remain authored; full language
+verification is deferred to the final consolidated suite by user instruction.
 
-Future reviewed-build evidence must include real cleaning/bills/care, physical inventory transfers,
+Remaining reviewed-build evidence must include real cleaning/bills/care, physical inventory transfers,
 actual food/drug/recreation effects, constrained wandering, source/provider-present and absent cases,
 settings/save transitions and seven-language controls. Preserve exact mod lists, action/result views,
 build identity and cleanup. Labor, available food, skill/research/work eligibility, urgency and

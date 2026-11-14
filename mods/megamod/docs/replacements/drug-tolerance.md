@@ -26,7 +26,7 @@ and exact-build evidence references; a scoped observation does not close the who
 | --- | --- | --- | --- |
 | DT-01 | Native row chooses Any or a strict numeric limit; inactive choice retained | Same native slider as neighboring controls, ordinary press versus drag, malformed repair, layout recovery and seven owned language catalogs/tooltips | Wider settings/world/inherited UI combinations |
 | DT-02 | Zero blocks governed routine use; equality rejects; missing hediff is zero; Any differs from numeric 100% | Map zero/Any, seeded positive/cap equality, natural-decay eligibility and actual Tea-to-Yayo shared tolerance | Other chemicals and full accumulation/clearance combinations |
-| DT-03 | Scheduled permission preserves native mood, interval, quantity and history; S024 adds potential mood | Map and caravan scheduled tolerance; caravan Any consumes one physical Beer and retains daily interval | S024 potential-mood producer and combined acceptance |
+| DT-03 | Scheduled permission preserves native mood, interval, quantity and history; S024 adds potential mood | Map/caravan scheduled use and direct S024 potential-mood conjunction; independent controls, layout failure/recovery, ordinary physical doses and native interval | Remaining drug/policy combinations and later S029 corrections |
 | DT-04 | Direct joy keeps its native exceptions; social drinking lacks those exceptions; patient treats use the patient | Direct joy, positive DrugDesire exception, social drinking and drinkless social recreation | Party lifecycle and S024 patient-treat producer |
 | DT-05 | Medical/manual/refill retain their separate authority | Explicit manual Drink and independent refill; scheduled attached pickup remains coupled to its accepted dose | S124/S134 medical/dependency producers and remaining exclusions |
 | DT-06 | Copy/save/maintenance retain immutable owned choices by row identity | Native copy/edit/save/reload, failed overwrite, late-load rejection, save/inheritance contexts and in-flight dose save/resume | Full S029 maintenance/catalog combinations |
@@ -43,9 +43,10 @@ Any/numeric/invalid state, weakly attached to the actual current row. Copy and r
 unknown bytes; there is no hidden archive for deleted rows and no import of the original mod's field.
 A later owned-schema migration requires its own backup, atomicity and restoration contract.
 
-S024 scheduled potential mood and tolerance are specified as a conjunction. Its future patient-treat
-selector must check the actual recipient without granting new self-recreation exceptions. These
-S024 producers are not implemented yet. S124/S134 likewise remain future producers with separate
+S024 scheduled potential mood and tolerance now compose directly through one admitted native hook,
+with independent settings and failure handling verified in the focused English batch. Its future
+patient-treat selector must check the actual recipient without granting new self-recreation exceptions;
+that producer remains unimplemented. S124/S134 likewise remain future producers with separate
 medical eligibility, dose history and shared pending-chemical ownership. S139 may later propose
 choices through owned state. No internal Harmony patch stack or universal ingestion veto is used.
 
@@ -84,6 +85,7 @@ Recent local ledgers under `artifacts/Implementation/megamod-p0/`:
 | `812ae49` | Native slider editor/layout: 131 steps, all 15 captures inspected | `s138-native-slider/native-verification.md` |
 | `4d4d57e` | Caravan scheduled tolerance: 148 steps, all 13 captures inspected; zero retains two Beer/no effects, Any consumes one and keeps the native interval | `s138-caravan-consumer/native-verification.md` |
 | `90f9245` | Seven fresh language runs: 392 steps, all 49 captures inspected; native drag, inactive retention and both tooltips | `s138-language-layout/slider-language-native-verification.md` |
+| Runtime `43f0b71`, reviewed fixtures through `91cb62c` | S024 scheduled composition: four English cases,679steps/58 inspected captures; independent restrictions, native map/caravan doses, layout recovery and settings reload | `s024-resume/native-verification.md` |
 
 The beta lacks Core translations. The launcher temporarily supplies language metadata so the real
 owned catalogs render alongside Core's accented-English fallback; cleanup removes that metadata.

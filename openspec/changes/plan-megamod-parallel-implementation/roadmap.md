@@ -1,7 +1,7 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **26**, 2026-11-14. Status: **implementation active; focused English batches; final language suite deferred; native acceptance incomplete**.
+Plan revision **27**, 2026-11-14. Status: **implementation active; scheduled-mood batch accepted; focused English batches; aggregate acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
@@ -500,6 +500,22 @@ revision; do not tuck them into a chunk without recording them.
 | S151 | [Clothing Sorter — `Mlie.ClothingSorter`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ## Plan revisions and execution records
+
+### Revision 27 — 2026-11-14 scheduled-mood batch acceptance
+
+S024-M1–M5 and direct S138 scheduled composition have completed focused RED/GREEN, independent
+runtime/fixture review, package checks and four personally observed English workflows. Runtime
+checkpoint43f0b71 and reviewed fixture corrections through91cb62c retain679steps/58 inspected
+captures across map, caravan, layout/recovery and settings reload. The exact per-case identities,
+failed-attempt dispositions, native outcomes, classified complete logs and graceful cleanup are
+in `artifacts/Implementation/megamod-p0/s024-resume/native-verification.md`.
+
+The map fixture authors' leases are closed. Independent review fixed sole-selection, caravan split
+accounting and pooled-job provenance issues before final affected reruns. These are fixture fixes,
+not reasons to replay unrelated completed scenarios. The scheduled producer and shared hook are
+accepted only for this scope; patient treats, other S024 portions, complete S138/S139, all152 entries
+and every aggregate part remain allocated. Revision26's English-only implementation policy and
+final language task12.5 remain in force. No remaining source obligation is removed.
 
 ### Revision 26 — 2026-11-14 English-only implementation verification
 

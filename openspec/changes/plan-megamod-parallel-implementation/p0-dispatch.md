@@ -1,7 +1,7 @@
-# P0 dispatch — current plan revision 26, 2026-11-14
+# P0 dispatch — current plan revision 27, 2026-11-14
 
 Owner: Make Rimworld Great Again (`fumblesneeze.megamod`). The current 152-entry scope is governed
-by [plan revision 26](roadmap.md) and the final **Revision 26 — English-only batches**
+by [plan revision 27](roadmap.md) and the final **Revision 27 — scheduled-mood acceptance**
 section below. Later entries supersede earlier author leases and verification schedules. Root owns
 build/install outputs and final native acceptance; no complete feature is accepted by this record.
 
@@ -960,3 +960,19 @@ README correction: snapshot active-ingestion provenance before native job poolin
 failure diagnostics. No product/Gateway or compile/install/launch lease is granted. Root serializes
 build outputs, assigns fresh independent review, runs affected English A/C and retains causal
 observations. The final language suite is allocated to aggregate task12.5; no feature is dropped.
+
+## Revision 27 — scheduled-mood acceptance
+
+The reviewed fixture corrections are committed through91cb62c. All S024 author/review leases for
+this batch are closed. Root personally inspected A205steps/19captures, B184/15, C241/17 and D49/7
+in fresh isolated English processes, including native console and full log classification. The
+exact evidence and semantic/playability conclusions are retained in
+`artifacts/Implementation/megamod-p0/s024-resume/native-verification.md`; canonical package validation
+passed72files. Product behavior is unchanged since reviewed43f0b71; each run retains its own binary
+identity. B/D were not replayed for unrelated map-fixture fixes.
+
+Only S024-M1–M5 close: recovering mood rejects, eligible caravan use consumes physical stock,
+independent tolerance/mood controls survive local unavailability and layout recovery, an executing
+dose completes after re-enabling mood checking, and native settings reload retains inheritance and
+dormant overrides. Full S024/S138/S139 and all part gates remain open. All152 entries, the all-mod
+option search requirement, seven authored catalogs and final language task12.5 remain allocated.

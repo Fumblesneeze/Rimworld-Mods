@@ -9,6 +9,13 @@ interrupting the work. No runtime implementation or gameplay acceptance is claim
 
 ## Status and next work
 
+Revision27, 2026-11-14: the selected S024 scheduled-mood/common-setting/S138 composition batch is
+accepted after independent review, focused host/package checks and four English native workflows
+(679steps,58 personally inspected captures). Exact causal evidence is retained under
+`artifacts/Implementation/megamod-p0/s024-resume/native-verification.md`. Only S024-M1–M5 close;
+full Common Sense, tolerance and aggregate parts remain open. All152 entries remain allocated.
+Translations stay complete; per revision26 the full language suite runs at the very end.
+
 Revision 25, 2026-11-14: **implementation active again**. The user resumed the existing S024/S138
 scheduled-mood batch after the revision 24 search clarification. The user added S140–S152; S053
 RePowered and S059 Best Mix were already selected. Current coverage is **152 unique entries:
@@ -17,7 +24,7 @@ a Needle-inspired all-mod option search draft, explicitly without a supported-mo
 other twelve require full sequential research
 and their own observable OpenSpec changes before code. See the [new intake and fixed integration
 decisions](2026-11-14-source-additions.md), especially Assign/Simple Sidearms and shared resource
-settings. S024/runtime review corrections and focused native verification are the active batch;
+settings. The S024/runtime review corrections and focused native verification were the revision25 batch;
 dated drafting/implementation counts below are
 historical checkpoints, not the current total. No runtime or acceptance task is closed by intake.
 
@@ -26,7 +33,7 @@ direct S138 composition as the next batch. The original source remains read-only
 The existing native mood threshold and common settings serve this behavior; no extra slider or
 independent settings system is planned. S138's same-slider correction, caravan route and seven
 owned language catalogs have scoped exact-build observations in its tasks. All other S024
-behaviors, complete feature acceptance and the 139-feature roadmap remain open.
+behaviors and complete feature acceptance remained open; the current roadmap has152 entries.
 
 Implementation planning now has a [shared-component design](../../../../openspec/changes/plan-megamod-parallel-implementation/design.md),
 [roadmap](../../../../openspec/changes/plan-megamod-parallel-implementation/roadmap.md) and
@@ -40,20 +47,21 @@ remain narrow, inspect referenced mods without copying code, and hand over tests
 the orchestrator runs and personally validates combined native results after each part is ready.
 It may revise the plan on evidence, retaining the revision log, feature obligations and acceptance
 gates. No runtime task is closed by this planning pass.
-The current dispatch implements the common transient effective-off path with the first diagnostic
+At the revision17 checkpoint, dispatch implemented the common transient effective-off path with the first diagnostic
 consumers, and S071's single-transpiler entry participant. Root retains startup/UI composition and
 native verification; stored preferences, target guards and all feature obligations remain intact.
 The [planning audit](2026-11-07-implementation-planning-audit.md) records independent review,
-dependency corrections and documentation validation; only planning acceptance tasks are complete.
+dependency corrections and documentation validation; its acceptance covers planning only.
 
 Implementation started from full-repository checkpoint `c0a600e`. The [P0 dispatch](../../../../openspec/changes/plan-megamod-parallel-implementation/p0-dispatch.md)
-records the current 1.7.5000 target, bounded assignments, core milestones and remaining work.
+records the original 1.7.5000 target and later revisions, bounded assignments, milestones and remaining work.
 Shared settings/admission, diagnostics snapshots, content policies and number-formatting rules have
 focused host evidence and scoped reviews. The first save-lifecycle observer is startup registered;
-no runtime feature has passed integrated native acceptance. Core progress does not change replacement
-coverage claim. The local execution ledger is `artifacts/Implementation/megamod-p0/part-ledger.md`.
+at that early checkpoint no runtime feature had passed integrated native acceptance. Later scoped
+native results are recorded above and in the owning tasks; aggregate gates remain open. The local
+execution ledger is `artifacts/Implementation/megamod-p0/part-ledger.md`.
 
-Current revision12 progress: the prepared-barrier/bridge slice has41/41 focused Harmony checks and
+Historical revision12 progress: the prepared-barrier/bridge slice has41/41 focused Harmony checks and
 two CLEAR correction rechecks; native message placement remains unregistered. The reviewed incident
 save-override scenario passed38 native steps; root personally inspected all8 captures, including
 both refusals and the physical ship chunk after reload. Cleanup passed and normal configuration was
@@ -906,7 +914,7 @@ unresolved detail is recorded under its owner and does not cause unrelated resea
 | S021 | P1-16; later reference update | Pick Up and Haul - Continued — `Zzyxzz.PickUpAndHaulReworked`; compare Reworked — `Dreadarm.PickUpAndHaul` | Current-reference composition drafted, reviewed and validated; PH-Q5 resolved for specification; PH-Q1–4 open | [specify-megamod-batch-hauling](../../../../openspec/changes/specify-megamod-batch-hauling/) |
 | S022 | P1-17 | **Original:** Weapons/apparel recycling | Drafted; ER-Q1–4 open | [specify-megamod-equipment-recycling](../../../../openspec/changes/specify-megamod-equipment-recycling/) |
 | S023 | P1-17 | **Original:** On-site melee destruction of items with HP | Drafted; MD-Q1–4 open | [specify-megamod-melee-item-destruction](../../../../openspec/changes/specify-megamod-melee-item-destruction/) |
-| S024 | P1-18 | Common Sense — `avilmask.CommonSense` | Drafted; CS-Q1–4 open | [specify-megamod-common-sense](../../../../openspec/changes/specify-megamod-common-sense/) |
+| S024 | P1-18 | Common Sense — `avilmask.CommonSense` | Scheduled mood/common setting/S138 composition accepted; other portions and CS-Q1–4 open | [specify-megamod-common-sense](../../../../openspec/changes/specify-megamod-common-sense/) |
 | S025 | P1-19 | Prosthetic No Missing Body Parts (Continued) — `Mlie.ProstheticNoMissingBodyParts` | Drafted; PA-Q1–4 open | [specify-megamod-prosthetic-apparel](../../../../openspec/changes/specify-megamod-prosthetic-apparel/) |
 | S026 | P1-20 | Use Best Materials — `kathanon.UseBestMaterials` | Drafted; UB-Q1–4 open | [specify-megamod-best-material-selection](../../../../openspec/changes/specify-megamod-best-material-selection/) |
 | S027 | P1-21 | Just Put It Over There — `Mlie.JustPutItOverThere` | Drafted; VD-Q1–4 open | [specify-megamod-visitor-deliveries](../../../../openspec/changes/specify-megamod-visitor-deliveries/) |
@@ -1020,7 +1028,7 @@ unresolved detail is recorded under its owner and does not cause unrelated resea
 | S135 | User addition, 2026-11-03 | Basic Caravan Loading — `LM420.BCL`, Workshop3370434966 | Public description, complete XML and native1.7 work/gather/unload contracts inspected; observable draft independently reviewed and validated156/0 | [Change](../../../../openspec/changes/specify-megamod-basic-caravan-loading/), [research](2026-11-07-basic-caravan-loading-research.md), [coverage](../replacements/basic-caravan-loading.md); BCL-Q1 resolved, runtime pending |
 | S136 | User addition,2026-11-03 | Floor Pipette Tool — `ferny.FloorPipetteTool`, Workshop3706877822 | Public/pinned source, complete binary/IL and focused native1.7 inspected; observable draft independently reviewed/validated157/0 | [Change](../../../../openspec/changes/specify-megamod-floor-sampling/), [research](2026-11-07-floor-pipette-research.md), [coverage](../replacements/floor-pipette.md); FPT-Q1 resolved, runtime pending |
 | S137 | User addition, 2026-11-05 | Original: click a health condition to filter medical bill recipes | Public UI references and focused native/source effects inspected; uniform general/heuristic/explicit matching and direct S007 composition reconciled; HBF-Q2 ancestor intent retained | [Change](../../../../openspec/changes/specify-megamod-condition-medical-bills/), [research](2026-11-07-condition-medical-bills-research.md), [coverage](../replacements/condition-medical-bills.md); independently reviewed, strict validation158/0; runtime unimplemented |
-| S138 | User addition,2026-11-08 | Only If 'Tolerance' Below in Drug Policy — `seohyeon.onlyIfToleranceBelow`, Workshop3088210509 | Choice/rule and S029 row-state components implemented-unverified; native hooks, editor, persistence and enforcement remain open | [Change](../../../../openspec/changes/specify-megamod-drug-tolerance/), [research](2026-11-08-drug-tolerance-research.md), [coverage](../replacements/drug-tolerance.md); no enabled tolerance behavior or original API/drop-in parity |
+| S138 | User addition,2026-11-08 | Only If 'Tolerance' Below in Drug Policy — `seohyeon.onlyIfToleranceBelow`, Workshop3088210509 | Runtime implemented with scoped native slider, persistence, map/caravan and scheduled S024 composition evidence; full feature remains open | [Change](../../../../openspec/changes/specify-megamod-drug-tolerance/), [research](2026-11-08-drug-tolerance-research.md), [coverage](../replacements/drug-tolerance.md); no original API/drop-in parity |
 | S139 | User addition,2026-11-08 | Safe Drug Policy Generator — `seohyeon.bestdrugpolicy`, Workshop2582640021 | Idea-only reference, independently drafted after S138; explicit preview/new-policy workflow, retained existing choices, medical permission and bounded risk claims; calculations and atomic creation remain prerequisites | [Change](../../../../openspec/changes/specify-megamod-drug-policy-generation/), [research](2026-11-08-safe-drug-policy-generator-research.md), [coverage](../replacements/safe-drug-policy-generator.md); no runtime implementation or universal safety claim |
 | S140 | User addition,2026-11-14 | Linkable Descriptions — `sk.linkabledescriptions` | Facility build-control descriptions; coordinate S074 without conflating info links | [Intake](2026-11-14-source-additions.md); identity/public scope checked, full source/specification work pending; unimplemented |
 | S141 | User addition,2026-11-14 | Needle — `ZIPender.Needle` | All-mod individual-option search specified; generic page/tab discovery, no supported-mod whitelist | [Change](../../../../openspec/changes/specify-megamod-settings-search/), [research](2026-11-14-needle-research.md), [coverage](../replacements/needle.md); unimplemented |
