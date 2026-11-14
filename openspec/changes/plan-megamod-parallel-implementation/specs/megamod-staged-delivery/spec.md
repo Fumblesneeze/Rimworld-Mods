@@ -86,3 +86,14 @@ synthetic state assertions or another agent's claim MUST NOT substitute for that
 - **WHEN** runtime-affecting edits invalidate the build or assumptions supporting its acceptance
 - **THEN** affected acceptance tasks reopen and require evidence on the new reviewed build
 - **AND** unrelated completed scenarios are not automatically rerun as a full repository suite.
+
+### Requirement: Language verification is consolidated at the final suite
+Every feature SHALL retain complete translations for all seven baseline languages. Implementation
+batches SHALL verify native behavior in English only, retaining static catalog checks. The full
+rendered-language verification SHALL run at the very end across the accumulated megamod suite;
+individual feature and part gates MUST NOT repeat that language matrix or imply it already passed.
+
+#### Scenario: A translated feature is ready for its implementation batch
+- **WHEN** all catalogs are complete and the reviewed English native workflow passes
+- **THEN** the batch records its English behavior evidence and keeps the final language gate open
+- **AND** it does not launch separate language cases before continuing implementation.

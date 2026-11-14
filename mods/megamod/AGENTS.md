@@ -248,7 +248,12 @@ gate, personally performed by the orchestrator at its integrated part gate, on t
 plus the balance/playability pass. Keep evidence local under ignored
 `artifacts/`; include causal actions, observations, build identity, and cleanup.
 
-Maintain all seven baseline languages with each UI feature. Add Harmony as a hard dependency when
+Maintain all seven baseline languages with each UI feature. The user's 2026-11-14 scheduling
+decision is **English-only native verification during implementation**: do not launch or review
+each language separately per feature. Retain complete catalogs and static translation checks;
+run the full language verification once at the very end across the accumulated megamod suite.
+Keep that final gate open without blocking an otherwise verified English feature batch.
+Add Harmony as a hard dependency when
 eagerly using its types; do not bundle it or upstream assemblies. Keep the developer Gateway out of
 product dependencies, assembly references, load hints, and packages. No Workshop publication or
 feature acceptance is implied by a scaffold profile or successful build.

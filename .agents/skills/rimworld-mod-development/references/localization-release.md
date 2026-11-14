@@ -36,6 +36,12 @@ The repository baseline for every new distributable mod is `English`, `German`, 
 
 Static completeness is necessary but not sufficient. On the final reviewed Release build:
 
+Megamod scheduling exception (user decision, 2026-11-14): author all seven catalogs as features
+land, but run native iteration/feature acceptance only in English. Do not repeat per-language
+launches or screenshot reviews for each feature. Defer rendered language verification to one final
+whole-megamod-suite gate at the end. Static catalog completeness remains required, and a green
+English feature batch does not claim that deferred language matrix has passed.
+
 1. Launch one fresh isolated process for each required language, with developer mode enabled and the exact owned PID/configuration evidence.
 2. Select the language through RimWorld's native setting or stage that isolated process's language preference before launch.
 3. Observe representative product settings, a Def/info card, a live job report, an alert, and a runtime action such as a float-menu or gizmo label.

@@ -1,7 +1,7 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **25**, 2026-11-14. Status: **implementation active; S024/S138 scheduled-mood batch resumed; native acceptance incomplete**.
+Plan revision **26**, 2026-11-14. Status: **implementation active; focused English batches; final language suite deferred; native acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
@@ -500,6 +500,16 @@ revision; do not tuck them into a chunk without recording them.
 | S151 | [Clothing Sorter — `Mlie.ClothingSorter`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ## Plan revisions and execution records
+
+### Revision 26 — 2026-11-14 English-only implementation verification
+
+The user retains all translations and explicitly moves full language verification to the very end
+for the whole megamod suite. During implementation, run focused native batches only in English;
+keep static catalog checks and the final consolidated language obligation. Earlier per-feature
+language run allocations are superseded as scheduling instructions, not deleted from history.
+The already-started French settings run may finish owned cleanup; no additional locale launches
+or screenshot reviews are allocated now. S024 continues with its map job-provenance fixture fix
+and affected English A/C cases. No product scope, package boundary or gameplay acceptance is waived.
 
 ### Revision 25 — 2026-11-14 resume the scheduled-mood batch
 

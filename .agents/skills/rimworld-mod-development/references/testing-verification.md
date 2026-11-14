@@ -67,6 +67,12 @@ Use a separately marked E2E project for a workflow that needs ordinary game fram
 
 The runner discovers downloaded package IDs, deploys repo-owned products before marker-owned staging, appends Gateway last, launches one fresh isolated process per exact group, and runs same-group tests sequentially. Its runtime reset removes every destroyable disposable Thing/Pawn plus zones, designations, selection, interactions, and test windows, then clears and verifies live messages, visible and delayed letters, and active alert-readout entries; permanent non-destroyable map features remain environment. A failed reset taints the process and skips later tests. The host persists aggregate JSON/JUnit and screenshots, shuts down the exact PID, sanitizes credentials, and cleans only its exact lease in `finally`.
 
+Do not read a live runner's mutable evidence JSON with `Get-Content` while it is being rewritten.
+On Windows even a brief read can deny the writer's file access and abort an otherwise valid run.
+Wait for the owned CLI session to finish before inspecting those files; use a typed live-status
+operation when progress detail is necessary. A file-sharing abort is harness evidence, not a
+gameplay failure or acceptance, and its cleanup must be checked before retrying the exact case.
+
 Before the ordinary reset, remove all roofs, including overhead mountain, through the scenario-owned
 test seam; then clear disposable state and alerts. For a plain quickstart, pass `-Quicktest` and omit
 `-Scenario`; the resulting evidence label `none` is not a literal scenario argument. Fixture setup and

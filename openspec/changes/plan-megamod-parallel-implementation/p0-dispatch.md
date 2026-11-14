@@ -1,8 +1,8 @@
-# P0 dispatch — current plan revision 25, 2026-11-14
+# P0 dispatch — current plan revision 26, 2026-11-14
 
 Owner: Make Rimworld Great Again (`fumblesneeze.megamod`). The current 152-entry scope is governed
-by [plan revision 25](roadmap.md) and the final **Revision 25 — resumed S024/S138 integration**
-section below. That section closes prior author leases and records the resumed batch. Root owns
+by [plan revision 26](roadmap.md) and the final **Revision 26 — English-only batches**
+section below. Later entries supersede earlier author leases and verification schedules. Root owns
 build/install outputs and final native acceptance; no complete feature is accepted by this record.
 
 The original checkpoint, environment and assignments below are historical execution records.
@@ -945,3 +945,18 @@ SplitOff evidence. Root owns remaining review disposition, product/E2E outputs, 
 commits and the actual minimized native workflows; no implementer is authorized to launch them.
 Exact reports and RED/GREEN evidence are under `artifacts/Implementation/megamod-p0/s024-resume/`.
 No task is accepted from these handoffs. Full S024/S138, S139, intake research and all part gates stay open.
+
+## Revision 26 — English-only batches
+
+The user's latest goal keeps translations complete and defers all-language verification until the
+very end for the whole suite. Root stops additional locale launches and reviews; the already-started
+French run finishes its owned cleanup. Corrected English D passed49steps with seven personally
+inspected captures including the native console. B's earlier caravan evidence remains scoped to
+its exact build. A progressed to ingestion but exposed a fixture reading a pooled Job after native
+completion; C shares that check and is not launched just to repeat it.
+
+`s024_native_batch_review` is now the author of only NativeScheduledMoodTests.cs and its PracticalNeeds
+README correction: snapshot active-ingestion provenance before native job pooling and improve
+failure diagnostics. No product/Gateway or compile/install/launch lease is granted. Root serializes
+build outputs, assigns fresh independent review, runs affected English A/C and retains causal
+observations. The final language suite is allocated to aggregate task12.5; no feature is dropped.

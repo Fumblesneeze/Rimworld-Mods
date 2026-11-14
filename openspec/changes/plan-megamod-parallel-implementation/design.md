@@ -2,9 +2,12 @@
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`, RimWorld **1.7 beta**.
 The planning baseline was an inert scaffold and 137 researched feature changes. P0 implementation
-is active again; no complete feature or part has passed final native acceptance. Revision 25
+is active again; no complete feature or part has passed final native acceptance. Revision 26
 retains 152 entries (140 drafts and twelve intake sources requiring their own specifications).
 S141 now explicitly covers all mods' individual options, without a supported-mod whitelist.
+The user's 2026-11-14 language scheduling correction keeps every translation but limits native
+implementation verification to English. The accumulated full language suite runs at the very end;
+it is not a per-feature or per-part launch requirement. Native gameplay evidence remains mandatory.
 The user's subsequent resume restarts the S024/S138 batch; source intake alone adds no code lease. The
 [foundation](../add-megamod-foundation/design.md) defines product boundaries; the
 [reconciled decisions](../../../mods/megamod/docs/refinement/2026-11-07-decision-reconciliation-audit.md)

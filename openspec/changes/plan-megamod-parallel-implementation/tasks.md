@@ -1,12 +1,14 @@
 # Governing implementation tasks
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **25**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
+Plan revision **26**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
 This is the aggregate coordination checklist. Each chunk's linked feature tasks hold its behavior
 slices; expand assignments into focused spec → RED/GREEN → code → review work before dispatch.
 A handoff gate below verifies that work; it does not replace those tasks or accept gameplay.
 
 Documentation completion and implementation are separate. All aggregate runtime gates remain open.
+Revision 26 retains all catalogs but verifies implementation batches only in English, as explicitly
+requested by the user. Full rendered-language verification moves to task 12.5 at the very end.
 Revision 25 resumes S024-M1–M5 and its direct S138 composition after the user's explicit activation.
 Finish review corrections as one focused batch, then build/package and run the selected native
 workflows. Intake/search scope is retained without dispatching unresearched sources.
@@ -282,6 +284,7 @@ source was changed and no automatic-clearance or aggregate P0 task closes.
 - [ ] 12.2 Reconcile all later-composition obligations with the reviewed final candidate; run any still-missing affected native workflows and personally inspect them. Do not use this task to launch an unrelated full repository suite.
 - [ ] 12.3 Complete independent accumulated integration review and the final semantic/playability review, resolve findings and repeat affected tests/package/native gates after fixes. Check every runtime revision's evidence and normal-configuration cleanup.
 - [ ] 12.4 Publish the development completion record locally with exact supported scope, feature task/coverage status and remaining blockers. Leave release preparation, release regression matrix, presentation and Workshop publication to their separately authorized workflow.
+- [ ] 12.5 At the very end, run consolidated language verification across the whole accumulated megamod suite on the final reviewed build. Personally inspect every required language; retain exact-build rendering, action/result and cleanup evidence. This final gate remains required before declaring complete language coverage, without repeating it in individual implementation batches.
 
 ## 13. Replanning record discipline
 
