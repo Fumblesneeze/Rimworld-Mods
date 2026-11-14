@@ -47,6 +47,12 @@ Keep controls with the existing Options → Mods list. One megamod entry leads t
 settings, whose configuration still uses normal global/save inheritance and disabled main-menu save
 controls. Do not recreate every legacy source page as a fake outer entry or add a bottom gameplay tab.
 
+S141 now extends this chooser with [all-mod individual-option search](needle.md), following the
+2026-11-14 user clarification. Its generic page/tab discovery requires no supported-mod whitelist;
+its query syntax and option results compose with these page identities/grouping. This supersedes
+the earlier foreign-control exclusion, without changing the status of the existing pure projection.
+No S141 capture/native navigation has been implemented or accepted.
+
 ## Contracts and coexistence
 
 Native/provider entries keep identity, settings labels, renderer and normal close/write lifecycle.

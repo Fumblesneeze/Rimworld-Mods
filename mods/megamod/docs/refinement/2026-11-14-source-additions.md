@@ -21,7 +21,7 @@ research remain in `artifacts/Refinement/2026-11-14-intake/source-intake.md`.
 | ID | Source / canonical package | Primary allocation | Intake purpose / composition |
 | --- | --- | --- | --- |
 | S140 | [Linkable Descriptions](https://steamcommunity.com/sharedfiles/filedetails/?id=3837322529), `sk.linkabledescriptions` | P6-C | Facility build-button descriptions; distinct from S074 info-card links |
-| S141 | [Needle](https://steamcommunity.com/sharedfiles/filedetails/?id=3834934844), `ZIPender.Needle` | P0-B | [Owned settings search draft](../../../../openspec/changes/specify-megamod-settings-search/proposal.md); compose with S047/common renderer |
+| S141 | [Needle](https://steamcommunity.com/sharedfiles/filedetails/?id=3834934844), `ZIPender.Needle` | P0-B | [All-mod option search draft](../../../../openspec/changes/specify-megamod-settings-search/proposal.md); compose with S047/common renderer |
 | S142 | [Xenotype Descriptions](https://steamcommunity.com/sharedfiles/filedetails/?id=3832924427), `lakinmanheim.xenotypedescriptions` | P8-A | Editable custom xenotype/xenogerm text and saved templates/tooltips; Biotech-dependent behavior |
 | S143 | [Insects Aren't Raiders](https://steamcommunity.com/sharedfiles/filedetails/?id=3838615303), `tk421storm.InsectsArentRaiders` | P6-B | Threat-aware hive/swarm aggression, defense and return-home behavior; research native/DLC/provider boundaries |
 | S144 | [Gear Tab - Compare & Swap](https://steamcommunity.com/sharedfiles/filedetails/?id=3835986381), `DOORAJP.GearPage` | P8-A | Colony equipment comparison and real swap/equip orders through **Assign**; genuine Simple Sidearms support |
@@ -101,12 +101,21 @@ Revision 23 updates the queue, replacement index, primary chunk allocations, aff
 and final 152-entry reconciliation. No new part/chunk is required: 27 chunks across nine parts stay.
 The twelve unspecific sources are assigned research obligations, not runnable implementation leases.
 Each needs its own source analysis, proposal/design/observable specs/tasks and coverage report before
-code. Preserve every existing feature and accepted user decision. Needle's selected owned-search
-draft and documentation checks do not resume the paused S024/runtime work or close a gameplay gate.
+code. Preserve every existing feature and accepted user decision. Revision 24 applies the user's
+explicit answer: Needle-inspired search covers all mods' individual options through generic page/tab
+discovery, with no supported-mod whitelist. It supersedes the initial owned-only draft and S047's
+foreign-control exclusion; counts and allocations stay unchanged. These documentation changes do not
+resume paused S024/runtime work or close a gameplay gate.
 
-Documentation verification: independent review found only a stale total/pause statement in the mod
+Revision 23 documentation verification: independent review found only a stale total/pause statement in the mod
 README; that entry point is reconciled. Queue, primary allocation and active handoff lists each
 contain the same 152 unique IDs. All twelve relative links in the seven new Markdown files resolve.
 Strict typed OpenSpec validation passed **169 items, zero failures**. Evidence is retained under
 `artifacts/Refinement/2026-11-14-intake/`; no runtime tests, install or game launch were needed for
 this documentation-only change. Existing paused source edits remain a separate uncommitted batch.
+
+Revision 24 verification: independent review found no blocking issue; its source-budget precision
+finding is corrected in the Needle research note. Typed OpenSpec validation again passed 169 items
+with zero failures; all 979 relative links across the twenty changed documents resolve, and the
+queue/allocation/handoff sets remain the same 152 unique IDs. Scope-review evidence uses the
+`all-mod-search-*` artifacts in the same local evidence directory. No runtime work was resumed.

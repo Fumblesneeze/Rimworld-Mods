@@ -1,15 +1,16 @@
 # Governing implementation tasks
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **23**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
+Plan revision **24**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
 This is the aggregate coordination checklist. Each chunk's linked feature tasks hold its behavior
 slices; expand assignments into focused spec → RED/GREEN → code → review work before dispatch.
 A handoff gate below verifies that work; it does not replace those tasks or accept gameplay.
 
 Documentation completion and implementation are separate. All aggregate runtime gates remain open.
-Revision 23 adds S140–S152 while implementation remains paused: S141 has an owned-settings search
-draft and twelve entries need full per-source research/specification before code. Every affected
-handoff below includes them; intake alone cannot satisfy a handoff. The complete scope is now 152
+Revision 23 added S140–S152 while implementation remains paused. Revision 24 specifies S141's
+all-mod individual-option search without a supported-mod whitelist; twelve entries still need full
+per-source research/specification before code. Every affected handoff below includes them;
+intake alone cannot satisfy a handoff. The complete scope is now 152
 entries, retaining all earlier feature obligations and the user's pending broader Assign design.
 Revision 22 selects only S024 scheduled potential mood, its common setting and direct S138
 composition ahead of the remaining P4-A work. Follow S024-M1–M5 in its owning tasks and the exact

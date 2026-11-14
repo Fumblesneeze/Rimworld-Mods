@@ -9,10 +9,11 @@ interrupting the work. No runtime implementation or gameplay acceptance is claim
 
 ## Status and next work
 
-Revision 23, 2026-11-14: **implementation remains paused**. The user added S140–S152; S053
+Revision 24, 2026-11-14: **implementation remains paused**. The user added S140–S152; S053
 RePowered and S059 Best Mix were already selected. Current coverage is **152 unique entries:
 140 drafts and twelve intake entries**, still allocated across 27 chunks/nine parts. S141 now has
-a Needle-inspired owned-settings search draft; the other twelve require full sequential research
+a Needle-inspired all-mod option search draft, explicitly without a supported-mod whitelist; the
+other twelve require full sequential research
 and their own observable OpenSpec changes before code. See the [new intake and fixed integration
 decisions](2026-11-14-source-additions.md), especially Assign/Simple Sidearms and shared resource
 settings. Current S024/runtime work is untouched; dated drafting/implementation counts below are
@@ -1020,7 +1021,7 @@ unresolved detail is recorded under its owner and does not cause unrelated resea
 | S138 | User addition,2026-11-08 | Only If 'Tolerance' Below in Drug Policy — `seohyeon.onlyIfToleranceBelow`, Workshop3088210509 | Choice/rule and S029 row-state components implemented-unverified; native hooks, editor, persistence and enforcement remain open | [Change](../../../../openspec/changes/specify-megamod-drug-tolerance/), [research](2026-11-08-drug-tolerance-research.md), [coverage](../replacements/drug-tolerance.md); no enabled tolerance behavior or original API/drop-in parity |
 | S139 | User addition,2026-11-08 | Safe Drug Policy Generator — `seohyeon.bestdrugpolicy`, Workshop2582640021 | Idea-only reference, independently drafted after S138; explicit preview/new-policy workflow, retained existing choices, medical permission and bounded risk claims; calculations and atomic creation remain prerequisites | [Change](../../../../openspec/changes/specify-megamod-drug-policy-generation/), [research](2026-11-08-safe-drug-policy-generator-research.md), [coverage](../replacements/safe-drug-policy-generator.md); no runtime implementation or universal safety claim |
 | S140 | User addition,2026-11-14 | Linkable Descriptions — `sk.linkabledescriptions` | Facility build-control descriptions; coordinate S074 without conflating info links | [Intake](2026-11-14-source-additions.md); identity/public scope checked, full source/specification work pending; unimplemented |
-| S141 | User addition,2026-11-14 | Needle — `ZIPender.Needle` | Selected owned-settings search specified; source-wide foreign-option crawling is not selected | [Change](../../../../openspec/changes/specify-megamod-settings-search/), [research](2026-11-14-needle-research.md), [coverage](../replacements/needle.md); unimplemented |
+| S141 | User addition,2026-11-14 | Needle — `ZIPender.Needle` | All-mod individual-option search specified; generic page/tab discovery, no supported-mod whitelist | [Change](../../../../openspec/changes/specify-megamod-settings-search/), [research](2026-11-14-needle-research.md), [coverage](../replacements/needle.md); unimplemented |
 | S142 | User addition,2026-11-14 | Xenotype Descriptions — `lakinmanheim.xenotypedescriptions` | Custom xenotype/xenogerm text, templates and tooltips; DLC contract pending | [Intake](2026-11-14-source-additions.md); identity/public scope checked, full source/specification work pending; unimplemented |
 | S143 | User addition,2026-11-14 | Insects Aren't Raiders — `tk421storm.InsectsArentRaiders` | Hive/swarm combat behavior; native/DLC/provider boundaries pending | [Intake](2026-11-14-source-additions.md); identity/public scope checked, full source/specification work pending; unimplemented |
 | S144 | User addition,2026-11-14 | Gear Tab - Compare & Swap — `DOORAJP.GearPage` | Assign entry only; genuine Simple Sidearms support; broader Assign redesign pending user input | [Intake](2026-11-14-source-additions.md); identity/public scope checked, full source/specification work pending; unimplemented |

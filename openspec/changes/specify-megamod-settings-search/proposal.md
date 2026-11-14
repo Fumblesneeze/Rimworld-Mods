@@ -1,34 +1,39 @@
 ## Why
 
-Make Rimworld Great Again has many common settings. The previously agreed search across setting
-names, descriptions, feature names and categories needs an observable contract. Needle provides a
-useful reference for finding an individual option and navigating directly to its existing control.
+The user clarified on 2026-11-14 that settings search must find individual options across **all
+mods**, like Needle, without requiring a supported-mod list. This supersedes the initial owned-only
+draft and extends the earlier name/help/feature/category requirement. Finding only a mod's settings
+page is insufficient: selecting an option must reveal its original control.
 
 ## What Changes
 
-- Specify S141, Needle-inspired search within megamod's one structured settings page.
-- Search all registered owned settings, including sections outside the current viewport; show the
-  matching setting, category/feature path, current scope/value and unavailable reason where relevant.
-- Reveal and highlight the actual setting without changing it, with current save/inheritance guards.
-- Use owned registration metadata rather than replaying settings draws to discover controls.
-- Keep S047's other-mod page-name/author chooser separate. Individual options inside other mods,
-  Needle's source APIs, hidden page crawling and source-settings migration are outside this draft.
+- Specify S141 as cross-mod individual-option search in native Options → Mod options, composed with
+  S047's page grouping/navigation and usable when S047 sorting is disabled.
+- Discover all available active-mod settings pages automatically, including independent
+  provider-generated pages, without package allowlists, per-mod adapters or registration prerequisites.
+- Use Needle-style bounded page drawing and tab discovery for foreign controls; use existing
+  registration metadata directly for megamod's own options.
+- Search readable labels, help, displayed values, tabs, mod/page names, authors and package IDs;
+  retain owned feature/category context. Reveal and highlight the original control without editing it.
+- Report pending, incomplete and failed discovery honestly, preserving normal page access.
+  A failed capture is a coverage gap, not a reason to redefine the scope as supported mods only.
 
 ## Capabilities
 
 ### New Capabilities
-- `megamod-settings-search`: localized option search, result navigation, live scope/value presentation,
-  lifecycle and failure behavior within the common settings UI.
+- `megamod-settings-search`: universal option discovery, query/results, native navigation, value
+  provenance, lifecycle and failure handling.
 
 ### Modified Capabilities
-None. This gives the 2026-11-02 owned-settings search decision its own contract; S047 still handles
-page navigation without inspecting opaque foreign controls.
+The still-active S047 draft `megamod-mod-settings-navigation` is amended in its owning change to
+compose its page-level search with S141 option results. Its former exclusion of opaque foreign
+controls is superseded; grouping, distinct page identities and native persistence remain authoritative.
+No duplicate capability delta is introduced here.
 
 ## Impact
 
 Sole owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`; target **1.7 beta**.
-This change specifies later behavior only; it delivers no runtime implementation or acceptance.
-It extends the owned common settings renderer/metadata and composes directly with S047. Harmony is
-already a required product dependency; no additional external runtime dependency, XML Extensions
-operation, Needle dependency or Gateway product reference is introduced. Needle is read-only
-research inspiration. Other requested additions remain separate intake entries.
+This is specification work only; implementation remains paused. Common settings metadata, native
+chooser integration and generic GUI capture will be affected later. Harmony remains the existing
+dependency. No Needle binary/API dependency, source-settings migration, XML Extensions operation
+or Gateway product dependency is introduced. Source inspection informs independent implementation.

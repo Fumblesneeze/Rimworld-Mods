@@ -81,10 +81,18 @@ SHALL NOT by itself identify a page as HugsLib-generated.
   for search and inspection.
 
 ### Requirement: MO-04 Search includes titles, mod names, authors and groups
-The mod SHALL perform case-insensitive substring search across the displayed settings title, mod
-name, original author information, normalized author and displayed group. An empty query SHALL
-show all available entries. Filtering SHALL preserve independent matches and current grouping/order
-without editing the pages or searching opaque values inside unrelated settings controls.
+The mod SHALL perform case-insensitive substring search across the displayed settings title, mod name, original author information, normalized author and displayed group.
+An empty query SHALL show all available entries. Filtering SHALL preserve independent matches and
+current grouping/order without editing settings. When S141 is enabled, its query syntax governs
+page matches on this metadata and adds distinct individual-option results across all mods in the
+same chooser. Option hits must not be filtered out by a nonmatching page title. S141's generic
+capture replaces this draft's earlier exclusion of opaque foreign controls; its coverage status
+and original-control reveal apply without changing S047 page identity or owner persistence.
+
+#### Scenario: Individual-option search composes with page grouping
+- **WHEN** S141 is enabled and an option matches although its page metadata does not
+- **THEN** the option remains selectable with its exact page identity and opens its original control;
+  grouping counts still use the complete page collection, and disabling S141 restores page-only search.
 
 #### Scenario: Search by an author hidden by grouping
 - **WHEN** the player searches for an original author whose page is displayed under Various Authors

@@ -58,8 +58,15 @@ preserve the separate projected groups rather than deduplicate their headings.
 
 Match a case-insensitive substring against displayed settings title, mod name, raw metadata authors,
 normalized author and displayed group. Empty query includes all; clearing restores the same original
-group sizes/order. Keep every independent match, including same-titled packs. Do not search opaque
-foreign control values or filter out mods because their settings happen to be default.
+group sizes/order. Keep every independent match, including same-titled packs. Do not filter out
+mods because their settings happen to be default.
+
+The 2026-11-14 S141 all-mod decision supersedes this draft's former foreign-control search exclusion.
+When S141 is enabled, reuse one query field: S141's syntax governs page matches on their own metadata
+and separate option results from generic discovery across all mods, without a package whitelist.
+A nonmatching page title cannot hide a matching option. Keep actual page identities, complete-list
+grouping and owner edit/close persistence. With S141 off, retain the page-only substring behavior
+above; with S047 sorting off, S141's native chooser search still works.
 
 Displayed group means the current view: Various Authors participates only when author mode and
 singleton grouping actually place that page there. Name mode has no displayed group, so that label

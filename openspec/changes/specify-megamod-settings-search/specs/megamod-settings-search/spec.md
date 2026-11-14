@@ -1,128 +1,153 @@
-# Owned settings search
+# Cross-mod settings search
 
-Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), **1.7 beta**.
-S141, Needle-inspired selected subset. Specification only; no runtime acceptance.
+Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), 1.7 beta.
+S141, Needle-inspired universal option search. Specification only; no runtime acceptance.
+The 2026-11-14 all-mod clarification supersedes the earlier owned-only draft.
 
 ## ADDED Requirements
 
-### Requirement: SS-01 Search covers owned setting names and context
-The common settings page SHALL provide search across every registered owned setting's localized name, description/help, feature name and category name, independently of the currently visible section or scroll position.
-Meaningful options within composite settings retain a route to their actual owning editor. Disabled
-or temporarily unavailable registered settings remain discoverable with their reason; search never
-enables a feature. Decorative text is not presented as an editable setting. S047 remains responsible
-for other mods' page-name/author search; their individual opaque controls are outside this capability.
+### Requirement: SS-01 Every mod's settings pages are eligible
+The mod SHALL search individual options across all available active-mod settings pages through generic discovery without a package allowlist, per-mod adapter or author-registration prerequisite.
+This includes megamod and independently identifiable provider-generated pages. Searchable context
+includes readable labels, help/tooltips, observed displayed values, tabs, page/mod names, authors
+and package IDs, plus owned feature/category names. Eligibility does not mean unreadable controls
+were successfully captured; SS-08 governs gaps. Do not hide disabled/default-valued options.
 
-#### Scenario: The matching word exists only in help
-- **WHEN** the player searches for a term present in an owned setting's description but not its name
-- **THEN** the setting is found with its name and feature/category path, including outside the current section.
+#### Scenario: Find an option in an unfamiliar mod
+- **WHEN** a newly installed active mod exposes a settings page through the normal page collection
+  and has no megamod-specific integration
+- **THEN** generic discovery attempts its options and finds a readable option by help text even when
+  neither its label nor mod title contains the query; a failed capture is reported.
 
-#### Scenario: Feature and category locate their settings
-- **WHEN** the player searches a feature or category name
-- **THEN** its matching registered settings appear without creating fake source-mod pages.
+#### Scenario: Options across tabs and duplicate pages
+- **WHEN** matching options occur on different tabs or separate provider pages with the same title
+- **THEN** each retains its actual owner/page/tab identity and remains independently selectable.
 
-#### Scenario: A feature is unavailable
-- **WHEN** a matching setting belongs to a disabled feature or lacks a required current capability
-- **THEN** the result explains that state and remains discoverable without turning the feature on.
+#### Scenario: Find an owned option outside the current section
+- **WHEN** the query matches an owned setting's feature/category or help outside the viewport
+- **THEN** its real control is discoverable, including disabled rows with their unavailability reason.
 
-### Requirement: SS-02 Matching and clearing are predictable
-Search SHALL use case-insensitive substring matching over readable localized text, treating whitespace-separated terms as AND conditions and a quoted phrase as one contiguous term.
-Terms can match different fields of the same setting. Repeated whitespace is ignored; rich-text
-formatting does not become search content. An unmatched opening quote treats the remaining text as
-one phrase. Empty input restores ordinary category browsing. Name matches rank before matches only
-in help or path; ties preserve common category/row order and stable identity. Search has no hidden
-result cap. The first implementation has no fuzzy or field-operator syntax.
+### Requirement: SS-02 Query behavior is predictable across result kinds
+Search SHALL support case-insensitive readable Unicode substrings, whitespace-separated AND terms, quoted phrases, exclusions and mod/author/id/tab field filters with deterministic ranking and bounded typo fallback.
+Match terms across the combined entry context; fields restrict terms to their named metadata.
+Rich-text markup is not content. Unknown prefixes remain literal; an unclosed quote consumes the
+remaining phrase. Exclusion-only queries filter all entries. Positive unqualified unquoted words
+without an exact match permit at most one edit at 5–8 characters or two at 9+; shorter words,
+phrases, exclusions and field terms stay literal. Insert/delete/substitute/transpose are edits.
+Exact results rank before typo results and labels before help/value-only matches, with stable
+page/path/occurrence ties. Empty input restores the page list, not every captured option.
 
-#### Scenario: Terms span label and description
-- **WHEN** one query term matches a setting name and another matches that same setting's help
-- **THEN** the setting matches, while a setting missing either term does not.
+#### Scenario: Combine owner and option terms
+- **WHEN** the player enters `mod:"Example Mod" "work speed" -animals`
+- **THEN** matching options belong to that mod/page name, contain the phrase in their combined
+  context, and exclude entries containing animals; no setting is changed.
 
-#### Scenario: Literal phrase and non-Latin text
-- **WHEN** the player searches a quoted phrase or an exact Chinese, Japanese or Cyrillic substring
-- **THEN** the corresponding localized text matches without requiring English or splitting it into Latin words.
+#### Scenario: Unicode, typo and empty results
+- **WHEN** the player enters an exact Chinese, Japanese or Cyrillic substring, a qualifying
+  misspelled word, an unmatched query and then clears it
+- **THEN** readable text matches, bounded typo fallback follows exact results, no-match status
+  distinguishes discovery gaps, and clearing restores ordinary page browsing.
 
-#### Scenario: Empty results and clear
-- **WHEN** no setting matches and the player clears the query
-- **THEN** an explicit no-results state is replaced by ordinary complete category browsing without any setting change.
+### Requirement: SS-03 Results reveal original controls from the native chooser
+Selecting an option result SHALL open its actual settings page, navigate its observed tab path, resolve its current control, scroll it into view and highlight it for three real elapsed seconds without editing it.
+The entry point is native Options → Mod options, sharing S047's query field when both are enabled.
+Page matches and option matches coexist; a page-title mismatch must not hide an option hit.
+S141 query syntax governs both result kinds when enabled, while page cards use page metadata only.
+S047's grouping/identity rules remain; its disabled sorting does not disable option search.
+No new gameplay tab or replacement foreign settings editor is introduced.
 
-### Requirement: SS-03 Results reveal the real control without editing it
-Selecting a result SHALL reveal its current containing section, scroll the actual setting into view and highlight its row for three real elapsed seconds after reveal without changing a value, inheritance choice or feature activation.
-Duplicate names remain distinct through feature/category context. Navigation does not send an input
-to an old screen coordinate. A setting removed or hidden by a later context change instead produces
-an explanatory unavailable result and, where still valid, opens its containing section. A new user
-navigation replaces the old reveal intent without repeated scrolling or focus stealing.
+#### Scenario: Reveal and edit an offscreen foreign option
+- **WHEN** the player searches, chooses a result on another tab, then changes the revealed native
+  control and closes/reopens its page
+- **THEN** selection alone leaves the value unchanged, the current control is visibly highlighted,
+  and the player's subsequent edit persists through the original owner's normal path.
 
-#### Scenario: Jump to a setting below the viewport
-- **WHEN** the player selects a result in another section below the current viewport
-- **THEN** that exact existing row becomes visible and briefly highlighted; its controls keep their values.
+#### Scenario: Target changed or is ambiguous
+- **WHEN** the option disappears, changes layout or cannot be uniquely resolved before selection
+- **THEN** the correct page opens with an explanation and no guessed click or unrelated edit;
+  ordinary navigation remains usable and user navigation cancels pending reveal.
 
-#### Scenario: Identical option labels
-- **WHEN** two features each expose an option called Enabled and the player selects one result
-- **THEN** the result's distinct feature/category identity reveals only the intended row.
+### Requirement: SS-04 Results distinguish current owned values from captured foreign values
+Search SHALL preserve value provenance and the original settings owner's persistence, without copying foreign options into megamod's global/save store.
+Owned results use current binding, requested/effective values, Global default, Current save/Use
+global and unavailable reasons. Main-menu results never invent save values or permit save edits.
+Foreign values are marked last observed until a new draw refreshes them; missing values are unknown.
 
-#### Scenario: The result becomes stale
-- **WHEN** the current save or dynamic setting list changes before a result is selected
-- **THEN** navigation resolves against the current context or explains that the target is unavailable, with no stale edit or previous-save access.
+#### Scenario: Value changes after capture
+- **WHEN** a foreign option changes after indexing and its page has not rendered again
+- **THEN** the result does not call the captured value current, and opening/refreshing the page
+  updates the observation without rewriting the option.
 
-### Requirement: SS-04 Search respects common value and scope semantics
-Results SHALL show current values and scope through the common settings path, distinguishing Global default, Current save, inherited choices and effective-off or unavailable status without maintaining separate setting truth.
-Unknown/unreadable values are labeled unavailable rather than replaced with false or zero. Selecting
-and editing the real row uses its existing application timing, validation, save persistence and
-dormant override behavior. At the main menu no last-save value is shown as current; all save controls
-and callbacks remain disabled. Searching and selecting alone perform no settings writes.
+#### Scenario: Owned inherited or effective-off option
+- **WHEN** the player opens an owned inherited setting or a feature made effectively unavailable
+- **THEN** search preserves the stored request, actual binding and common edit guards, including at
+  the main menu and after switching saves.
 
-#### Scenario: Global and save values differ
-- **WHEN** a matching setting has a global-on value and current-save-off override
-- **THEN** the result identifies both scopes accurately and the revealed row retains that exact override.
+### Requirement: SS-05 Indexing respects lifecycle and bounded work
+Discovery SHALL run in bounded sessions at valid GUI phases, refresh affected observations on lifecycle changes, expose progress/cancellation and avoid recurring scans during ordinary gameplay.
+Initial capture occurs at startup when enabled or on first enable/open if needed. Querying uses
+captured text, not repeated draws per keystroke. Real page renders and explicit Refresh update
+observations. Query/highlight are view-local; the index is process-local and never saved to disk.
+Language, page-collection and main-menu/save/world changes invalidate affected text, values and
+targets before reuse. Conditional rows are discoverable when rendered; do not edit prerequisites.
 
-#### Scenario: Effective-off retains requested on
-- **WHEN** original-provider handling makes a requested-on feature effectively off
-- **THEN** search explains the effective state while preserving and displaying the stored/inherited request.
+#### Scenario: Refresh after language or save transition
+- **WHEN** the player changes language or moves between main menu and different saves/worlds
+- **THEN** stale text, values and reveal targets are invalidated and capture status remains honest.
 
-#### Scenario: Main-menu browsing
-- **WHEN** the player searches and opens a setting without a loaded game
-- **THEN** global editing remains usable and Current save/Use global remain disabled with a reason and no stale save data.
+#### Scenario: Cancel a large capture
+- **WHEN** the player cancels discovery or a page reaches its documented work budget
+- **THEN** no further callbacks are scheduled for that session, retained results stay usable with
+  partial status, and Refresh can retry; no background gameplay scan is started.
 
-### Requirement: SS-05 Search state follows the current view and language
-The query, result selection and highlight SHALL be transient settings-view state, cleared on close and never stored as global defaults or per-save overrides.
-Language, registration, scope or value changes update the matching text and displayed state before
-the next interaction. World-view access uses the current game without requiring a selected map.
-Search and results remain usable in all seven baseline languages and supported UI scales, with
-full labels/help available when text does not fit.
+### Requirement: SS-06 Generic discovery observes controls without issuing edits
+The reader SHALL use neutral bounded page drawing and observed navigation callbacks for discovery, prohibit setting-edit/reset/apply/write actions, and restore capture-owned GUI, event, tab, scroll and temporary-window state in guaranteed cleanup.
+Use shape-guarded generic GUI capture rather than a list of supported packages. Do not reflect over
+arbitrary foreign setting values. Owned registration metadata is the direct fast path.
+Third-party callbacks may have effects the reader cannot undo; known mutation or failed restoration
+is a failed page, not successful read-only coverage. Cancellation/budgets apply between callbacks;
+do not claim forced preemption or transactional rollback of arbitrary callback internals.
 
-#### Scenario: Reopen and change saves
-- **WHEN** settings is reopened after closing or another save is loaded
-- **THEN** search uses current metadata and values with no inherited query, stale highlight or departed-save value.
+#### Scenario: Traverse tabs without changing settings
+- **WHEN** generic capture reads an actual tabbed settings page with sliders, checkboxes and help
+- **THEN** its options become searchable, the original tab/scroll is restored, and native before/
+  after observations demonstrate unchanged settings and no reset/apply/editor action.
 
-#### Scenario: Change language
-- **WHEN** the active language changes and the settings page is opened again
-- **THEN** queries match the newly displayed labels/help and results reveal their newly measured controls.
+#### Scenario: Callback fails or violates the reader boundary
+- **WHEN** a page throws, visibly mutates settings during a draw or fails state restoration
+- **THEN** that page is reported failed, further automated calls to it stop for this session, and
+  unrelated results plus normal settings access remain available with bounded diagnostics.
 
-### Requirement: SS-06 Discovery is read-only and failure preserves browsing
-Building or querying the search index SHALL NOT execute hidden settings-page draws, tab/editor/reset callbacks or gameplay actions to discover values and controls.
-There is no recurring search scan during ordinary gameplay outside the settings view. A malformed
-entry is isolated with an honest unavailable result and bounded diagnostic; a search failure leaves
-ordinary manual settings navigation and editing available. No setting or source configuration is
-reset, migrated or rewritten by discovery or failure recovery.
+### Requirement: SS-07 Common activation preserves independent browsing
+Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at NextDisplay with normal inheritance, dormant overrides and main-menu guards.
+Effective off cancels further discovery and hides option search without changing foreign settings,
+S047 grouping or ordinary page access. Later enable schedules missing discovery. Active original
+`ZIPender.Needle` receives the standard bounded warning and best-effort ordinary effective-off
+handling, retaining stored preferences; an inactive installed copy does not trigger this path.
 
-#### Scenario: Discovery encounters a failing entry
-- **WHEN** one entry cannot supply valid searchable metadata or a current display value
-- **THEN** unrelated settings remain searchable and ordinary browsing remains available, without repeated per-frame warnings.
+#### Scenario: Disable and re-enable search
+- **WHEN** the player disables search and later enables it
+- **THEN** ordinary browsing remains available, values remain unchanged and missing discovery
+  resumes only when enabled, with its progress/coverage visible.
 
-#### Scenario: Search has never been opened
-- **WHEN** the player plays normally without opening settings search
-- **THEN** this feature does not repeatedly traverse settings pages or invoke their controls in the background.
-
-### Requirement: SS-07 Search activation uses the ordinary settings path
-Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at the next display and preserving the foundation's inheritance, dormant override and main-menu guards.
-Turning it off hides search and restores manual browsing without affecting S047's page chooser or
-any feature values. An active original `ZIPender.Needle` triggers a bounded startup warning and
-best-effort ordinary search-off handling, retaining stored preferences; an inactive installed copy
-does not. This establishes no original-mod API, save or coexistence compatibility.
-
-#### Scenario: Turn search off
-- **WHEN** the player disables the owned search setting
-- **THEN** manual settings browsing remains usable and all other feature values and scopes are retained.
-
-#### Scenario: Original provider is active
+#### Scenario: Original Needle is active
 - **WHEN** startup detects active Needle
-- **THEN** the owned search follows its ordinary effective-off path with one bounded explanation, preserving stored preferences and the independently registered common settings page.
+- **THEN** our option search follows its ordinary effective-off path with a bounded explanation,
+  preserving stored preferences and independent common settings access.
+
+### Requirement: SS-08 Coverage gaps are visible rather than silently narrowing scope
+Search SHALL report per-page pending, partial, failed or unverified discovery and accessible reasons, preserve page opening, and never describe page-name-only fallback as completed individual-option coverage.
+Show aggregate discovery status alongside results, including zero-result searches. Unsupported
+custom rendering, inaccessible provider pages and budget exhaustion remain outstanding gaps.
+Every mod stays eligible; test fixtures or optional provider adapters are not a product whitelist.
+An exception-free draw alone does not establish complete control coverage.
+
+#### Scenario: One page cannot be read
+- **WHEN** one custom page is unreadable while other mods' options were captured
+- **THEN** those results remain usable, the unreadable page is listed with its reason and normal
+  access route, and no-match text explains the incomplete coverage instead of claiming absence.
+
+#### Scenario: Generic capture is unavailable
+- **WHEN** the engine GUI contract no longer satisfies the reader's shape guards
+- **THEN** search reports the cross-mod discovery gap, preserves manual page access and any valid
+  owned metadata results, and does not present this degraded state as the all-mod feature completed.

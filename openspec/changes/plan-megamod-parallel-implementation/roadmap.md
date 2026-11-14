@@ -1,7 +1,7 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **23**, 2026-11-14. Status: **implementation paused; source intake and owned-settings search specified; native acceptance incomplete**.
+Plan revision **24**, 2026-11-14. Status: **implementation paused; source intake and all-mod option search specified; native acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
@@ -226,7 +226,7 @@ revision; do not tuck them into a chunk without recording them.
 | S034 | [Readable Numbers — `7h0m4s.RimworldReadableNumbers`](../specify-megamod-readable-numbers/proposal.md) |
 | S047 | [Mod Options Sort — `Superniquito.ModOptionsSort`](../specify-megamod-mod-settings-navigation/proposal.md) |
 | S071 | [Better Message Placement (Continued) — `Mlie.BetterMessagePlacement`](../specify-megamod-message-placement/proposal.md) |
-| S141 | [Needle-inspired owned settings search — `ZIPender.Needle`](../specify-megamod-settings-search/proposal.md) |
+| S141 | [Needle-inspired all-mod option search — `ZIPender.Needle`](../specify-megamod-settings-search/proposal.md) |
 | S148 | [DragSelect — `telardo.DragSelect`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ### P0-C — Content selection
@@ -500,6 +500,18 @@ revision; do not tuck them into a chunk without recording them.
 | S151 | [Clothing Sorter — `Mlie.ClothingSorter`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ## Plan revisions and execution records
+
+### Revision 24 — 2026-11-14 all-mod option search clarification
+
+The user explicitly requires searching all mods' individual settings, not just our options or a
+supported subset. S141 therefore adopts generic Needle-style page/tab discovery with no package
+whitelist or per-mod opt-in, original-control reveal and visible incomplete/failed coverage. This
+supersedes revision 23's owned-only draft and S047's exclusion of foreign controls; S047 retains
+page grouping/identity and normal owner editing. Owned metadata remains a fast path within the
+universal search. The owning S141/S047 drafts, queue and coverage references are reconciled.
+
+Counts stay 152 entries (140 drafts and twelve intake sources), 27 chunks and nine parts. P0-B
+retains S141 with the expanded contract; no new lease, code, build, game run or acceptance is resumed.
 
 ### Revision 23 — 2026-11-14 intake while implementation is paused
 

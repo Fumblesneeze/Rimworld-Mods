@@ -13,7 +13,7 @@ Specification only; all implementation and acceptance tasks remain open.
 
 - [ ] 2.1 Focused RED → minimum GREEN for author/name sorting, source group precedence, singleton counts before search, stable duplicate ties and missing author handling; retain nonzero evidence.
 - [ ] 2.2 Focused RED → GREEN for raw/normalized author, title/mod/group substring search, empty/no-match results, singleton membership stability and distinct provider packs.
-- [ ] 2.3 Implement the smallest admitted native chooser integration with exact page identities, native/provider-owned open paths and no foreign settings-value reflection or mutation during browsing.
+- [ ] 2.3 Implement the smallest admitted native chooser integration with exact page identities, native/provider-owned open paths and no foreign settings-value reflection or mutation during browsing. Compose S141's universal option results/query with this same chooser; verify option hits without page-title matches and independent S047/S141 activation.
 - [ ] 2.4 Test benign foreign additions, unsupported required semantics, failed install, repeated initialization, owned-only rollback and later revalidation; validate incoming streams on every invocation if transpiling.
 - [ ] 2.5 Test native/provider click routing and errors, absent/changed HugsLib, GUI-state recovery and bounded diagnostics. Check best-effort warning/ordinary-off handling for an active original and no trigger when inactive, without testing or promising original-sorter coexistence.
 

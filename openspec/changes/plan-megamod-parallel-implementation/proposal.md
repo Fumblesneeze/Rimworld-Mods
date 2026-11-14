@@ -18,8 +18,9 @@ tests, runtime dependency changes, deployment or live acceptance is delivered no
 - Plan concrete shared components, their first consumers, authority, lifetime, freshness and failure
   behavior; reuse native data and existing owned helpers before adding materialization.
 - Map every S001–S152 feature to an implementation chunk and dependency-aware integration part.
-  Revision 23 adds S140–S152: S141 has a selected settings-search draft, while the other twelve
-  require full per-source research and observable drafts before implementation. Implementation stays paused.
+  Revision 23 added S140–S152; revision 24 expands S141 to all-mod option search without a whitelist.
+  The other twelve require full per-source research and observable drafts before implementation.
+  Implementation stays paused.
   Preserve individual OpenSpec behavior contracts and task traceability instead of merging them away.
 - Authorize parallel implementation of multiple source-derived features within megamod. Implementers
   perform focused test-first work, independent review and executable verification-scenario authoring.

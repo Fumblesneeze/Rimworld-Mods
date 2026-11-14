@@ -27,7 +27,7 @@ The [shared design](../../openspec/changes/plan-megamod-parallel-implementation/
 [governing tasks](../../openspec/changes/plan-megamod-parallel-implementation/tasks.md) coordinate
 152 feature entries (140 drafts and twelve intake sources) in 27 chunks across nine integration parts.
 The [2026-11-14 additions](docs/refinement/2026-11-14-source-additions.md) include a Needle-inspired
-owned-settings search draft, Assign-based gear comparison with Simple Sidearms support, and resource
+all-mod option search draft, Assign-based gear comparison with Simple Sidearms support, and resource
 substitution alongside content selection. New intake needs full per-source specifications before code.
 Listed research/design prerequisites still apply; this is not delivered gameplay or a resume request.
 Implementers inspect referenced mods, independently implement our observable contracts through

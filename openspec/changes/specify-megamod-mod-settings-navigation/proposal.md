@@ -33,7 +33,10 @@ This change **specifies future behavior only**; no runtime implementation or com
 ### Modified Capabilities
 
 None. Foundation global/save settings and UI-placement contracts remain authoritative for owned pages;
-this change specifies navigation of the outer native settings chooser.
+this change specifies navigation of the outer native settings chooser. The 2026-11-14 S141 decision
+extends that chooser with individual-option discovery across all mods, without a supported-mod
+whitelist. This active draft is reconciled with S141's query/reveal contract; page identity, grouping
+and original owner persistence remain here.
 
 ## Impact
 

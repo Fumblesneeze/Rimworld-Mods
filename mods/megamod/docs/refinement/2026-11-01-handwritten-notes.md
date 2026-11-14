@@ -437,6 +437,10 @@ These user clarifications supersede provisional readings, without promoting them
   arbitrary searching inside other mods' custom settings controls. Search remains part of the
   common settings UI and preserves its global/current-save separation and disabled controls.
   Detailed matching, result presentation and navigation belong in specification.
+  **Superseded in scope on 2026-11-14:** the user now explicitly requires individual-option
+  search across all mods, without a supported-mod whitelist, like Needle. The earlier owned-only
+  boundary above is historical; [S141's current contract](../../../../openspec/changes/specify-megamod-settings-search/proposal.md)
+  extends the same native chooser while retaining common scope rules for our own settings.
 - **Numeric parameters:** chosen numeric values must be documented in the eventual spec and at
   least named constants in code. User-adjustable settings are preferred where appropriate, using
   the existing common settings model; not every implementation detail must become a setting.
