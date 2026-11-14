@@ -677,8 +677,18 @@ internal sealed class NativeToleranceSaveContextFixture
         EndToEndAssert.True(Field(geometry.GetType(), "resolutionFailure").GetValue(geometry) == null && geometry.Failure == null);
         var geometryRoutes = (List<DrugToleranceGeometryAdmission>)Field(geometry.GetType(), "admissions").GetValue(geometry)!;
         EndToEndAssert.Equal(8, geometryRoutes.Count);
-        var routes = geometryRoutes.Cast<object>().Concat(new[] { "allocation", "scheduled", "joy", "social", "header", "row" }
+        var ownedRoutes = geometryRoutes.Cast<object>().Concat(new[] { "allocation", "joy", "social", "header", "row" }
             .Select(name => Field(runtime.GetType(), name).GetValue(runtime) ?? throw new InvalidOperationException("Missing atomic member: " + name))).ToArray();
+        EndToEndAssert.Equal(13, ownedRoutes.Length);
+        var shared = Field(runtime.GetType(), "scheduledDecision").GetValue(runtime)
+            ?? throw new InvalidOperationException("Shared scheduled owner is missing.");
+        EndToEndAssert.True(ReferenceEquals(Field(mod.GetType(), "scheduledDrugDecision").GetValue(mod), shared) &&
+            Field(shared.GetType(), "resolutionFailure").GetValue(shared) == null);
+        var bridge = Field(shared.GetType(), "bridge").GetValue(shared)
+            ?? throw new InvalidOperationException("Shared scheduled bridge is missing.");
+        var sharedRoute = Field(bridge.GetType(), "decision").GetValue(bridge)
+            ?? throw new InvalidOperationException("Shared scheduled decision receipt is missing.");
+        var routes = ownedRoutes.Concat(new[] { sharedRoute }).ToArray();
         EndToEndAssert.Equal(14, routes.Length);
         var observed = new List<string>();
         foreach (var route in routes)
@@ -700,7 +710,7 @@ internal sealed class NativeToleranceSaveContextFixture
                 var nativeList = (FieldInfo)Field(type, "candidateList").GetValue(route)!;
                 EndToEndAssert.True(ReferenceEquals(Field(type, "workingList").GetValue(route), nativeList.GetValue(null)));
             }
-            observed.Add(target.DeclaringType!.FullName + "." + target.Name + ":generation=" + ReadProperty(generation!, "Version"));
+            observed.Add((ReferenceEquals(route, sharedRoute) ? "shared:" : "S138-owned:") + target.DeclaringType!.FullName + "." + target.Name + ":generation=" + ReadProperty(generation!, "Version"));
         }
         retainedAdmission = string.Join(";", observed);
     }

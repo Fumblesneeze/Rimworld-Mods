@@ -108,4 +108,4 @@ does not alter foreign settings or require importing Needle data.
 Implementation must pin native/provider page enumeration, GUI/tab/scroll capture and reveal
 semantics, budgets, custom-control failure detection and representative real mod fixtures. Those are
 implementation research tasks; they cannot be resolved by restricting product scope to those fixtures.
-The wider implementation goal remains paused.
+S141 is not dispatched by the resumed S024/S138 implementation batch.

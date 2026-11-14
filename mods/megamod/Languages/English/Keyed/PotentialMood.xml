@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.PotentialMood.Category>Recreation and care</Megamod.PotentialMood.Category>
+  <Megamod.PotentialMood.Enabled>Consider potential mood for scheduled drugs</Megamod.PotentialMood.Enabled>
+  <Megamod.PotentialMood.EnabledHelp>For scheduled drug use, require both current mood and potential mood from current thoughts to be below the policy's mood threshold. A 100% threshold or no mood need adds no restriction. Changes apply to the next selection and do not interrupt an existing order. Other drug rules still apply.</Megamod.PotentialMood.EnabledHelp>
+  <Megamod.PotentialMood.Unavailable>The scheduled mood restriction is unavailable. Native drug rules and any supported tolerance limit still apply.</Megamod.PotentialMood.Unavailable>
+  <Megamod.PotentialMood.ContextUnavailable>The scheduled mood restriction requires a fully loaded colony.</Megamod.PotentialMood.ContextUnavailable>
+  <Megamod.PotentialMood.ReadingUnavailable>A current or potential mood value could not be read. This selection omits only the extra mood restriction; native drug rules and any supported tolerance limit still apply.</Megamod.PotentialMood.ReadingUnavailable>
+</LanguageData>

@@ -42,7 +42,8 @@ public sealed class DrugToleranceDecisionPatch
 
     public DrugToleranceDecisionPatch(string id, MethodInfo target, bool trackerReceiver,
         Func<object, object, bool> extraAllowed, Func<bool> groupAvailable, Action<string> unavailable,
-        Func<IReadOnlyList<CodeInstruction>, string?>? validateBody = null)
+        Func<IReadOnlyList<CodeInstruction>, string?>? validateBody = null,
+        string? targetSpecId = null, string? unavailableBehavior = null, string? fallback = null)
     {
         this.target = target; this.trackerReceiver = trackerReceiver; this.extraAllowed = extraAllowed;
         this.groupAvailable = groupAvailable; this.unavailable = unavailable;
@@ -52,8 +53,9 @@ public sealed class DrugToleranceDecisionPatch
         postfix = new(target, HarmonyPatchType.Postfix, PostfixMethod, () => Owned(HarmonyPatchType.Postfix));
         finalizer = new(target, HarmonyPatchType.Finalizer, FinalizerMethod, () => Owned(HarmonyPatchType.Finalizer));
         observer = new(target, HarmonyPatchType.Transpiler, ObserverMethod, () => Owned(HarmonyPatchType.Transpiler));
-        Candidate = new(id, "DT-ROUTINE-DECISIONS", target.ToString()!, "routine tolerance restrictions and contextual editing",
-            "native eligibility; retained choices unavailable", Validate, Install, Rollback);
+        Candidate = new(id, targetSpecId ?? "DT-ROUTINE-DECISIONS", target.ToString()!,
+            unavailableBehavior ?? "routine tolerance restrictions and contextual editing",
+            fallback ?? "native eligibility; retained choices unavailable", Validate, Install, Rollback);
     }
 
     public PatchCandidate Candidate { get; }
@@ -183,6 +185,8 @@ public sealed class DrugToleranceDecisionPatch
     }
     private void Refuse(string reason)
     {
+        // Only a fresh observed publication may recover a refused invocation generation.
+        Volatile.Write(ref generation, null); Volatile.Write(ref receipt, null);
         Failure = reason;
         try { unavailable(reason); } catch (Exception) { /* Owned diagnostics cannot replace a native result/exception. */ }
     }

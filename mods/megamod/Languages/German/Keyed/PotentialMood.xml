@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.PotentialMood.Category>Erholung und Fürsorge</Megamod.PotentialMood.Category>
+  <Megamod.PotentialMood.Enabled>Potenzielle Stimmung bei geplantem Drogenkonsum berücksichtigen</Megamod.PotentialMood.Enabled>
+  <Megamod.PotentialMood.EnabledHelp>Geplanter Drogenkonsum setzt voraus, dass sowohl die aktuelle Stimmung als auch die aus aktuellen Gedanken resultierende potenzielle Stimmung unter dem Grenzwert der Richtlinie liegen. Bei 100% oder ohne Stimmungsbedürfnis entsteht keine zusätzliche Einschränkung. Änderungen gelten ab der nächsten Auswahl und unterbrechen keinen laufenden Auftrag. Andere Drogenregeln gelten weiterhin.</Megamod.PotentialMood.EnabledHelp>
+  <Megamod.PotentialMood.Unavailable>Die Stimmungseinschränkung für geplanten Konsum ist nicht verfügbar. Die normalen Drogenregeln und unterstützte Toleranzgrenzen gelten weiterhin.</Megamod.PotentialMood.Unavailable>
+  <Megamod.PotentialMood.ContextUnavailable>Die Stimmungseinschränkung für geplanten Konsum benötigt eine vollständig geladene Kolonie.</Megamod.PotentialMood.ContextUnavailable>
+  <Megamod.PotentialMood.ReadingUnavailable>Die aktuelle oder potenzielle Stimmung konnte nicht gelesen werden. Nur die zusätzliche Stimmungseinschränkung entfällt für diese Auswahl; normale Drogenregeln und unterstützte Toleranzgrenzen gelten weiterhin.</Megamod.PotentialMood.ReadingUnavailable>
+</LanguageData>

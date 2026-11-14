@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.PotentialMood.Category>娱乐与照护</Megamod.PotentialMood.Category>
+  <Megamod.PotentialMood.Enabled>定时服药时考虑潜在心情</Megamod.PotentialMood.Enabled>
+  <Megamod.PotentialMood.EnabledHelp>定时服药要求当前心情和基于当前想法的潜在心情都低于方案中的心情阈值。阈值为100%或没有心情需求时，不增加限制。更改从下一次选择生效，不会中断已有指令。其他药物规则仍然适用。</Megamod.PotentialMood.EnabledHelp>
+  <Megamod.PotentialMood.Unavailable>定时服药的心情限制不可用。原版药物规则和受支持的耐受度限制仍然适用。</Megamod.PotentialMood.Unavailable>
+  <Megamod.PotentialMood.ContextUnavailable>定时服药的心情限制需要殖民地完全加载。</Megamod.PotentialMood.ContextUnavailable>
+  <Megamod.PotentialMood.ReadingUnavailable>无法读取当前或潜在心情。本次选择仅跳过额外的心情限制；原版药物规则和受支持的耐受度限制仍然适用。</Megamod.PotentialMood.ReadingUnavailable>
+</LanguageData>

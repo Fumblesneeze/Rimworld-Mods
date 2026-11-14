@@ -1,5 +1,5 @@
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), 1.7 beta.
-S141 is specified only. Implementation remains paused; drafting accepts no checkbox.
+S141 is specified only and is not dispatched by the resumed S024/S138 batch; drafting accepts no checkbox.
 
 ## 1. Pin universal discovery and native reveal
 

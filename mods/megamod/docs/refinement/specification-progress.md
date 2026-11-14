@@ -9,14 +9,16 @@ interrupting the work. No runtime implementation or gameplay acceptance is claim
 
 ## Status and next work
 
-Revision 24, 2026-11-14: **implementation remains paused**. The user added S140–S152; S053
+Revision 25, 2026-11-14: **implementation active again**. The user resumed the existing S024/S138
+scheduled-mood batch after the revision 24 search clarification. The user added S140–S152; S053
 RePowered and S059 Best Mix were already selected. Current coverage is **152 unique entries:
 140 drafts and twelve intake entries**, still allocated across 27 chunks/nine parts. S141 now has
 a Needle-inspired all-mod option search draft, explicitly without a supported-mod whitelist; the
 other twelve require full sequential research
 and their own observable OpenSpec changes before code. See the [new intake and fixed integration
 decisions](2026-11-14-source-additions.md), especially Assign/Simple Sidearms and shared resource
-settings. Current S024/runtime work is untouched; dated drafting/implementation counts below are
+settings. S024/runtime review corrections and focused native verification are the active batch;
+dated drafting/implementation counts below are
 historical checkpoints, not the current total. No runtime or acceptance task is closed by intake.
 
 Implementation revision 22 selects the specified S024 scheduled potential-mood condition and its

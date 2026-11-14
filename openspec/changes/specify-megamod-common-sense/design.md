@@ -112,6 +112,12 @@ permission cache or global polling is needed. Convert native read exceptions at 
 consumer boundary to that consumer's unavailable result and bounded per-Game notice; do not erase
 the other healthy restriction or misreport a consumer failure as shared-hook failure.
 
+The shared bridge accepts one optional synchronous context continuation for the native adapter.
+It captures exact Game/binding/tracker/pawn/policy/row/drug before either consumer and revalidates
+after both. If a foreign getter replaces that context, neither old-context veto is applied to the
+native permission. Per-adapter recapture alone cannot establish this shared identity. The default
+host call shape stays unchanged; no context or continuation is retained beyond the invocation.
+
 `practicalNeeds.scheduledPotentialMood` is Boolean, default true, GlobalAndSave, category
 `recreation-care`, order 10, `NextEligibleOccurrence`. It uses the common renderer and inherited
 settings store. Canonical active `avilmask.commonsense` supplies ordinary effective-off for this

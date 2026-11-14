@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.PotentialMood.Category>娯楽とケア</Megamod.PotentialMood.Category>
+  <Megamod.PotentialMood.Enabled>定期的なドラッグ使用で潜在的な心情を考慮する</Megamod.PotentialMood.Enabled>
+  <Megamod.PotentialMood.EnabledHelp>定期的なドラッグ使用には、現在の心情と、現在の思考による潜在的な心情の両方が方針の心情しきい値を下回る必要があります。しきい値が100%、または心情の欲求がない場合は制限を追加しません。変更は次の選択から適用され、実行中の指示を中断しません。他のドラッグ使用規則は引き続き適用されます。</Megamod.PotentialMood.EnabledHelp>
+  <Megamod.PotentialMood.Unavailable>定期使用の心情制限を利用できません。通常のドラッグ使用規則と対応する耐性上限は引き続き適用されます。</Megamod.PotentialMood.Unavailable>
+  <Megamod.PotentialMood.ContextUnavailable>定期使用の心情制限には、コロニーの読み込み完了が必要です。</Megamod.PotentialMood.ContextUnavailable>
+  <Megamod.PotentialMood.ReadingUnavailable>現在または潜在的な心情を読み取れませんでした。今回の選択では追加の心情制限のみを省略します。通常のドラッグ使用規則と対応する耐性上限は引き続き適用されます。</Megamod.PotentialMood.ReadingUnavailable>
+</LanguageData>

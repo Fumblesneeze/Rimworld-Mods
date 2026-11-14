@@ -4,7 +4,9 @@ One RimWorld mod for independently engineered quality-of-life features, with sha
 and guarded game patches. Package ID: `fumblesneeze.megamod`. Author: Fumblesneeze.
 Initial target: **RimWorld 1.7 beta**.
 
-**Current state: implementation paused; no whole feature accepted yet.** Initial shared settings,
+**Current state: implementation active; no whole feature accepted yet.** The resumed batch adds
+scheduled potential-mood checking and its shared tolerance decision; live acceptance is pending.
+Initial shared settings,
 patch admission and content-policy rules have focused host tests. Drug-preset controls and unchanged-
 catalog save/reload have narrow reviewed native evidence. Tolerance editing and selected scheduled,
 recreation and manual drinking routes also have scoped native evidence; wider feature workflows
@@ -29,7 +31,7 @@ The [shared design](../../openspec/changes/plan-megamod-parallel-implementation/
 The [2026-11-14 additions](docs/refinement/2026-11-14-source-additions.md) include a Needle-inspired
 all-mod option search draft, Assign-based gear comparison with Simple Sidearms support, and resource
 substitution alongside content selection. New intake needs full per-source specifications before code.
-Listed research/design prerequisites still apply; this is not delivered gameplay or a resume request.
+Listed research/design prerequisites still apply; source intake is not delivered gameplay.
 Implementers inspect referenced mods, independently implement our observable contracts through
 focused tests and review, and author native verification scenarios. After all chunks in a part are
 ready, the orchestrator runs and personally inspects the integrated workflows in isolated minimized

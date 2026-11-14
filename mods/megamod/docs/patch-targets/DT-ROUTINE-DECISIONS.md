@@ -1,4 +1,4 @@
-# DT-SCHEDULED / DT-DIRECT-JOY: routine selection decisions
+# DT-DIRECT-JOY and shared scheduled dependency: routine selection decisions
 
 Owner: `fumblesneeze.megamod`, S138. Contract: the selection-boundary, native-permission,
 direct-recreation-exception and atomic availability requirements in the owning
@@ -9,7 +9,7 @@ Implementation is feature-local; no megamod method is patched. Current native re
 
 | ID | Native callable | Route and inputs |
 | --- | --- | --- |
-| DT-SCHEDULED | public instance bool `Pawn_DrugPolicyTracker.AllowedToTakeScheduledNow(ThingDef)` | Tracker's actual pawn/current policy and selected drug; no joy exception |
+| DT-SCHEDULED-DEPENDENCY | Shared `DRUG-SCHEDULED-COMPOSITION` receipt for `Pawn_DrugPolicyTracker.AllowedToTakeScheduledNow(ThingDef)` | Read-only dependency; actual pawn/current policy and selected drug, no joy exception |
 | DT-DIRECT-JOY | protected virtual instance bool `JoyGiver_Ingest.CanIngestForJoy(Pawn,Thing)` | Actual recipient and candidate Thing; positive DrugDesire or mental-state exception only here |
 
 Map `JobGiver_TakeDrugs` and caravan scheduled selection reach ShouldTryToTakeScheduledNow,
@@ -19,8 +19,9 @@ JoyGiver_TakeDrug inherits the observed direct-joy eligibility method; its inven
 candidate paths both call it. The runtime must reject a loaded direct drug joy provider that
 overrides this boundary without delegating to the admitted target. The initial adapter admits
 the inherited method identity; it does not yet prove override delegation and therefore leaves
-such a provider unavailable. No general provider compatibility is claimed. S024 is absent and
-will call the owned rule directly for its actual treat recipient.
+such a provider unavailable. No general provider compatibility is claimed. S024 scheduled mood
+is composed by the [shared scheduled owner](DRUG-SCHEDULED-COMPOSITION.md). Its future patient-treat
+selector remains unimplemented and may call the owned rule directly for its actual recipient.
 
 Inherited decision lookup compares module, metadata token and exact declaring type for the
 nongeneric native method. Its reflected worker type is not declaration identity: the ordinary
@@ -56,12 +57,14 @@ tracking does not retain that Game or cache permission. An unsupported drug mapp
 Unavailable row, with its choice retained. Direct joy exceptions stay on the direct route, and
 neither scheduled nor social selection imports them.
 
-These candidates belong to one group with DT-SOCIAL-DRINK, the policy header/row editor and the
+The direct-joy candidate and read-only shared scheduled dependency belong to one group with DT-SOCIAL-DRINK, the policy header/row editor and the
 native runtime forwarding registration. Persistence CanUseChoices, common effective enablement,
 current finalized game and supported UI layout are required before applying any extra veto or
 accepting an edit. Installation failure rolls back only newly acquired owned slots. One bounded
 diagnostic identifies a failed enabled target and the native-behavior fallback; stored choices
-are not rewritten. No final-ingestion veto, job cancellation or persisted job-purpose tag exists.
+are not rewritten. Its dependency rollback never removes the shared scheduled owner's callbacks.
+S138-only failure leaves supported S024 scheduled mood independent; shared-boundary failure still
+invalidates the whole S138 capability. No final-ingestion veto, job cancellation or persisted job-purpose tag exists.
 
 Harmony fixtures must exercise actual patched callables: native true/false, current extra result,
 captured actor/candidate despite later argument changes, skip/throw, compatible outer edits,

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.PotentialMood.Category>Отдых и забота</Megamod.PotentialMood.Category>
+  <Megamod.PotentialMood.Enabled>Учитывать потенциальное настроение при приёме по расписанию</Megamod.PotentialMood.Enabled>
+  <Megamod.PotentialMood.EnabledHelp>Для приёма наркотика по расписанию и текущее, и потенциальное настроение от текущих мыслей должны быть ниже порога политики. Порог 100% или отсутствие потребности в настроении не добавляют ограничений. Изменения действуют со следующего выбора и не прерывают текущий приказ. Остальные правила приёма наркотиков сохраняются.</Megamod.PotentialMood.EnabledHelp>
+  <Megamod.PotentialMood.Unavailable>Ограничение по настроению для приёма по расписанию недоступно. Обычные правила и поддерживаемые пределы толерантности сохраняются.</Megamod.PotentialMood.Unavailable>
+  <Megamod.PotentialMood.ContextUnavailable>Ограничение по настроению для приёма по расписанию требует полностью загруженной колонии.</Megamod.PotentialMood.ContextUnavailable>
+  <Megamod.PotentialMood.ReadingUnavailable>Не удалось прочитать текущее или потенциальное настроение. При этом выборе пропускается только дополнительное ограничение по настроению; обычные правила и поддерживаемые пределы толерантности сохраняются.</Megamod.PotentialMood.ReadingUnavailable>
+</LanguageData>

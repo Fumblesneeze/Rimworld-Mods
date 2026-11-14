@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.PotentialMood.Category>Recreación y cuidados</Megamod.PotentialMood.Category>
+  <Megamod.PotentialMood.Enabled>Considerar el ánimo potencial para las drogas programadas</Megamod.PotentialMood.Enabled>
+  <Megamod.PotentialMood.EnabledHelp>El consumo programado requiere que tanto el ánimo actual como el potencial según los pensamientos actuales estén por debajo del umbral de la política. Un umbral del 100% o la ausencia de necesidad de ánimo no añade restricciones. Los cambios se aplican a la siguiente selección y no interrumpen órdenes en curso. Las demás reglas sobre drogas siguen vigentes.</Megamod.PotentialMood.EnabledHelp>
+  <Megamod.PotentialMood.Unavailable>La restricción de ánimo para el consumo programado no está disponible. Se mantienen las reglas normales sobre drogas y los límites de tolerancia compatibles.</Megamod.PotentialMood.Unavailable>
+  <Megamod.PotentialMood.ContextUnavailable>La restricción de ánimo para el consumo programado requiere una colonia completamente cargada.</Megamod.PotentialMood.ContextUnavailable>
+  <Megamod.PotentialMood.ReadingUnavailable>No se pudo leer el ánimo actual o potencial. Esta selección omite solo la restricción adicional de ánimo; se mantienen las reglas normales sobre drogas y los límites de tolerancia compatibles.</Megamod.PotentialMood.ReadingUnavailable>
+</LanguageData>

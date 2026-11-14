@@ -1,10 +1,20 @@
-# P0 dispatch — contract revision 5, 2026-11-07
+# P0 dispatch — current plan revision 25, 2026-11-14
 
-Owner: Make Rimworld Great Again (`fumblesneeze.megamod`). Implementation starts from checkpoint
-`c0a600e`; full139-entry goal remains active. Governing plan revision17 and all individual owning
-specifications remain authoritative. This is an active assignment record, not acceptance evidence.
+Owner: Make Rimworld Great Again (`fumblesneeze.megamod`). The current 152-entry scope is governed
+by [plan revision 25](roadmap.md) and the final **Revision 25 — resumed S024/S138 integration**
+section below. That section closes prior author leases and records the resumed batch. Root owns
+build/install outputs and final native acceptance; no complete feature is accepted by this record.
 
-## Current environment and central ownership
+The original checkpoint, environment and assignments below are historical execution records.
+Current exact game/build identity must come from the resumed run's retained evidence, not this
+older inspection. Later revisions supersede earlier allocations without dropping their obligations.
+
+## Original dispatch — contract revision 5, 2026-11-07
+
+Implementation started from checkpoint `c0a600e` with a 139-entry scope under plan revision 17.
+That baseline and its original assignments are superseded by the later revisions below.
+
+## Original environment and central ownership
 
 Inspected game: **1.7.5000 rev1275**, Steam build **26468007**, Assembly-CSharp SHA256
 `D55AA8E47FA3C5463CA85B0ECCD51F195B4BBCD04F56DA3AF21C2F6688A81254`.
@@ -897,8 +907,41 @@ agent launches acceptance games or claims acceptance from its handoff. C01/C02, 
 metadata and unrelated fixtures remain outside this batch. Source contracts and signatures are
 frozen in the implementation handoff before central integration.
 
+The executable-scenario portion is now split into a disjoint implementation lane to reduce elapsed
+time: `caravan_language_batch_review` owns only the four new files under
+`tests/Megamod.EndToEndTests/PracticalNeeds/` named by the packet (NativeScheduledMoodTests,
+NativeScheduledMoodAvailabilityTests, NativePotentialMoodSettingsTests and README). The runtime
+author confirmed those files absent and released them before this assignment. It retains all
+other feature paths and the two old save-fixture probes. The former reviewer is now an author for
+this lane and cannot independently review its own scenario implementation; a fresh reviewer and
+root own integrated review. No author may compile shared product/E2E outputs without a root lease.
+The frozen signatures, scenario oracles, budgets and acceptance obligations are unchanged.
+
+The shared bridge subsequently gained one approved optional synchronous context continuation.
+It surrounds both consumers with the same current identity capture/revalidation, addressing the
+concrete case where a foreign potential-mood getter changes the policy between consumers. Existing
+root-facing signatures and passive receipt fields stay unchanged. Focused bridge tests must cover
+departure after both allowed and rejected mood results; details remain in the implementation ledger.
+
 The reviewed plan corrections require truthful shared-receipt ownership, a fresh native-eligible
 zero control while mood is off, and actual exception conversion through the production boundary.
 Native scenarios prove physical stock/effects and independently available restrictions on the
 reviewed composed build. Patient treats, S124/S134, full S024/S138, S139 and all part gates remain
 open. This move does not remove any feature or replace native observation with host tests.
+
+## Revision 25 — resumed S024/S138 integration
+
+The user reactivated implementation on 2026-11-14 after commits 07ad452 and 4a5ddf2. Prior paused
+author leases are closed. Root resumes the same S024-M1–M5 batch and retains every source obligation.
+`s024_recovery_fix` received only DrugToleranceDecisionPatch, its scheduled-composition Harmony
+fixture and the focused Harmony output lease. It reproduced two second-cycle skip failures,
+revoked both generation and receipt on refusal, strengthened the regression and handed off 37/37
+focused checks. Its lease is now closed; independent `s024_recovery_review` found no issues.
+
+`s024_native_batch_review` independently reviewed the four new PracticalNeeds files, shared Boolean
+settings projection and two changed passive save probes. Its sole finding was consumed caravan
+split accounting. Root corrected only that fixture stock ownership while retaining cleanup and
+SplitOff evidence. Root owns remaining review disposition, product/E2E outputs, canonical install,
+commits and the actual minimized native workflows; no implementer is authorized to launch them.
+Exact reports and RED/GREEN evidence are under `artifacts/Implementation/megamod-p0/s024-resume/`.
+No task is accepted from these handoffs. Full S024/S138, S139, intake research and all part gates stay open.

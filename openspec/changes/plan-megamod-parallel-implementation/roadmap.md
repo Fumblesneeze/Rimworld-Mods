@@ -1,7 +1,7 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **24**, 2026-11-14. Status: **implementation paused; source intake and all-mod option search specified; native acceptance incomplete**.
+Plan revision **25**, 2026-11-14. Status: **implementation active; S024/S138 scheduled-mood batch resumed; native acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
@@ -500,6 +500,20 @@ revision; do not tuck them into a chunk without recording them.
 | S151 | [Clothing Sorter — `Mlie.ClothingSorter`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ## Plan revisions and execution records
+
+### Revision 25 — 2026-11-14 resume the scheduled-mood batch
+
+The user reactivated implementation after the intake/search scope commits. Resume S024-M1–M5
+and direct S138 composition from the existing reviewed packet; keep the all-mod search requirement
+and all 152 entries, 27 chunks and nine parts. The old paused author leases are superseded by the
+bounded recovery-fix and native-review assignments in p0-dispatch. No new feature is substituted
+for the unfinished batch, and no historical native evidence accepts its changed shared hook.
+
+The repeated-skip regression was reproduced and corrected with 37 focused Harmony checks green;
+independent review is clear. Native review found a fixture-only caravan stock error: the discarded
+partial-ingestion split belongs to cleanup/provenance, not remaining stock. Fix that before the
+integrated build and exact native batch. Root owns installation, observed acceptance and logical
+commits. All native and aggregate feature gates remain open until their exact evidence exists.
 
 ### Revision 24 — 2026-11-14 all-mod option search clarification
 
@@ -1061,3 +1075,9 @@ native observation. The feature lane owns only the exact packet paths. No C01/C0
 second threshold control, medical producer or generic restriction registry is allocated.
 Changed runtime invalidates affected older S138 evidence; only focused composed workflows are run
 after integrated review. All 139 features, S139's unresolved publication work and P0–P8 gates remain.
+
+Revision 22 scheduling refinement — after the first 30 focused Unit checks passed, the runtime
+author released the four still-absent PracticalNeeds E2E files to a separate scenario author.
+The exact disjoint lease is recorded in p0-dispatch. Runtime and native workflow authoring proceed
+together; builds remain serialized, defects return as a batch, and an independent reviewer replaces
+the previous plan reviewer for code that reviewer now authors. No behavior or acceptance scope changed.

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod.PotentialMood.Category>Loisirs et soins</Megamod.PotentialMood.Category>
+  <Megamod.PotentialMood.Enabled>Tenir compte de l'humeur potentielle pour les drogues planifiées</Megamod.PotentialMood.Enabled>
+  <Megamod.PotentialMood.EnabledHelp>La consommation planifiée exige que l'humeur actuelle et l'humeur potentielle issue des pensées actuelles soient toutes deux inférieures au seuil de la politique. Un seuil de 100% ou l'absence de besoin d'humeur n'ajoute aucune restriction. Les changements s'appliquent à la prochaine sélection sans interrompre un ordre en cours. Les autres règles sur les drogues restent applicables.</Megamod.PotentialMood.EnabledHelp>
+  <Megamod.PotentialMood.Unavailable>La restriction d'humeur pour la consommation planifiée est indisponible. Les règles normales sur les drogues et les limites de tolérance prises en charge restent applicables.</Megamod.PotentialMood.Unavailable>
+  <Megamod.PotentialMood.ContextUnavailable>La restriction d'humeur pour la consommation planifiée nécessite une colonie entièrement chargée.</Megamod.PotentialMood.ContextUnavailable>
+  <Megamod.PotentialMood.ReadingUnavailable>L'humeur actuelle ou potentielle n'a pas pu être lue. Seule la restriction supplémentaire d'humeur est omise pour cette sélection ; les règles normales sur les drogues et les limites de tolérance prises en charge restent applicables.</Megamod.PotentialMood.ReadingUnavailable>
+</LanguageData>

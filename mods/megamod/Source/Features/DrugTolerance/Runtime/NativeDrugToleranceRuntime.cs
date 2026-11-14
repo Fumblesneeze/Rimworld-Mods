@@ -4,6 +4,8 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Megamod.Features.DrugPolicyMaintenance.Core;
+using Megamod.Features.DrugPolicyMaintenance.Runtime;
 using Megamod.Features.DrugTolerance.Core;
 using Megamod.Patching;
 using Megamod.Settings;
@@ -19,6 +21,7 @@ public sealed class NativeDrugToleranceRuntime
 {
     private readonly SettingsRuntime settings;
     private readonly DrugTolerancePersistencePatch persistence;
+    private readonly NativeScheduledDrugDecision scheduledDecision;
     private readonly Action<string> report;
     private readonly HashSet<string> reported = new(StringComparer.Ordinal);
     private static readonly ConditionalWeakTable<Dialog_ManageDrugPolicies, DrugToleranceWindowState> windowStates = new();
@@ -26,7 +29,7 @@ public sealed class NativeDrugToleranceRuntime
     private readonly Dictionary<Type, bool> joyTypes = new();
     private readonly NativeDrugToleranceGeometry? geometry;
     private readonly DrugToleranceAllocationAdmission? allocation;
-    private readonly DrugToleranceDecisionPatch? scheduled, joy;
+    private readonly DrugToleranceDecisionPatch? joy;
     private readonly DrugToleranceSocialPatch? social;
     private readonly DrugToleranceEditorPatch? header, row;
     private readonly FieldInfo? selectedPolicy, policies;
@@ -34,9 +37,10 @@ public sealed class NativeDrugToleranceRuntime
     private string? resolutionFailure, status;
     private bool installed;
 
-    public NativeDrugToleranceRuntime(SettingsRuntime settings, DrugTolerancePersistencePatch persistence, Action<string> protectedWarning)
+    public NativeDrugToleranceRuntime(SettingsRuntime settings, DrugTolerancePersistencePatch persistence,
+        NativeScheduledDrugDecision scheduledDecision, Action<string> protectedWarning)
     {
-        this.settings = settings; this.persistence = persistence; report = protectedWarning;
+        this.settings = settings; this.persistence = persistence; this.scheduledDecision = scheduledDecision; report = protectedWarning;
         try
         {
             settings.Store.ReadGlobal(DrugToleranceSettings.Enabled); // Root registers before loading the common store.
@@ -56,9 +60,6 @@ public sealed class NativeDrugToleranceRuntime
             row = new("DT-POLICY-ROW", Method(manager, "DoEntryRow", false, typeof(Rect), typeof(DrugPolicyEntry), typeof(int)), false,
                 NativeDrugToleranceEditorBindings.Callbacks(false), new DrugToleranceEditorCallGuard(calculator, width.GetMethod!, width.SetMethod!, false, readers).Validate,
                 (owner, rect, entry, index) => Prepare(owner, (Rect)rect, entry as DrugPolicyEntry, index, false), CoreAvailable, Report);
-            scheduled = new("DT-SCHEDULED", Method(typeof(Pawn_DrugPolicyTracker), nameof(Pawn_DrugPolicyTracker.AllowedToTakeScheduledNow), false, typeof(ThingDef)), true,
-                (tracker, drug) => tracker is Pawn_DrugPolicyTracker actual && drug is ThingDef definition && ReferenceEquals(actual.pawn?.drugs, actual)
-                    ? Allows(actual.pawn, definition, RoutineDrugUse.Scheduled) : true, () => Available, Report);
             joyTarget = Method(typeof(JoyGiver_Ingest), "CanIngestForJoy", false, typeof(Pawn), typeof(Thing));
             var exception = new DrugToleranceJoyExceptionGuard(new(
                 typeof(Pawn).GetField(nameof(Pawn.story))!, typeof(Pawn_StoryTracker).GetField(nameof(Pawn_StoryTracker.traits))!,
@@ -75,7 +76,7 @@ public sealed class NativeDrugToleranceRuntime
                 (actor, drug) => actor is Pawn pawn && drug is ThingDef definition ? Allows(pawn, definition, RoutineDrugUse.SocialDrink) : true,
                 () => Available, Report);
             Group = new("drug-tolerance.enforcement-editor", AdmissionPhase.Early,
-                geometry.Candidates.Concat(new[] { allocation.Candidate, scheduled.Candidate, joy.Candidate, social.Candidate, header.Candidate, row.Candidate,
+                geometry.Candidates.Concat(new[] { allocation.Candidate, scheduledDecision.S138Dependency, joy.Candidate, social.Candidate, header.Candidate, row.Candidate,
                     new PatchCandidate("DT-NATIVE-RUNTIME", "DT-POLICY-EDITOR", "native tolerance composition", "tolerance editing and enforcement", "native decisions and retained row state",
                         () => null, () => installed = true, () => installed = false) }).ToArray());
         }
@@ -156,8 +157,8 @@ public sealed class NativeDrugToleranceRuntime
         { status = "Megamod.DrugTolerance.ContextUnavailable"; return false; }
         if (!settings.Store.GetEffective(DrugToleranceSettings.Enabled)) return false;
         if (!installed || resolutionFailure != null || !persistence.CanUseChoices || geometry?.Available != true ||
-            allocation?.Available != true || scheduled?.Available != true || joy?.Available != true || social?.Available != true ||
-            header?.Available != true || row?.Available != true || allocation.Failure != null || scheduled.Failure != null ||
+            allocation?.Available != true || !scheduledDecision.Available || joy?.Available != true || social?.Available != true ||
+            header?.Available != true || row?.Available != true || allocation.Failure != null || scheduledDecision.Failure != null ||
             joy.Failure != null || social.Failure != null || header.Failure != null || row.Failure != null || !SupportedJoyProviders())
         { status = "Megamod.DrugTolerance.Unavailable"; return false; }
         return true;
@@ -179,6 +180,27 @@ public sealed class NativeDrugToleranceRuntime
 
     // Future owned S024 calls this for its actual patient at selection; no native feeding hook.
     public bool AllowsPatientTreat(Pawn patient, ThingDef drug) => !Available || Allows(patient, drug, RoutineDrugUse.PatientTreat);
+    public ScheduledDrugReadResult EvaluateScheduled(Pawn_DrugPolicyTracker tracker, ThingDef drug)
+    {
+        // Whole S138 structural/editor readiness stays outside the local reading boundary.
+        if (!Available) return ScheduledDrugReadResult.Unavailable;
+        var game = Current.Game;
+        return ScheduledDrugReadBoundary.Evaluate(() =>
+        {
+            if (!ScheduledContext.TryCapture(settings, tracker, drug, out var context)) return ScheduledDrugReadResult.Unavailable;
+            var choice = NativeDrugToleranceState.Read(context!.Entry);
+            var reading = NativeDrugToleranceReader.Read(drug, context.Pawn.health?.hediffSet?.hediffs);
+            if (!context.IsCurrent(settings) || !ReferenceEquals(NativeDrugToleranceState.Read(context.Entry), choice))
+                return ScheduledDrugReadResult.Unavailable;
+            var result = DrugToleranceRule.Evaluate(true, true, RoutineDrugUse.Scheduled, false, choice, reading);
+            if (result == DrugToleranceDecision.Unavailable)
+            {
+                if (NativeDrugToleranceReader.Resolve(drug) != null) ReadingUnavailable(game);
+                return ScheduledDrugReadResult.Unavailable;
+            }
+            return result == DrugToleranceDecision.Allowed ? ScheduledDrugReadResult.Allowed : ScheduledDrugReadResult.Rejected;
+        }, _ => ReadingUnavailable(game));
+    }
     private bool Allows(Pawn pawn, ThingDef drug, RoutineDrugUse route)
     {
         if (!Available || pawn?.drugs == null || drug == null || !CurrentDrug(drug)) return true;
@@ -194,12 +216,12 @@ public sealed class NativeDrugToleranceRuntime
             ReadingUnavailable();
         return result is DrugToleranceDecision.Allowed or DrugToleranceDecision.Unavailable;
     }
-    private void ReadingUnavailable()
+    private void ReadingUnavailable(Game? expectedGame = null)
     {
         var game = Current.Game;
-        if (game == null || readingNotices.TryGetValue(game, out _)) return;
+        if (game == null || expectedGame != null && !ReferenceEquals(game, expectedGame) || readingNotices.TryGetValue(game, out _)) return;
         readingNotices.Add(game, new object());
-        try { report("[fumblesneeze.megamod] DT-NATIVE targetSpec=DT-SCHEDULED/DT-DIRECT-JOY/DT-SOCIAL-DRINK; current pawn tolerance reading unavailable; this routine selection keeps native permission; retained choices are unchanged."); }
+        try { report("[fumblesneeze.megamod] DT-NATIVE targetSpec=DRUG-SCHEDULED-COMPOSITION/DT-DIRECT-JOY/DT-SOCIAL-DRINK; current pawn tolerance reading unavailable; this routine selection omits only the tolerance restriction; retained choices are unchanged."); }
         catch (Exception) { }
         try { Messages.Message("Megamod.DrugTolerance.ReadingUnavailable".Translate(), MessageTypeDefOf.RejectInput, false); }
         catch (Exception) { }

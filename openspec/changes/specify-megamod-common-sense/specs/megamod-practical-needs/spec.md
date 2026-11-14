@@ -90,6 +90,9 @@ need not evaluate potential mood. Supported S138 tolerance SHALL remain independ
 and disabling or losing S138 alone SHALL not disable healthy mood checking. Changes affect the next
 native selection, without cancelling, reclassifying or adding a final veto to an executing dose;
 dose quantity, interval, stock target and consumption history remain native.
+Both added restrictions SHALL evaluate one current Game, settings binding, pawn and policy-row
+context. If a native reading replaces that context during the decision, neither restriction from
+the departed context may be applied to the earlier native permission; no stale authority is retained.
 
 #### Scenario: Mood is already recovering
 - **WHEN** current mood is low but potential mood already reaches the policy threshold

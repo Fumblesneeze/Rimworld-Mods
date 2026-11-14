@@ -1,7 +1,7 @@
 # Needle: all-mod option search reference
 
 Owner: Make Rimworld Great Again (`fumblesneeze.megamod`, `mods/megamod`), 1.7 beta.
-Inspected 2026-11-14. S141 is specification only; implementation remains paused.
+Inspected 2026-11-14. S141 is specification only, with no active implementation lease.
 
 ## Sources and evidence
 
@@ -29,7 +29,8 @@ Asked whether to retain it or expand to foreign individual options, the user ans
 This **supersedes owned-only search and any supported-mod whitelist**. S047's active page-navigation
 draft is reconciled in place: its page grouping/identity remains, while S141 extends the same native
 chooser to individual options. A failed or custom page is a reported discovery gap, not an exclusion
-from eligibility. The implementation pause remains in force.
+from eligibility. This scope decision did not itself resume implementation; the subsequent user
+activation resumes S024/S138, with no S141 implementation lease.
 
 ## Observed implementation and selected adaptations
 

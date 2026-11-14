@@ -86,6 +86,20 @@ internal sealed class NativeDiagnosticSettingsView
         return target;
     }
 
+    // Sibling controls are measured from the same current row; this never draws or commits it.
+    internal (Rect UseGlobal, Rect CurrentSave, Rect GlobalDefault) MeasureBooleanControls(out bool visible)
+    {
+        EndToEndAssert.True(editorOffset == 0, "Ordinary Boolean sibling controls require the native editor offset.");
+        var global = MeasureCheckbox(out bool globalVisible);
+        var inheritance = new Rect(global.x - 2 * (global.width + 8), global.y - 22, global.width, 28);
+        var save = new Rect(global.x - global.width - 8, global.y, global.width, 28);
+        bool Fits(Rect rect) => float.IsFinite(rect.x) && float.IsFinite(rect.y) && float.IsFinite(rect.width) &&
+            rect.width > 0 && rect.height == 28 && rect.xMin >= 0 && rect.xMax <= ViewWidth &&
+            rect.yMin >= 0 && rect.yMax <= ViewportHeight;
+        visible = globalVisible && Fits(global) && Fits(inheritance) && Fits(save);
+        return (inheritance, save, global);
+    }
+
     internal Vector2 PlanTrackClick(Rect target)
     {
         var handler = typeof(GUI).GetMethod("HandleScrollbars", BindingFlags.Static | BindingFlags.NonPublic, null,

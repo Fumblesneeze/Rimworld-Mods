@@ -20,6 +20,10 @@ Read generated evidence at the exact path returned by the operation. If only a r
 known, enumerate that bounded directory with `rg --files --no-ignore` before selecting its log or
 TRX; do not guess filenames from a remembered suite or previous run. Evidence directories are
 ignored by Git, so an ordinary `rg --files` can otherwise hide the files that actually exist.
+When retaining a typed CLI run, capture stderr separately as well as stdout. Failed operations may
+report their diagnostic on stderr and leave stdout empty; preserve the canonical test log/TRX and
+its nonzero counters instead of mistaking an empty redirect for durable RED evidence or rerunning
+an already retained failure merely to recover its output.
 
 The Zlepper testing SDK only references game assemblies; it does not load mods, apply Harmony, or load Def XML. Keep ordinary, explicit-Harmony, and DefDatabase tests in separate projects/processes. Simulate package presence through the public package-ID boundary; use constructed lightweight `Def` fixtures only in an initially empty isolated Def database; use actual RimWorld for populated/Core/Workshop databases, `ThingDef`/`RecipeDef`, XML inheritance/cross-references/PatchOperations, or another mod's real lifecycle. Read [the host-test decision table](../../../../docs/TestingEnvironments.md) before adding such a test.
 
@@ -149,6 +153,10 @@ Prefer action → wait → observation steps that exercise the same native path 
 - Assert physical units with `stackCount` across spawned, carried, inventory, holder, and embedded
   state. Counting Thing objects misses duplicates merged into a stack. When exact fixtures matter,
   also assert each returned Thing identity and `stackCount == 1`.
+  Distinguish remaining stock from cleanup ownership. Native partial `Thing.Ingested` can discard
+  an undestroyed, holderless `SplitOff` result; tracking every result and summing `!Destroyed`
+  double-counts the consumed unit. Retain its causal split evidence and cleanup handle, but use the
+  actual native ownership/consumption path to decide whether it remains physical stock.
 - Exercise the real engine seam. Calling `meal.Graphic.GetType()` proves a CLR owner, not ingredient
   graphic selection; invoke `MatSingleFor`/the actual selected Graphic method. Starting a Job directly
   proves less than choosing its native float-menu/gizmo/bill action.

@@ -142,6 +142,10 @@ An observation-only hook should still require only the callable and execution fa
   inside a transpiler must preserve its incoming stream and cannot prevent another owner's patch
   removal. Test the actual failing provider path, including a subsequent successful rebuild when
   recovery is claimed. Public instruction inspection outside composition is not a publication receipt.
+  When invocation refusal lasts until republication, revoke both the receipt and its pending
+  generation: an availability getter must not admit that same refused generation and clear its
+  failure. Test a second refuse/recover cycle where a foreign skip prevents the capture prefix,
+  including repeated status/dependency reads and bounded diagnostic delivery.
   Cached admission must state which mutations invalidate it; observer removal does not execute the
   removed observer. Do not claim that removal is detected unless an existing check actually proves it.
 - Verify fallback by invoking the target and checking its native effects, values and exceptions.

@@ -18,8 +18,9 @@ do not copy source code, assemblies or artwork.
 
 ## Behavior inventory
 
-All rows are **analyzed; specified with retained gaps; not implemented**. Evidence is the pinned
-source/native inspection above; actual in-game acceptance is absent.
+All rows are analyzed and specified with retained gaps. The scheduled potential-mood portion of
+CS-B10 and its CS-B13 setting are under implementation; other portions remain unimplemented.
+Source/native inspection is research evidence, and actual S024 in-game acceptance is absent.
 
 | ID | Native action → proposed observable result | Defaults, boundaries and owning contract |
 | --- | --- | --- |
@@ -86,7 +87,12 @@ conversion, rollback and verified postconditions. Owned save/load retains actual
 
 ## Implementation and coverage
 
-**Implemented: nothing.** All CS-B1–13 are specification work. [Proposal](../../../../openspec/changes/specify-megamod-common-sense/proposal.md)
+The first batch implements only scheduled potential mood, its default-on inherited preference and
+direct S138 tolerance composition. Focused rule, setting and read-failure checks are in progress;
+runtime integration and native map/caravan/settings workflows remain unaccepted. The existing
+native mood slider supplies the threshold, with no extra policy control. The two restrictions have
+independent settings and local failures through one shared scheduled hook. Patient treats and all
+other CS-B1–13 portions remain unimplemented. [Proposal](../../../../openspec/changes/specify-megamod-common-sense/proposal.md)
 records intent; [design](../../../../openspec/changes/specify-megamod-common-sense/design.md) records technical
 boundaries; [tasks](../../../../openspec/changes/specify-megamod-common-sense/tasks.md) remain unchecked.
 
@@ -105,13 +111,14 @@ Hauling > Opportunities preference. S024 provides navigation to that control, no
 Actual selected-material surplus, resource-to-work improvement and whole-trip bounds replace the
 source room/worker-distance gate; only S125 authorizes work-bound equal-priority relocation.
 
-Original Common Sense active withholds owned overlap; preserve cargo and hold explicit unload orders
-for Resume. External While You're Up's overlapping detour follows the rule above. Missing/changed optional
-integrations disable only their unsupported behavior. Runtime work will require Harmony and XML
+The scheduled-mood batch routes active original Common Sense through ordinary effective-off for its
+single setting without changing stored preferences. The broader cargo/held-order policies remain
+future work. Missing/changed optional integrations disable only their unsupported behavior.
+The scheduled slice uses existing Harmony only. Later declarative runtime work will require XML
 Extensions, guarded additive Def/extension/component changes and one intentional packing-threshold
 scalar replacement; no whole-list replacement is intended. Shared facts remain map-owned with current
-pawn-specific eligibility checked at use. Exact patch targets, code, tests and live evidence do not
-exist yet; CS-T1–8 in design are candidate groups, not finished admission checks.
+pawn-specific eligibility checked at use. The shared scheduled target is
+`DRUG-SCHEDULED-COMPOSITION`; the remaining CS-T1–8 groups are candidates, not finished checks.
 
 ## Verification and acceptance
 
