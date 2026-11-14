@@ -199,6 +199,20 @@ supports idle-input admission rather than global input shadowing: defer on actua
 repeat, all five mouse buttons, motion/scroll or IME; a focused idle editor alone does not block.
 Foreign direct device pumping, I/O or arbitrary field assignment cannot be rolled back generically.
 
+Native text metrics may delegate only at a completed callback boundary on the GUI thread, with
+no reentry into an in-progress DrawText/Layout. The inspected native methods rebuild their own
+layout scratch and copy detached outputs; the next visible draw rebuilds it again. Lease and
+restore only the exact native TextLayout.Scale around each metric call, matching the hidden
+matrix's x-column magnitude (native zero-scale identity fallback). Keep scale-keyed glyph caches;
+do not forward SetMatrix to correct measurement. Unknown replacement backends remain an explicit
+reader gap. Hidden group geometry reproduces native per-push pixel snapping, including fractional
+nested origins; plain accumulated offsets are insufficient. These source premises still require
+the hidden backend's native workflow and do not establish accepted rendering or reveal behavior.
+The hidden backend's draft pilot cap is256 aggregate simultaneously open group/clip/window entries;
+excess or unbalanced structure fails that capture, not package eligibility. This is a bounded-work
+policy rather than a native framework limit. Unsupported render-target/font/language mutations
+latch a fixed failure even if a callback catches the immediate exception.
+
 For startup page acquisition, use a fresh detached native Dialog_Options with soundAppear and
 soundAmbient null, call its normal PostOpen under the same isolation, and materialize the final
 cachedModsWithSettings there. Do not call PreOpen, add, draw or close that carrier. This preserves

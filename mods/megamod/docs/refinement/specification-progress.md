@@ -15,6 +15,9 @@ cancel/refresh rejects stale receipts and progress remains partial/failed/cancel
 This is a detached implementation checkpoint: native GUI isolation and automatic page-reading
 integration remain active work, with D1–D3 and all full-feature acceptance still open. No known-mod
 list or registration prerequisite narrows the universal search requirement.
+The first native state component also passed24 steps with five personally inspected captures:
+typed text/focus survived success and exception, then subsequent native typing worked without
+refocus. This scoped result does not accept hidden drawing or automatic foreign-page discovery.
 
 Revision29, 2026-11-14: the query checkpoint8579276 is committed. S141-R1–R3 now build and verify
 the reusable generic recorder on an actual unfamiliar page's ordinary native draw. Automatic

@@ -1054,3 +1054,15 @@ repaint ID. The host checkpoint does not close D1–D3 before integrated native 
 Root retained the focused state component's native inert-stub RED after real native text entry
 and personally inspected its focused-field capture. The state lane may now apply only
 `Runtime/SettingsGuiStateScope.cs`; root owns its native workflow, review and all build/run outputs.
+
+The state runtime file is now frozen and independently reviewed. Its author has released that
+tracked lease and may draft only the hidden backend under local `discovery/backend/` while root
+runs the focused state workflow. This supersedes root's draft-authoring assignment for that
+artifact only; tracked backend implementation still requires the next native RED and explicit lease.
+Root retains guards, catalog/session integration, central registration and all acceptance authority.
+
+The reviewed state component now passes the focused English native workflow24/24steps. Root
+personally inspected all five captures, including unchanged focus/text after success and exception,
+subsequent typing without refocus and console. Exact-run cleanup/config hashes passed; only this
+component claim is verified. D1–D3, hidden backend/control guards, automatic collection/discovery,
+tab/reveal and complete S141 acceptance remain open.

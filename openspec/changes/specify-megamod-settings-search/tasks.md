@@ -3,6 +3,12 @@ S141's detached query checkpoint is followed by the verified ordinary-draw recor
 revision29. Automatic discovery/reveal and full feature acceptance remain open. Drafting or host
 checks alone accept no gameplay checkbox.
 
+Revision30 checkpoint: bounded session passes110 affected host checks after independent review.
+The state component has reviewed English native RED/GREEN,24steps/five personally inspected
+captures and successful subsequent typing without refocus. Its same-ID editor/style probes are
+diagnostic support; full hidden controls/scroll/write guards and all-mod integration remain open.
+See `discovery/root/verification.md` under local implementation evidence. D1–D3 stay unchecked.
+
 ## Selected query and discovery-contract batch
 
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.

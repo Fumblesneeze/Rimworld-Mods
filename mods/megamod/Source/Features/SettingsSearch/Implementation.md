@@ -79,3 +79,20 @@ regression, pass110 affected discovery/capture/query/chooser checks. Evidence is
 `artifacts/Implementation/megamod-p0/settings-search/discovery/core/`; review is under
 `discovery/review/`. This host checkpoint is not automatic discovery or native acceptance. D1–D3
 remain open until integration with the neutral reader and the required native workflow are verified.
+
+`SettingsGuiStateScope` captures an explicit native1.7 field/collection contract before mutation,
+isolates native editor/scroll/control collections, and restores the same original objects and
+known scalar/content/style state. It does not inspect foreign settings. Shape/budget refusal occurs
+before isolation; partial isolation failure attempts every restoration, and disposal is idempotent.
+The65,536-entry snapshot cap is pilot policy. Backend/event ownership, input admission, native
+control output/write guards and callback dispatch remain the caller's unimplemented obligations.
+
+The reviewed English `megamod.settings-search.native-state` component workflow passed24/24steps
+after actual native RED. Root personally inspected five exact-run captures: native typing before
+isolation, unchanged focused text after success and exception, subsequent native typing without
+refocus, and the console. The same-ID scratch editor lookup and style/state assertions are supporting
+diagnostics. They do not prove a hidden native control draw, moved caret/noncollapsed selection,
+scroll restoration, budget/shape refusal, every captured field or arbitrary foreign-page behavior.
+Those remain required in the integrated reader batch. Evidence and exact reviewed source/build
+identities are in `artifacts/Implementation/megamod-p0/settings-search/discovery/root/verification.md`.
+No automatic hooks or additional player settings are registered by this checkpoint.
