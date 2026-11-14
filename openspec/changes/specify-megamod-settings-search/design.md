@@ -99,7 +99,18 @@ provider editing require fresh isolated native workflows.
 
 ## Migration Plan
 
-No runtime or data change is delivered by this draft. Later implementation adds one common enabled
+The first implementation tranche is detached query behavior only, without runtime registration.
+It reuses S047's immutable page descriptor and retains opaque page/path/occurrence identity; labels
+and coordinates are never identity. Unicode text uses canonical composition, invariant case matching
+and collapsed whitespace; syntactic rich-text tags are removed while literal comparisons remain.
+Typo eligibility is determined per positive plain word against the whole supplied snapshot before
+field/exclusion filtering: an exact occurrence anywhere suppresses that word's typo fallback.
+This preserves the inspected source behavior without its numeric scoring algorithm. Match ranking
+uses exact before typo, label matches before other context, then ordinal package/page/path/occurrence
+ties. Page records search page metadata only. No callbacks, settings access or persistent index are
+part of this tranche; snapshot lifecycle remains the future native adapter's obligation.
+
+Later implementation adds one common enabled
 preference and transient discovery state. Missing preference means inherited/default-on; disabling
 does not alter foreign settings or require importing Needle data.
 
@@ -108,4 +119,4 @@ does not alter foreign settings or require importing Needle data.
 Implementation must pin native/provider page enumeration, GUI/tab/scroll capture and reveal
 semantics, budgets, custom-control failure detection and representative real mod fixtures. Those are
 implementation research tasks; they cannot be resolved by restricting product scope to those fixtures.
-S141 is not dispatched by the resumed S024/S138 implementation batch.
+Plan revision28 dispatches the detached query tranche and read-only native-contract research.

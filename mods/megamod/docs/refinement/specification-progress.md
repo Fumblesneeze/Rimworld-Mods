@@ -9,6 +9,12 @@ interrupting the work. No runtime implementation or gameplay acceptance is claim
 
 ## Status and next work
 
+Revision28, 2026-11-14: S141 all-mod option search is the active batch. Detached query matching has
+focused RED/GREEN and61 affected search/chooser checks; native generic page/GUI/tab research is
+retained alongside proposed English scenarios. No runtime search is registered or accepted. The
+next slice is generic native capture and original-control reveal, preserving every eligible page
+and reporting gaps. All other features and final suite-wide language verification remain allocated.
+
 Revision27, 2026-11-14: the selected S024 scheduled-mood/common-setting/S138 composition batch is
 accepted after independent review, focused host/package checks and four English native workflows
 (679steps,58 personally inspected captures). Exact causal evidence is retained under

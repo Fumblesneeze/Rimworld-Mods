@@ -1,7 +1,7 @@
-# P0 dispatch — current plan revision 27, 2026-11-14
+# P0 dispatch — current plan revision 28, 2026-11-14
 
 Owner: Make Rimworld Great Again (`fumblesneeze.megamod`). The current 152-entry scope is governed
-by [plan revision 27](roadmap.md) and the final **Revision 27 — scheduled-mood acceptance**
+by [plan revision 28](roadmap.md) and the final **Revision 28 — settings search**
 section below. Later entries supersede earlier author leases and verification schedules. Root owns
 build/install outputs and final native acceptance; no complete feature is accepted by this record.
 
@@ -976,3 +976,22 @@ independent tolerance/mood controls survive local unavailability and layout reco
 dose completes after re-enabling mood checking, and native settings reload retains inheritance and
 dormant overrides. Full S024/S138/S139 and all part gates remain open. All152 entries, the all-mod
 option search requirement, seven authored catalogs and final language task12.5 remain allocated.
+
+## Revision 28 — settings search
+
+Root implements only S141-Q1–Q3 detached matching/ranking with existing S047 immutable page
+descriptors in `Source/Features/SettingsSearch/Core/` and matching `Megamod.Unit` tests. Work is
+test-first in focused vertical slices, reviewed as one batch; root holds Unit/product outputs,
+registration and commits. No runtime search hook or new settings system is part of this tranche.
+`settings_search_native_research` owns only the artifact directory named in S141 tasks and Q4's
+native/API/workflow research. It may inspect original/native sources read-only, never copy them,
+build/install or launch games. Complete discovery/reveal/lifecycle and genuine provider behavior
+remain the next native integration obligations, not a supported-mod whitelist or an owned-only fallback.
+
+The query core now has six RED/GREEN slices plus seven reproduced review regressions, with61/61
+affected Unit checks. Its implementation note records the host-only boundary; no search hook is
+registered or gameplay accepted. Native research has returned and its artifact lease is closed.
+The next runtime tranche must consume the provider-completed chooser collection, preserve ordinary
+widget/scroll inputs during neutral capture, refuse capture-created window lifecycle effects, and
+resolve tab identity independently of selected-last draw order. These concrete findings replace
+guesswork; callback budgets still require a live pilot and provider-present proof remains outstanding.

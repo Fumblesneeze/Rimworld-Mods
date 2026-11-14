@@ -1,5 +1,29 @@
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), 1.7 beta.
-S141 is specified only and is not dispatched by the resumed S024/S138 batch; drafting accepts no checkbox.
+S141's first detached query batch is dispatched by plan revision28; native discovery/reveal and
+full feature acceptance remain open. Drafting or host checks alone accept no gameplay checkbox.
+
+## Selected query and discovery-contract batch
+
+- [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.
+- [ ] S141-Q2 Add bounded typo fallback and deterministic exact/label/page/path/occurrence ranking; reuse S047's immutable page descriptor and keep page matches confined to page metadata.
+- [ ] S141-Q3 Independently review this host-only tranche, fix findings as one affected batch, run focused checks and owning build/package validation, and record remaining native discovery/reveal/lifecycle obligations without registering an incomplete search UI.
+- [ ] S141-Q4 Inspect exact native page/GUI/tab/scroll boundaries and author the next executable English workflow plan, with generic eligibility, unchanged-value observations, coverage gaps and explicit capture budget premises.
+
+Root owns `Source/Features/SettingsSearch/Core/`, its matching Unit fixture, integration documents
+and shared outputs. The disjoint `settings_search_native_research` lease is artifact-only under
+`artifacts/Implementation/megamod-p0/settings-search/native-research/`; no tracked edits, build,
+installation or game launch. Existing S047 projection remains intact. One selected search snapshot
+contains detached immutable displayed text and opaque page/path identities; it neither executes
+callbacks nor owns settings values. Runtime/index lifecycle and complete task2.1 remain open.
+
+The detached query checkpoint has six actual RED/GREEN slices and seven reproduced/corrected
+review regressions; the affected search/chooser batch passes61/61. Source/API limits and evidence
+are in `mods/megamod/Source/Features/SettingsSearch/Implementation.md` and the local query ledger.
+Read-only1.7.5005 research pins the generic GUI backend and actual completed native chooser list.
+It also identifies value-changing repaint/scroll paths, unsafe close callbacks and unstable raw tab
+draw order; the native adapter must address those before capture/reveal can be accepted. The artifact
+handoff proposes measured-pilot inputs and English workflows; its callback budgets are explicitly
+unmeasured. A genuine1.7 provider-generated-page fixture remains unpinned. No checkbox closes here.
 
 ## 1. Pin universal discovery and native reveal
 

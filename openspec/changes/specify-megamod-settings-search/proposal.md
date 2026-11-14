@@ -33,7 +33,7 @@ No duplicate capability delta is introduced here.
 ## Impact
 
 Sole owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, `mods/megamod`; target **1.7 beta**.
-This is specification work only; S141 has no active implementation lease. Common settings metadata, native
+The first detached query tranche is active under plan revision28; no runtime search is accepted. Common settings metadata, native
 chooser integration and generic GUI capture will be affected later. Harmony remains the existing
 dependency. No Needle binary/API dependency, source-settings migration, XML Extensions operation
 or Gateway product dependency is introduced. Source inspection informs independent implementation.

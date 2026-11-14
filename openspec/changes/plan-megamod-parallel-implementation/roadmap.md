@@ -1,7 +1,7 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **27**, 2026-11-14. Status: **implementation active; scheduled-mood batch accepted; focused English batches; aggregate acceptance incomplete**.
+Plan revision **28**, 2026-11-14. Status: **implementation active; all-mod search query batch; focused English batches; aggregate acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
@@ -500,6 +500,17 @@ revision; do not tuck them into a chunk without recording them.
 | S151 | [Clothing Sorter — `Mlie.ClothingSorter`; intake, per-source spec pending](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md) |
 
 ## Plan revisions and execution records
+
+### Revision 28 — 2026-11-14 all-mod search query and native-contract batch
+
+After scheduled-mood acceptance commit e6b662f, select S141-Q1–Q4 within existing P0-B. Its detached
+query rules depend only on supplied text/identity and existing S047 page descriptors, so they can
+proceed alongside read-only generic GUI/page/tab/scroll research. Root owns the query core/tests,
+shared outputs and integration; `settings_search_native_research` owns only its artifact packet.
+No unfinished native search UI is registered. The user-selected all-mod eligibility has no whitelist.
+Native discovery, lifecycle, reveal, real provider editing and final acceptance remain required.
+S139's unproved generic-family/provider-lifetime premises stay allocated for later bounded work;
+this changes sequence, not scope. All152 entries,27 chunks/nine parts and final language task12.5 remain.
 
 ### Revision 27 — 2026-11-14 scheduled-mood batch acceptance
 

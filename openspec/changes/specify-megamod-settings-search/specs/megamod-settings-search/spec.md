@@ -1,7 +1,7 @@
 # Cross-mod settings search
 
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), 1.7 beta.
-S141, Needle-inspired universal option search. Specification only; no runtime acceptance.
+S141, Needle-inspired universal option search. Detached query implementation started; no runtime acceptance.
 The 2026-11-14 all-mod clarification supersedes the earlier owned-only draft.
 
 ## ADDED Requirements
@@ -36,6 +36,10 @@ without an exact match permit at most one edit at 5–8 characters or two at 9+;
 phrases, exclusions and field terms stay literal. Insert/delete/substitute/transpose are edits.
 Exact results rank before typo results and labels before help/value-only matches, with stable
 page/path/occurrence ties. Empty input restores the page list, not every captured option.
+Canonical-equivalent Unicode and normalized whitespace SHALL match; syntactic rich-text tags are
+not searchable, while literal comparisons such as `value < 5` remain readable text. Typo fallback
+eligibility is determined against the complete current supplied search snapshot before field and
+exclusion filtering; an exact occurrence anywhere keeps that word literal.
 
 #### Scenario: Combine owner and option terms
 - **WHEN** the player enters `mod:"Example Mod" "work speed" -animals`
