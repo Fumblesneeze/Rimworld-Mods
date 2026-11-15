@@ -1126,3 +1126,19 @@ drag, and root observed the intended edit after unchanged hidden reads. All trac
 shared-output leases are released. Idle-input and listing research remain artifact-only (the idle
 draft has a source review); listing IntEntry and label-scroll caches are additional retained D2
 obligations. Root owns their implementation/integration and all remaining all-mod discovery work.
+
+Next focused batch: root owns native input/listing fixtures, stub RED, specs, shared outputs and
+acceptance. `settings_idle_contract` prepares only the existing input draft under ignored artifacts;
+`settings_native_controls` prepares only the 27th Listing IntEntry binding draft under
+discovery/listing/value-guard. Tracked runtime leases begin only after root records the grouped
+native RED. The intended disjoint paths are Runtime/SettingsReadInputAdmission.cs and the existing
+Runtime/SettingsReadControlGuards.cs respectively. No culling/cache implementation or complete
+automatic reader registration is included in this small batch; all remaining obligations persist.
+
+That batch is now frozen and component-verified. Both real native RED failures were retained;
+the strengthened input witness also rejected a real active click against the inert stub. The two
+reviewed runtime files passed one grouped English run: 47 steps, nine root-inspected captures,
+successful cleanup and unchanged normal config hashes. Input fixture review fixes are resolved
+and retained in the testing skill. Author/reviewer leases are released. Root retains listing
+culling/cache, other numeric closures, remaining native input workflows and all provider/reader/
+search integration; the complete universal feature and part gates remain unfinished.

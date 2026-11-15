@@ -147,3 +147,20 @@ source/process identities, logs and successful cleanup are in local
 `artifacts/Implementation/megamod-p0/settings-search/discovery/values/root/verification.md`.
 Idle input, Listing_Standard culling/value/cache preservation, other numeric closures, provider
 collection, integrated automatic discovery and search/reveal remain open D2/D3 obligations.
+
+`SettingsReadInputAdmission` now binds native input storage once and classifies GUI repaints as
+Idle, Busy or Unavailable without resetting or consuming input. It covers the inspected keyboard,
+five mouse buttons, movement/scroll and Windows IME contract; focused but idle text remains eligible.
+Constructor failures must be contained by the eventual reader initializer. The control binder also
+adds exact instance Listing_Standard.IntEntry preservation, bringing it to 27 targets.
+
+The reviewed English input/listing batch passed 47 native steps (31 input, 16 listing), with nine
+personally inspected captures. Real typing/dragging produced independently witnessed Busy frames,
+then focused idle eligibility resumed; text and slider edits remained visible. A real listing
+request retained 7 despite a hidden minimum of 29, then native +1 changed it to 8. Worker rejection,
+missing-device and empty-text IME checks are supporting diagnostics, not genuine IME action proof.
+Review strengthened every-active-frame assertions, asynchronous diagnostic waits and independent
+cleanup; these lessons are saved in the testing skill. Exact evidence is under local
+`discovery/input-listing/root/verification.md`. Repeat/extra-button/wheel/IME native actions,
+listing culling/cache preservation, other numeric closures and integrated automatic discovery
+remain open. This component still registers no production reader callbacks.

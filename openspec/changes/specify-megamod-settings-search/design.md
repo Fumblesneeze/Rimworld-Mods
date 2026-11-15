@@ -305,3 +305,23 @@ after its widget call, and long labels/End mutate listing-owned scroll-cache col
 are concrete native preservation obligations before a complete reader; they do not limit which
 mods are eligible. The artifact-only idle-input draft has an independent source review, but still
 needs runtime compilation and native input workflows, including focused-but-idle resumption.
+
+The selected continuation batches native input admission with Listing_Standard.IntEntry outward
+preservation. Input construction is GUI-thread-owned and binds inspected native storage once;
+the initializer must catch shape/platform/delegate compilation failure and leave discovery
+unavailable. Check reads stored state without initializing input devices or invoking virtual
+input callbacks. Require real type/rawType Repaint, all 127 inspected keyboard slots, all five
+mouse buttons and their held/press/release/repeat states, exact nonzero movement/scroll components,
+and the attached Windows IME bridge including composition begun with empty text. Any nonzero or
+nonfinite stored button value conservatively counts as busy. The 127-slot premise is the native
+inventory, not a mod/provider limit; changed native/platform shapes remain explicit gaps. Focus
+alone is not busy. This helper cannot prove the caller's completed-callback placement or prevent
+arbitrary foreign event pumping; those remain integrated-reader obligations.
+
+Listing IntEntry gets an exact public instance guard that retains its original integer and string
+buffer through the native minimum clamp, including exception paths. This consumes the same
+outward-preservation contract as the existing control pairs, without changing culling semantics.
+Two focused English native workflows form one batch: real typing/dragging with idle resumption,
+and a native request that would clamp a listed value followed by an ordinary listed-value edit.
+Synthetic input-state probes, if used, are supporting diagnostics only. Broader hold/repeat,
+extra-button, wheel and genuine IME action delivery remain to be verified through native workflows.

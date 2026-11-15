@@ -62,6 +62,13 @@ Widgets.HorizontalSlider arms on mouse-down but updates through MouseDrag, so a 
 native click receipt does not prove a slider edit. Use NativeWindowDragActionStep with real
 movement from the current handle to the desired value, then assert and inspect the changed value.
 
+For a per-frame admission claim, witness the exercised native activity independently and reject
+every observed active frame that is admitted. A positive blocked-frame counter alone can hide
+intermittent leaks. Keep native delivery that finishes before the sampled phase distinct from
+still-active input. Schedule worker diagnostics asynchronously and poll completion through a
+bounded E2E wait; read a Task result on the GUI thread only after completion. Register independent
+cleanup obligations separately so one failing close does not skip another window or speed restore.
+
 Use a separately marked E2E project for a workflow that needs ordinary game frames, native actions, pawn jobs, waits, and player-visible observations. Set `RimWorldEndToEndTest=true` and one `RimWorldEndToEndTestOwnerPackageId`; keep the assembly outside product `Assemblies` and NUnit/VSTest. Each attributed test declares its globally stable ID, owner, complete ordered non-Gateway package set, and deadlines.
 
 ```powershell

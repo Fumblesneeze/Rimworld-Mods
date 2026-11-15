@@ -144,7 +144,8 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
 
 #### Scenario: Native controls normalize values during an idle draw
 - **WHEN** a hidden native draw would truncate or normalize text, initialize numeric buffers,
-  round or clamp sliders/ranges, or clamp scroll positions without a player edit
+  normalize a listing's minimum integer value, round or clamp sliders/ranges, or clamp scroll
+  positions without a player edit
 - **THEN** the original outward values and buffer identities are retained, including nulls and
   exact float values; native slider drag sounds and hidden tooltip registration are suppressed.
   Literal help may be recorded, but search never evaluates a lazy help getter. Subsequent ordinary
@@ -156,6 +157,14 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
 - **THEN** acquired original values are restored even on exception, nesting cleanup allows later
   independent calls, and unavailable preservation prevents automatic read entry. Other owners'
   registrations remain intact; no full transaction over arbitrary foreign effects is claimed.
+
+#### Scenario: Discovery waits for native input and resumes while focus remains
+- **WHEN** the player types, drags, holds or repeats a key/button, moves or scrolls the pointer,
+  or has an active IME composition during a possible discovery frame
+- **THEN** automatic reads wait until that input is idle, without resetting, consuming or pumping
+  it. A focused but idle editor remains eligible, and ordinary typing/dragging still changes its
+  native controls. Missing or unverified native input state prevents automatic reads while
+  ordinary settings access remains available.
 
 ### Requirement: SS-07 Common activation preserves independent browsing
 Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at NextDisplay with normal inheritance, dormant overrides and main-menu guards.

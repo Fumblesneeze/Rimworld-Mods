@@ -15,7 +15,7 @@ namespace Megamod.Features.SettingsSearch.Runtime;
 // Initialization is owned by the complete neutral reader. This component registers no callbacks itself.
 public sealed class SettingsReadControlGuards : IDisposable
 {
-    private const int TargetCount = 26;
+    private const int TargetCount = 27;
     private readonly Thread owner = Thread.CurrentThread;
     private readonly AdmissionCoordinator admission;
     private readonly List<SettingsReadControlGuard> guards = new();
@@ -77,6 +77,7 @@ public sealed class SettingsReadControlGuards : IDisposable
         Bind("SS-READ-SLIDER-SOUND", typeof(Widgets), "CheckPlayDragSliderSound", false, typeof(void), typeof(Sound), false);
         Bind("SS-READ-TOOLTIP", typeof(TooltipHandler), "TipRegion", true, typeof(void), typeof(Tooltip), false,
             typeof(Rect), typeof(TipSignal));
+        BindListingInt();
         group = new PatchGroup("settings-search.read-controls", AdmissionPhase.GameReady, candidates.ToArray());
     }
 
@@ -132,6 +133,23 @@ public sealed class SettingsReadControlGuards : IDisposable
         }
         catch (Exception) { target = null; }
         Add(id, declaringType.FullName + "." + name, target, callbacks, paired);
+    }
+
+    private void BindListingInt()
+    {
+        var arguments = new[] { typeof(int).MakeByRefType(), typeof(string).MakeByRefType(), typeof(int), typeof(int) };
+        MethodInfo? target = null;
+        try
+        {
+            target = typeof(Listing_Standard).GetMethod("IntEntry", BindingFlags.Public | BindingFlags.Instance |
+                BindingFlags.DeclaredOnly, null, arguments, null);
+            if (target == null || target.DeclaringType != typeof(Listing_Standard) || target.IsStatic ||
+                !target.IsPublic || target.IsVirtual || target.IsGenericMethod || target.ContainsGenericParameters ||
+                target.ReturnType != typeof(void) ||
+                !target.GetParameters().Select(parameter => parameter.ParameterType).SequenceEqual(arguments)) target = null;
+        }
+        catch (Exception) { target = null; }
+        Add("SS-READ-LISTING-INT", typeof(Listing_Standard).FullName + ".IntEntry", target, typeof(ListingIntBuffer), true);
     }
 
     private void BindNumeric(string id, Type number, Type callbacks)
@@ -251,6 +269,20 @@ public sealed class SettingsReadControlGuards : IDisposable
         [HarmonyPriority(int.MinValue)]
         private static void Finalizer(ref int __1, ref string? __2, (bool Active, int Value, string? Buffer) __state)
         { if (__state.Active) { __1 = __state.Value; __2 = __state.Buffer; } }
+    }
+
+    private static class ListingIntBuffer
+    {
+        [HarmonyPriority(int.MaxValue)]
+        private static void Prefix(ref int __0, ref string? __1, MethodBase __originalMethod,
+            out (bool Active, int Value, string? Buffer) __state)
+        {
+            __state = default;
+            if (SettingsReadControlGuard.ShouldCapture(__originalMethod)) __state = (true, __0, __1);
+        }
+        [HarmonyPriority(int.MinValue)]
+        private static void Finalizer(ref int __0, ref string? __1, (bool Active, int Value, string? Buffer) __state)
+        { if (__state.Active) { __0 = __state.Value; __1 = __state.Buffer; } }
     }
 
     private static class FloatBuffer

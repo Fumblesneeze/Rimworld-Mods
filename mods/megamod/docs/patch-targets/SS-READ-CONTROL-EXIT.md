@@ -10,7 +10,7 @@ Implementation: SettingsSearch/Harmony/SettingsReadControlGuard.cs and Runtime/S
 
 ## Target and minimal predicates
 
-All methods below are nongeneric static methods except the exact numeric closures. `GUI` means
+Methods below are static except Listing_Standard.IntEntry, and nongeneric except numeric closures. `GUI` means
 UnityEngine.GUI in UnityStubs; `Widgets` means Verse.Widgets in Assembly-CSharp. All are public
 except GUI.BeginScrollViewImpl. Every binder checks the exact declared signature, including refs.
 
@@ -40,6 +40,7 @@ except GUI.BeginScrollViewImpl. Every binder checks the exact declared signature
 | SS-READ-FLOAT-RANGE | Widgets.FloatRange(Rect,int,ref FloatRange,float,float,string,ToStringStyle,float,GameFont,Color?,float):void | original range |
 | SS-READ-INT-RANGE | Widgets.IntRange(Rect,int,ref IntRange,int,int,string,int):void | original range |
 | SS-READ-RANGE-TEXT | Widgets.FloatRangeWithTypeIn(Rect,int,ref FloatRange,float,float,ToStringStyle,string):void | original range before text formatting/parsing |
+| SS-READ-LISTING-INT | Listing_Standard.IntEntry(ref int,ref string,int,int):void (public instance, nonvirtual) | original integer and buffer before the listing's minimum clamp |
 
 Input snapshots are bounded to the consumed values. Vector input needs only the three entries the
 native field can touch, preserving array identity and untouched additional entries. Do not reflect
@@ -88,3 +89,9 @@ with five personally inspected captures; text/slider preservation and later deli
 visible. Numeric/vector/range/scroll assertions, including all four public scroll entries and both
 Widgets modes, are supporting diagnostics. See local discovery/values/root/verification.md.
 This does not establish complete generic page discovery or all remaining control contracts.
+
+The later SS-READ-LISTING-INT component has its own reviewed 16-step English workflow. Root
+inspected the original 7, the same value after a real hidden-read request with minimum 29, and 8
+after the ordinary +1 button. A throwing-postfix restoration assertion supports that workflow.
+See local discovery/input-listing/root/verification.md. This verifies outward value preservation,
+not listing culling or its label-scroll caches.

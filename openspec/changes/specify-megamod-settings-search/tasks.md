@@ -29,6 +29,14 @@ failure. Evidence is under `discovery/values/root/verification.md`; no automatic
 callbacks are registered. Idle admission, native listing culling/value/cache preservation, other
 numeric closures and complete provider/reader/search integration keep D1–D3 and full S141 open.
 
+The next input/listing component batch passed 47 native steps after retained RED and independent
+review, with nine personally inspected captures. Native typing/dragging was classified Busy on
+every independently witnessed active repaint, followed by focused idle resumption. Hidden listing
+minimum normalization retained 7 and normal +1 edited it to 8. See local
+`discovery/input-listing/root/verification.md` for identities and diagnostic/native distinctions.
+Broader input categories, listing culling/cache state, other numeric closures, provider collection
+and complete reader integration remain open; this checkpoint closes no D1–D3/full-feature task.
+
 ## Selected query and discovery-contract batch
 
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.
