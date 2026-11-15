@@ -1181,3 +1181,27 @@ re-review/build/package evidence belongs to root's local listing/proof-root ledg
 remain confined to the components above. The next integration still owes derived/sequential row
 proofs, generic operands, effective wrappers, all 17 native consumer contracts and the offscreen
 player workflow. A host checkpoint is not listing unculling or all-mod search acceptance.
+
+From 43eaead, the continued semantic lane leases only SettingsListingBoundsSemantics.cs and its
+existing Harmony fixture to `settings_bounds_checker`. It first prepares executable RED fixtures
+for native derived rectangles, sequential same/different-method draws and symbolic generic draw
+operands; root runs tests before implementation. `settings_family_publication` has an artifact-only
+lease under discovery/listing/composition-research to pin original-body/effective-wrapper proof
+and the generic publication route. It does not alter provider readers or run builds. Root owns
+contracts, shared outputs, review, integration and native acceptance. These leases supersede the
+completed prior batch assignments; all 17 consumers and the offscreen workflow remain required.
+
+Source inspection identified patch-metadata work in Harmony's convenience original-reader path.
+The composition lane now additionally leases new Patching/Harmony/HarmonyOriginalBody.cs and its
+matching Harmony fixture for a passive raw-body tracer. It may expose only the existing bounded
+structural decoder in HarmonyPublishedBody.cs for reuse, without changing that reader's root,
+generic, EH or ABI restrictions. Root runs RED before implementation and retains shared-output
+ownership. Wrapper admission remains separate pending work; a raw body alone approves no patch.
+
+The continuation reaches 56 passing semantic checks, 16 passive original-reader checks and 18
+existing published-reader checks. Executable review regressions cover final-stage repetition and
+shared projection-scalar mutation; compatible post-use changes and full-gate reentry remain
+eligible. Root retains final review/build/package evidence in listing/continuation-root. The raw
+reader leaves published-body generic/EH/ABI restrictions intact. SS-READ-LISTING-BOUNDS records the
+pending integration contract: no getter/automatic callback is registered, and exact native bindings,
+effective wrapper/family composition and the actual offscreen player workflow remain unaccepted.

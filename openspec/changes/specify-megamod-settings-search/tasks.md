@@ -51,6 +51,13 @@ See local `discovery/listing/proof-root/verification.md`. No getter patch or rea
 added; derived/sequential draws, generic operands, effective wrappers, all 17 native consumers
 and the offscreen player workflow remain unverified. No D1–D3/full-feature task closes here.
 
+The continuation extends original-instruction semantics with derived/sequential draws, symbolic
+generic operands, constructor/scalar preparation and protected shared scalar lifetimes. Its
+56 checks pass after executable review RED/GREEN. A passive original-body reader passes16 checks,
+and the reused published-reader regression group passes18. Local evidence is in
+`discovery/listing/continuation-root/verification.md`. Exact native bindings, effective composition
+and the offscreen workflow are still required; these host components close no D1–D3/full-feature task.
+
 ## Selected query and discovery-contract batch
 
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.

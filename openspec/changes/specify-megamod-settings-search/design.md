@@ -375,3 +375,54 @@ lexical instruction order. Preserve unrelated work and compatible paths while re
 mutations. This original-instruction component still needs derived-rectangle/sequential-draw,
 generic operand, effective wrapper and all 17 actual native consumer integration before unculling
 can be registered. It does not itself confer a live or complete-reader acceptance claim.
+
+The next original-body proof must retain drawing cardinality and rectangle derivation: LabelDouble
+requires both sequential calls of the same label method on the row's left and right halves;
+ButtonTextLabeledPct requires its derived label and button rectangles, including the native
+button-height adjustment. A proof that merely finds either call is insufficient. Distinguish
+these sequences from Label's legitimate long/short alternative. Bind exact producer callables
+and the relevant value/alias lifetime while preserving unrelated observers and layout work.
+For the two generic numeric consumers, bind the widget operand to the consumer's own generic
+parameters or actual arguments; an arbitrary same-signature generic closure is not that operand.
+No finite numeric-type list defines eligibility. The original-body proof still needs separate
+coherent publication/effective-composition evidence before getter acquisition or native acceptance.
+
+Known scalar rectangle accessors may adjust the base row before its culling decision, as native
+RadioButton and CheckboxLabeled do. This does not authorize writes after that decision: retain
+the final compared row through the draw and reject escaping addresses or later alias writes.
+Derived locals need their own producer-to-draw lifetime, including the declared pre-cull height
+setter. Drawing stages describe mandatory sequential calls; alternatives occupy the same stage.
+Validate actual reachable call order and cardinality rather than inferring either from source
+order. Bind projection parameters to their actual consumer arguments, including the native
+`1f - labelPct` complement, and retain exact operation order rather than algebraic equivalence.
+The paired projections must consume the same scalar value: protect its lifetime between reads,
+including aliases acquired earlier, while permitting changes after the final consumed read.
+After the final required drawing stage, inspect later paths for duplicate stages until return
+or reentry through the complete native culling gate; an intact gate may begin a fresh sequence.
+The native in-place four-float rectangle constructor is permitted only before the relevant row
+lifetime, with its exact address/argument/constructor chain intact; post-cull replacement refuses.
+Bound a semantic binding to eight drawing sites/stages, 32 scalar accessors and four exact
+constructors. A completed drawing sequence does not erase the dependencies of stored projections
+reused later: if only one projection is rebuilt after a scalar change, refuse the mixed pair.
+
+Original-body acquisition must also be passive. The inspected Harmony convenience path consults
+patch metadata even when asked to apply zero transpilers, so that argument does not establish a
+side-effect-free read. Reuse a shape-guarded raw original-body reader only after inspecting its
+actual path; bound original IL/locals/branch metadata before invoking it and retain generic
+definition context. Test an already-published factory/attribute case with counters reset after
+ordinary acquisition, proving inspection itself performs neither callback execution nor patch
+acquisition. This body read is separate from publication/effective-wrapper admission.
+
+The initial raw reader is limited to exact runtime methods declared on nongeneric types, including
+open generic definitions. It rejects original exception regions and InlineSig operands, and bounds
+IL to 65,536 bytes, decoded operations to 4,096, each switch to 256 destinations and locals to 256.
+Reuse the existing bounded structural decoder before the provider parser; do not allocate from an
+unvalidated switch count. Preserve exact generic token context and branch target identity without
+emitting or executing the inspected body. These are inspection bounds, not mod/type eligibility
+rules; refusal leaves ordinary page access intact and the capture incomplete.
+
+Native integration must account for all direct getter consumers on the declaring listing class,
+including detecting an additional native consumer after a game change. The current 17-method
+research inventory cannot silently excuse a newly discovered unproved consumer. This bounded
+native prerequisite check is distinct from universal foreign-page eligibility and does not scan
+arbitrary foreign callbacks to promise transactionality.

@@ -74,11 +74,18 @@ An observation-only hook should still require only the callable and execution fa
   Cover addresses captured before the producing write and supplied argument addresses too: later
   alias writes can replace a protected value without another direct `ldloca` or `starg`. Exercise
   the bypass with valid executable fixture IL, not only a rearranged diagnostic instruction list.
+  When multiple producers share a scalar argument, prove its value survives between their reads;
+  matching the same argument slot is insufficient after `starg` or a retained ref-alias write.
+  Keep writes after the final consumed read outside that lifetime, including a completed drawing
+  cycle that updates the scalar before recomputing both projections for the next cycle.
+  If a later cycle reuses stored projections, retain each producer's scalar dependency until
+  that producer refreshes; finishing a draw alone does not prove both projections were rebuilt.
   Reject only the unproved relationship; harmless aliases and unrelated edits should remain eligible.
   Exercise the alternate incoming path through a real owned-patch fixture before calling it guarded.
   Pair a rejection with a compatible counterexample: a branch entering at the start of an intact
   producer chain is not a bypass when it still executes that complete chain.
-  Follow control flow through and after the first consumer: a later backedge can reach an unsafe
+  Follow control flow through and after every required consumer, including the final draw in a
+  sequence: a later backedge can repeat that draw, reach an unsafe
   value read, and a block physically after the draw can execute a mutation before it. Bound the
   protected lifetime by reachable paths, not instruction order or an absorbing first draw. Pair
   these executable regressions with harmless post-draw work and reentry through the intact guard.
@@ -90,7 +97,10 @@ An observation-only hook should still require only the callable and execution fa
   Harmony provider's public `GetPatchInfo` path can construct foreign parameter attributes. For
   side-effect-free admission, use the existing shape-guarded publication reader where applicable
   (`mods/megamod/Source/Patching/Harmony/HarmonyPublication.cs`), not copied parsing or an assumed
-  inert reflection call. Inspect one coherent snapshot for a decision. Filter acquired-owner
+  inert reflection call. The inspected `GetOriginalInstructions` convenience path also reads and
+  sorts patch metadata before its zero-transpiler loop; zero is not proof of a passive read. Inspect
+  the raw reader path and verify factory/attribute counters after ordinary patch acquisition.
+  Inspect one coherent snapshot for a decision. Filter acquired-owner
   registrations before projecting rollback receipts; unrelated factories need not be resolved or
   rejected when their ordering/effects are not consumed. Actual provider composition may execute
   factories; inspection must not execute them as probes.

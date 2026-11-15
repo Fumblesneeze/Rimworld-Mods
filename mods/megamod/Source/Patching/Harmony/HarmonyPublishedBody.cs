@@ -231,6 +231,15 @@ internal static class HarmonyPublishedBody
     private static readonly Dictionary<short, OpCode> Opcodes = typeof(OpCodes).GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(field => field.FieldType == typeof(OpCode)).Select(field => (OpCode)field.GetValue(null)!)
         .Where(code => code.OpCodeType != OpCodeType.Nternal).ToDictionary(code => code.Value);
+    // Structural preflight shared with the original metadata reader. This does not resolve
+    // tokens, inspect a publication or relax this class's captured-body restrictions.
+    internal static bool TryDecode(byte[] code, out IReadOnlyList<Operation>? operations, out Failure failure)
+    {
+        operations = null;
+        failure = Failure.None;
+        try { operations = Decode(code, (_, _) => { }).AsReadOnly(); return true; }
+        catch (CaptureFailure error) { failure = error.Reason; return false; }
+    }
     private static List<Operation> Decode(byte[] code, Action<int, OperandType> bind)
     {
         var result = new List<Operation>();

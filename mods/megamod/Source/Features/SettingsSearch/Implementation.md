@@ -185,9 +185,22 @@ without a numeric-type list; relevant publication changes permanently invalidate
 Currentness is separate from semantic admission. The checker follows the exact null/overlap draw
 relationship, including post-draw backedges and tail blocks that can modify a row before drawing.
 
-Focused RED/GREEN covers 12 detached inventory and 28 Harmony checks, with executable regressions
-for both control-flow review findings and compatible-path controls. Exact runs and review evidence
-are in local `discovery/listing/proof-root/verification.md`. No getter patch or production reader
-registration is added. Derived rectangles, sequential draws, generic operands, effective wrappers
-and all 17 native consumer proofs remain outstanding, alongside the offscreen player workflow.
-This host checkpoint does not accept listing unculling or full S141.
+The initial family/semantic checkpoint has 12 detached inventory and 28 Harmony checks; its local
+evidence is in `discovery/listing/proof-root/verification.md`. The following semantic extension
+adds exact derived-rectangle producers, sequential drawing stages, symbolic generic operands,
+pre-cull scalar/constructor preparation and shared scalar lifetimes. Its 56 focused checks include
+executable review regressions for repeated final draws and scalar writes between projections,
+paired with intact-gate reentry, harmless post-use controls and a complete recomputed next cycle.
+Stored producer dependencies remain live through partial later-cycle reuse until those producers
+actually refresh, preventing old/new projection pairs in either direction and through aliases.
+
+`HarmonyOriginalBody` supplies bounded detached original instructions without replaying published
+factories, attributes or transpilers. It reuses the existing structural decoder before the raw
+provider reader, preserving generic context and copied branches/locals. It passes 16 focused
+checks; the existing published-body reader's 18 checks also pass with its restrictions intact.
+Current batch evidence is in local `discovery/listing/continuation-root/verification.md`.
+
+No getter patch or production reader registration is added. Exact native binding and all 17
+consumer proofs, coherent effective-wrapper/generic-family composition, and the offscreen player
+workflow remain outstanding. The host helpers do not establish these engine contracts or accept
+listing unculling/full S141. See `docs/patch-targets/SS-READ-LISTING-BOUNDS.md` for the pending gate.
