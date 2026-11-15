@@ -461,3 +461,34 @@ Native inventory bounds are 256 declared methods/constructors/type initializer, 
 getter method references, including function-pointer references, without applying consumer EH
 semantics to unrelated members. Unknown direct users refuse the prerequisite; ordinary page
 eligibility remains universal. Exact consumed methods then require the original semantic proof.
+
+The next integration composes the existing GUI/input/backend/action/control/listing components
+in one synchronous reader. A caller supplies a complete page callback after its visible-draw
+delegate and all nested native widget/DrawText/layout calls have returned. The enclosing Window
+callback may still be active; this boundary prevents metric reentry, not all nested OnGUI work.
+Busy input defers without running it; unavailable prerequisites and
+failed cleanup publish no observations. Check preservation receipts both before and after drawing,
+discard caught scope failures, and restore all acquired state before returning the detached capture.
+This batch registers no automatic startup/chooser callbacks. Its English workflow requests a read
+of the real Pick Up And Haul page, observes captured label/help with all original values unchanged,
+then deliberately edits and restores its ordinary native checkbox.
+
+Exact native source and provider research narrows the numeric preservation claim: the native
+parser implements only int and float, which have existing concrete guards. An unsupported struct
+closure still initializes a null string buffer before parsing, and its ToString can have arbitrary
+effects. This is a known remaining preservation gap, not proof of safety or a page eligibility
+rule. The installed detour backend rejects open generic definitions, so patching that definition
+is not an available all-T solution. Keep the gap explicit and full D2/S141 unaccepted; do not add a
+whole-program scanner or a type/package whitelist to pretend generic transactionality. The
+integrated-reader component workflow proves only the actual native paths exercised there.
+
+The next catalog continuation has a real provider fixture available: installed XML Extensions1.7
+emits independent Mod instances from actual SettingsMenuDefs during normal startup. Two owned
+fixture defs may share title/package while retaining distinct modIds; do not spoof provider Mod
+objects or populate LoadedModManager in a host test. Retain each occurrence of the completed native
+cachedModsWithSettings collection and its exact Mod token, including nullable metadata; use public
+Content.Name, PackageId and ModMetaData?.AuthorsString. Materialize inside isolation, preserve
+ordinary opening and reject stale-generation tokens. The provider's ModSettingsWindow constructor
+changes global provider selection and closes settings windows before WindowStack.Add, so blocking
+Add does not make its renderer safe to probe. Catalog/native opening evidence is distinct from
+hidden provider-page discovery; the latter remains an explicit unresolved integration obligation.

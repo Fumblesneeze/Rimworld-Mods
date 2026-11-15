@@ -1223,3 +1223,21 @@ cleanup/config preservation. Root observed offscreen label/help capture with unc
 value/viewport, then native scrolling and checkbox editing. Evidence is in listing/integration-root.
 Full S141 remains open: this component registers no automatic reader callbacks, and transformed
 consumers plus the remaining input/numeric/provider/discovery/search/reveal work are still required.
+
+From 3fa25aa, root owns the integrated SettingsNeutralReader, its native PUAH workflow, specs,
+shared outputs and acceptance. `settings_family_publication` has an artifact-only reader-batch/
+numeric-research lease; `settings_catalog_research` has an artifact-only reader-batch/catalog-research
+lease. Neither lane edits product code, runs tests, installs, launches or commits. The native
+reader tracer begins inert for RED. Catalog/provider research continues toward the next actual
+collection integration; no automatic discovery or full-feature checkbox is closed by this batch.
+
+Both artifact research leases are released. Exact provider evidence rejects an open-generic detour
+as an all-T preservation solution; unsupported-T buffer mutation remains an explicit unresolved
+gap while supported native int/float guards compose in the reader. XML Extensions1.7 supplies a
+real emitted-page fixture for catalog work, with constructor side effects requiring separate hidden
+provider handling. Root retains integrated review, verification, docs and commit ownership.
+
+The reviewed reader component passed its final27-step English native workflow and root inspected
+all seven captures, including native console and deliberate foreign-option edit/restoration.
+Failure/reuse probes, successful cleanup, unchanged config hashes and exact tested identity are in
+reader-batch/root. No automatic hooks are registered; full D1–D3, S141 and the part gate remain open.

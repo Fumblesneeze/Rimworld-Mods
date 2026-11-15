@@ -15,6 +15,15 @@ One callback per repaint replaces the unmeasured4ms scheduling premise after the
 5.1376ms whole-callback observation. All mod pages remain eligible, every later tab/reveal/lifecycle
 obligation stays allocated, and the completed recorder evidence proves only its unchanged component.
 
+Revision30 continuation, 2026-11-15: after the offscreen-listing checkpoint3fa25aa, compose the
+verified reader components and exercise an actual foreign page before acquiring the completed
+native/provider catalog. Provider research supersedes the proposed open-generic numeric hook:
+the installed detour backend rejects that route. Preserve the unresolved unsupported-T buffer
+obligation explicitly; do not substitute a type/package whitelist or claim universal preservation.
+XML Extensions1.7 now supplies a real generated-page catalog fixture, but its constructor effects
+precede WindowStack.Add and need separate hidden-provider handling. No feature obligation, earlier
+user decision or complete part is removed or accepted by this narrower integration checkpoint.
+
 Revision29 advances S141-R1–R3 after the reviewed detached query checkpoint8579276. Implement the
 generic recorder on ordinary page draws first so native forwarding and publication can be proved
 without simultaneously adding hidden callback/state-restoration behavior. This is a reusable

@@ -166,6 +166,12 @@ Prefer action → wait → observation steps that exercise the same native path 
   an attempted return to the menu is not proof of completed recovery. If an injected failure
   exposes a native cleanup defect, retain its exact causal evidence and distinguish the rejected
   operation from successful scene recovery before changing fixture expectations.
+- When composing previously tested state scopes or guards, verify the composition's failure path:
+  an actual callback that throws after changing leased state, a rejected nested call whose child
+  never executes, and a successful later call on the same instance. Check exact acquired identities
+  and cleared scope after each attempt. A caught forbidden action that returns normally exercises
+  refusal latching but does not prove exception cleanup or reuse. Keep these bounded diagnostics
+  alongside the real player workflow; they do not replace its visible action/result evidence.
 - Preserve native fixture data contracts. Generated human pawns may participate in later relation
   generation, so use native human-style names (`NameTriple`) instead of replacing them with
   `NameSingle` before generating additional humans. Direct setup must not create the tested result.

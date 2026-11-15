@@ -26,7 +26,8 @@ retaining preferences; this is not a coexistence claim.
 
 ## Evidence and remaining work
 
-The detached query and native recording/read-isolation components are implemented; scoped English
+The detached query, native recording/read-isolation components and composed single-callback reader
+are implemented; scoped English
 component workflows and their limits are recorded in the implementation ledger and tasks. The
 listing-bounds component has a reviewed 22-step English workflow: offscreen label/help observation,
 unchanged value/viewport, then native scrolling and editing of the original checkbox. Automatic discovery, the

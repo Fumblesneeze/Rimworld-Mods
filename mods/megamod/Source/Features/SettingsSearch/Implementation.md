@@ -218,3 +218,22 @@ have supporting diagnostic probes. Catalog/getter/review RED and final build/pro
 evidence is retained in local `discovery/listing/integration-root/verification.md`.
 Transformed consumer bodies and the remaining input/numeric/provider/automatic discovery/search/
 reveal obligations stay open. This integration is a component of S141, not full feature acceptance.
+
+`SettingsNeutralReader` now composes the input, GUI state/backend, action, control, listing-cache
+and bounds components for one supplied complete page callback. Its caller finishes visible drawing
+first; busy input defers without invocation. It checks guard receipts before/after drawing, rejects
+nested reads and caught failures, attempts every acquired restoration, then publishes detached
+observations. Failed reads publish nothing. It adds no automatic production hooks or page whitelist.
+
+Native source supports int/float editing; their guards do not prove preservation of unsupported
+struct numeric closures, whose null buffers and ToString still form a known gap. XML Extensions1.7
+provides a real generated-page fixture for the next catalog batch, but its window constructor
+changes provider state before Add, requiring separate discovery integration. Neither limitation
+changes all-mod eligibility or closes D1–D3/full S141. Evidence is retained under local
+`discovery/reader-batch/root/verification.md`.
+
+The reviewed English reader workflow passes27 native steps with seven root-inspected captures:
+the request finds actual foreign label/help, preserves all inspected original values, and normal
+native editing toggles/restores the original checkbox. Four diagnostic phases prove refusal,
+exception/nesting cleanup and same-instance recovery. Final console/log accounting and exact-process
+cleanup pass with unchanged normal configuration hashes. No complete discovery task closes here.

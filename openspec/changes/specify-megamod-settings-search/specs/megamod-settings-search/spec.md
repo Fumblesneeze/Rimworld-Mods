@@ -194,6 +194,15 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
   variants; a later refresh cannot revive an old result. Unrelated method changes do not revoke
   the family proof, and ordinary page access remains available without a numeric-type whitelist.
 
+#### Scenario: Compose the reader for a real foreign page
+- **WHEN** the player requests discovery and the scheduler reaches an idle completed native GUI
+  callback boundary for a foreign page
+- **THEN** the reader observes its supported native label/help/control paths without drawing over
+  the current window or changing the page's original values. Busy input defers the callback, caught
+  guard failures or failed cleanup publish no capture, and subsequent ordinary native editing works.
+  This component does not establish preservation for unsupported generic numeric struct closures;
+  that known gap remains unaccepted and does not exclude their owning pages from eligibility.
+
 ### Requirement: SS-07 Common activation preserves independent browsing
 Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at NextDisplay with normal inheritance, dormant overrides and main-menu guards.
 Effective off cancels further discovery and hides option search without changing foreign settings,

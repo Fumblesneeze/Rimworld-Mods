@@ -71,6 +71,16 @@ build/process/config identities, observations and successful cleanup. No automat
 reader hooks are registered. Transformed consumer bodies and remaining input/numeric/provider/
 discovery/search/reveal obligations keep D1–D3 and full S141 open.
 
+The composed single-callback reader now has a reviewed English 27-step native workflow, with seven
+root-inspected captures after the intended inert RED. A real request captures33 text/help records
+from Pick Up And Haul after four busy deferrals, preserving its12 scalar settings and storage list.
+Caught action refusal, a throwing callback, a nested request and same-reader recovery have bounded
+diagnostic assertions; ordinary native checkbox editing/restoration and the native console are
+personally observed. Exact build/process/config/cleanup evidence is in local
+`discovery/reader-batch/root/verification.md`. This closes only the composed reader component:
+catalog/provider acquisition, unsupported numeric closures, broader input, automatic discovery,
+query UI and reveal remain open with all pages eligible.
+
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.
 - [ ] S141-Q2 Add bounded typo fallback and deterministic exact/label/page/path/occurrence ranking; reuse S047's immutable page descriptor and keep page matches confined to page metadata.
 - [ ] S141-Q3 Independently review this host-only tranche, fix findings as one affected batch, run focused checks and owning build/package validation, and record remaining native discovery/reveal/lifecycle obligations without registering an incomplete search UI.
