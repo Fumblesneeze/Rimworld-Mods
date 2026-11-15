@@ -130,6 +130,18 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
   nor treats the observed draw as proof of complete page coverage. A failed callback discards its
   observations and preserves the original exception; cleanup preserves a distinct replacement backend.
 
+#### Scenario: A page catches a refused native action
+- **WHEN** a read callback attempts to add/remove a window, queue an immediate window, save mod
+  settings, write the clipboard or change native IME composition, and catches the refusal
+- **THEN** the native action is stopped before its effects and the read remains failed; later
+  ordinary player input and native settings operations outside the read remain available.
+
+#### Scenario: Native action guard ordering becomes unavailable
+- **WHEN** a required native action guard is missing, has an unreadable callable/order, or loses
+  its first-prefix position before a read begins
+- **THEN** no automatic read starts, other owners' patches remain intact, and normal page access
+  remains available with an explicit discovery gap.
+
 ### Requirement: SS-07 Common activation preserves independent browsing
 Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at NextDisplay with normal inheritance, dormant overrides and main-menu guards.
 Effective off cancels further discovery and hides option search without changing foreign settings,

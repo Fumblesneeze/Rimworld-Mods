@@ -71,6 +71,16 @@ reviewed-build native gate.
 | `MSG-BAR-ENTRIES` | S071 message placement | [Revised prepared-render contract](MSG-BAR-LAYOUT-PREP.md) | Retired revision12 experiment; source/standalone fixtures removed; historical evidence retained |
 | `MSG-BAR-EXECUTION` | S071 message placement | [Revised prepared-render contract](MSG-BAR-LAYOUT-PREP.md) | Retired revision12 experiment; source/standalone fixtures removed; historical evidence retained |
 
+The S141 read-action guard components have a reviewed16-step English native workflow; automatic
+reader integration and complete S141 acceptance remain pending:
+
+- [SS-READ-WINDOW-ADD](SS-READ-WINDOW-ADD.md)
+- [SS-READ-IMMEDIATE-WINDOW](SS-READ-IMMEDIATE-WINDOW.md)
+- [SS-READ-WINDOW-REMOVE](SS-READ-WINDOW-REMOVE.md)
+- [SS-READ-SETTINGS-WRITE](SS-READ-SETTINGS-WRITE.md)
+- [SS-READ-CLIPBOARD](SS-READ-CLIPBOARD.md)
+- [SS-READ-IME](SS-READ-IME.md)
+
 The normative requirements are in
 [megamod-patch-target-specs](../../../../openspec/changes/add-megamod-foundation/specs/megamod-patch-target-specs/spec.md)
 and the executable development rules in [AGENTS.md](../../AGENTS.md). Documentation and checks must

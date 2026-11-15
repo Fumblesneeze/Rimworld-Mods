@@ -4,8 +4,10 @@ One RimWorld mod for independently engineered quality-of-life features, with sha
 and guarded game patches. Package ID: `fumblesneeze.megamod`. Author: Fumblesneeze.
 Initial target: **RimWorld 1.7 beta**.
 
-**Current state: implementation active; no whole feature accepted yet.** The resumed batch adds
-scheduled potential-mood checking and its shared tolerance decision; live acceptance is pending.
+**Current state: implementation active; no whole feature accepted yet.** Scheduled potential-mood
+checking and its shared tolerance decision have scoped native evidence. The current batch builds
+all-mod settings search; its recorder, GUI isolation and action guards have component evidence,
+while automatic discovery and the complete search/reveal workflow remain unfinished.
 Initial shared settings,
 patch admission and content-policy rules have focused host tests. Drug-preset controls and unchanged-
 catalog save/reload have narrow reviewed native evidence. Tolerance editing and selected scheduled,

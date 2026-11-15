@@ -1031,6 +1031,21 @@ preparation for automatic all-mod discovery, not a replacement by visited-page i
 
 ## Revision30 — automatic discovery sessions
 
+2026-11-15 continuation: select the read-scope and six native action-boundary components under
+S141-D2, retaining all value/control/provider and integrated-reader obligations. Root owns native
+binding, target documents/index, shared project links, OpenSpec, native fixtures and outputs.
+`settings_read_scope` leases only `Source/Features/SettingsSearch/Core/SettingsReadScope.cs`, its
+matching Unit fixture and `discovery/actions/core/` ignored evidence. No runtime registration,
+install, game launch or commits in that lease. Independent review and root integration remain
+required; component handoffs do not close D2 or establish all-mod discovery acceptance.
+
+`settings_action_guards` leases only SettingsSearch/Harmony/SettingsReadActionGuard.cs, its
+Megamod.Harmony fixture, the six SS-READ action target documents and ignored discovery/actions/
+harmony evidence. It holds the Harmony output lease; root owns the index, source links, exact
+native binder and native fixture. It must document targets before patch implementation, reuse
+C01 publication/owned rollback, and retain focused actual RED/GREEN. No product build, install,
+game launch or commit is delegated. These disjoint leases supersede root's helper authorship.
+
 `settings_discovery_core` owns only `Source/Features/SettingsSearch/Core/SettingsDiscoverySession.cs`,
 its matching Megamod.Unit fixture and local `settings-search/discovery/core/` evidence. The frozen
 session API is in its dispatch; it holds the focused Unit output lease through handoff, with no
@@ -1079,3 +1094,10 @@ skill. Root's fresh English run passed17steps/four personally inspected captures
 repaints, no visible hidden label/fill and subsequent deliberate native checkbox input. Cleanup and
 normal hashes passed. The artifact author and reviewer leases are released; root retains remaining
 control/write guards, real catalog/automatic callbacks, coverage/reveal integration and acceptance.
+
+The read-scope and six native action guards are now frozen, independently reviewed and component-
+verified:23 focused host checks plus English native16steps/four personally inspected captures.
+The native write test was strengthened to use a distinct attempted value; the prevention is saved
+in the testing skill. All author/reviewer leases are released. Root retains remaining widget/ref/
+scroll/tooltip guards, idle admission, catalog/neutral-reader integration, search/reveal and every
+full-feature/part obligation. No automatic callback registration or D2/D3 closure follows here.

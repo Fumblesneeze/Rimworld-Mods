@@ -13,6 +13,13 @@ with its probe active through screenshot completion for19repaints. Native label 
 invisible and subsequent checkbox input worked. Remaining metric/geometry/failure/control/provider
 integration cases are explicitly unverified; this result does not close the neutral-reader tasks.
 
+The read-scope/six-action guard component now has23 passing focused host checks, resolved
+independent reviews and English native16/16steps with four personally inspected captures. A real
+button attempted the guarded native actions; the same panel/option remained unchanged, and a later
+native checkbox click worked. Disposable file/IME/clipboard-backstop checks support the observed
+workflow. Exact evidence is under `discovery/actions/root/verification.md`. No production reader
+hooks are registered; remaining widget/idle/provider/integrated reader obligations keep D2/D3 open.
+
 ## Selected query and discovery-contract batch
 
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.

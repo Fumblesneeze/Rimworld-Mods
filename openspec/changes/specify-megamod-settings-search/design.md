@@ -233,3 +233,30 @@ Implementation must pin native/provider page enumeration, GUI/tab/scroll capture
 semantics, budgets, custom-control failure detection and representative real mod fixtures. Those are
 implementation research tasks; they cannot be resolved by restricting product scope to those fixtures.
 Plan revision28 dispatches the detached query tranche and read-only native-contract research.
+
+### Read-scope action guards (revision30 continuation)
+
+The next D2 batch provides a thread-owned `SettingsReadScope`: `Begin()` rejects nesting and
+latches the existing scope's first failure; `Refuse(fixedReason)` latches failure and returns the
+exception to throw. Catching that exception never makes the read successful. Only the creating
+thread can dispose the scope; repeated disposal cannot clear a later scope. This small core owns
+no native state, callbacks or settings values. The eventual reader still owns GUI-thread and idle
+input admission, state/backend/event cleanup, and discarding failed observations.
+
+Six native action boundaries receive separately documented owned prefixes: WindowStack.Add,
+ImmediateWindow and TryRemove(Window,bool), LoadedModManager.WriteModSettings, the clipboard
+setter and ImeComposition.Set. A live read scope refuses each call before its body or any later
+outer prefix. Outside a read scope native behavior is unchanged. Admission proves the guard is
+first in the effective prefix order from C01's safe publication snapshot; priority alone is not
+proof. Revalidate publication/owned slot before entry. Compatible other prefixes, transpilers and
+postfixes remain installed, including the owned message-placement ImmediateWindow transpiler.
+Unknown order/factories or failed owned rollback leave the automatic reader unavailable. Arbitrary
+repatching during a callback, arbitrary field writes and foreign I/O remain explicit limits; this
+is not a general transaction. No hidden callback registration occurs in this component batch.
+
+The focused native fixture requests guarded attempts through an ordinary button, observes that
+the disposable window/settings state remains unchanged, and then edits a real visible control.
+A test-only clipboard backstop runs after the production prefix and throws before the OS write:
+asserting it was never entered proves ordering without risking the user's clipboard during RED.
+This is supporting instrumentation, not evidence that a real clipboard write occurred. Other
+value/ref-buffer/scroll/tooltip guards and the complete generic reader remain D2/D3 obligations.

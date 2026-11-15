@@ -17,6 +17,8 @@
     </Reference>
     <Compile Include="../../mods/megamod/Source/Patching/Core/**/*.cs" Link="Product/Core/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Patching/Harmony/**/*.cs" Link="Product/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../mods/megamod/Source/Features/SettingsSearch/Core/SettingsReadScope.cs" Link="Product/SettingsSearch/Core/SettingsReadScope.cs" />
+    <Compile Include="../../mods/megamod/Source/Features/SettingsSearch/Harmony/**/*.cs" Link="Product/SettingsSearch/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Features/ContentSelection/Core/**/*.cs" Link="Product/ContentSelection/Core/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Features/ContentSelection/Harmony/**/*.cs" Link="Product/ContentSelection/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../mods/megamod/Source/Features/MessagePlacement/Harmony/**/*.cs" Link="Product/MessagePlacement/Harmony/%(RecursiveDir)%(Filename)%(Extension)" />

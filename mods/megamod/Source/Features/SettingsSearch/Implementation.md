@@ -112,3 +112,18 @@ origins, balance and scope restoration passed supporting assertions. Review's tr
 gap was fixed and the prevention saved to the testing skill. This does not yet verify every metric,
 scale, transform, draw method, failure path, custom backend or real foreign page. Those and native
 control/write guards, provider catalog and automatic dispatch remain D2/D3 integration work.
+
+`SettingsReadScope` now retains a caught first failure, rejects nested reads, and keeps ownership
+and cleanup on the creating thread. `SettingsReadActionGuard` uses existing C01 owned receipts and
+safe publication inspection to prove first-prefix ordering without removing compatible patches.
+`SettingsReadActionGuards` binds six exact native window/settings/clipboard/IME actions and admits
+a read only after all guards are current. It has no production registration yet.
+
+This component has23 focused passing host tests, three independent review passes with the one
+native test-payload finding fixed, warning-free product build and package checks. Reviewed English
+`megamod.settings-search.native-actions` passed16steps after actual inert-binder RED. Root inspected
+four captures: real button, unchanged panel/checkbox after refusals, subsequent real checkbox edit
+and console. Native assertions additionally verify the disposable saved baseline, IME and clipboard
+backstop order. See local `discovery/actions/root/verification.md` for exact identities, logs and
+successful cleanup. This does not close D2/D3: widget/ref/scroll/tooltip guards, idle admission,
+provider collection and complete automatic discovery/search/reveal remain required.

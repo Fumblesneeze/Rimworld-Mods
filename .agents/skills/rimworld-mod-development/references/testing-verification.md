@@ -79,6 +79,12 @@ Either retain an exact-frame capture with frame provenance or keep the bounded f
 until screenshot completion, then stop it and assert its budget/failure state. An end-state image
 after the transient draw stopped cannot prove that nothing was drawn during that callback.
 
+For a guard that must prevent a write, attempt a value distinguishable from the retained baseline.
+Writing the same serialized payload and comparing bytes cannot show that the write was blocked.
+Use a disposable destination and preserve the before/action/after comparison; for external state
+such as the clipboard, a later test-only backstop can contain a broken guard without exposing or
+overwriting the user's data. Treat backstop counters as supporting ordering evidence.
+
 Before the ordinary reset, remove all roofs, including overhead mountain, through the scenario-owned
 test seam; then clear disposable state and alerts. For a plain quickstart, pass `-Quicktest` and omit
 `-Scenario`; the resulting evidence label `none` is not a literal scenario argument. Fixture setup and
