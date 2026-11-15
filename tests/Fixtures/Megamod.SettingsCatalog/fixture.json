@@ -1,0 +1,11 @@
+{
+  "schema": "RimWorldDevGateway/XmlFixture/v1",
+  "ownerPackageId": "fumblesneeze.megamod",
+  "packageId": "fumblesneeze.megamodsettingscatalogfixture",
+  "rimWorldVersion": "1.7",
+  "packageInclude": [
+    "About/About.xml",
+    "Defs/SettingsCatalog.xml"
+  ],
+  "expectedErrors": []
+}

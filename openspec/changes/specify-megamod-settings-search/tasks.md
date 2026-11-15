@@ -81,6 +81,15 @@ personally observed. Exact build/process/config/cleanup evidence is in local
 catalog/provider acquisition, unsupported numeric closures, broader input, automatic discovery,
 query UI and reveal remain open with all pages eligible.
 
+The completed native catalog now has a reviewed112-step English workflow with11 root-inspected
+captures. Actual XML Extensions startup emits two same-title/package pages; native card clicks,
+independent checkbox edits, close/reopen persistence and restored defaults prove original access.
+Refresh invalidates old descriptors and retains exact new identities. Twelve supporting native
+probes cover bounded materialization and failure/publication paths. Exact build/process/config,
+console/log and cleanup evidence is in local `discovery/catalog-batch/root/verification.md`.
+This accepts the catalog component only: owned row metadata, provider hidden rendering, automatic
+discovery, full query/reveal and remaining D1–D3 obligations still keep the full tasks unchecked.
+
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.
 - [ ] S141-Q2 Add bounded typo fallback and deterministic exact/label/page/path/occurrence ranking; reuse S047's immutable page descriptor and keep page matches confined to page metadata.
 - [ ] S141-Q3 Independently review this host-only tranche, fix findings as one affected batch, run focused checks and owning build/package validation, and record remaining native discovery/reveal/lifecycle obligations without registering an incomplete search UI.
@@ -100,7 +109,9 @@ Read-only1.7.5005 research pins the generic GUI backend and actual completed nat
 It also identifies value-changing repaint/scroll paths, unsafe close callbacks and unstable raw tab
 draw order; the native adapter must address those before capture/reveal can be accepted. The artifact
 handoff proposes measured-pilot inputs and English workflows; its callback budgets are explicitly
-unmeasured. A genuine1.7 provider-generated-page fixture remains unpinned. No checkbox closes here.
+unmeasured. The later catalog workflow above pins a genuine1.7 XML Extensions generated-page
+fixture. That collection/access evidence does not accept hidden provider discovery. No checkbox
+closes here.
 
 ## 1. Pin universal discovery and native reveal
 

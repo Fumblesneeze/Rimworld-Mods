@@ -227,6 +227,15 @@ custom rendering, inaccessible provider pages and budget exhaustion remain outst
 Every mod stays eligible; test fixtures or optional provider adapters are not a product whitelist.
 An exception-free draw alone does not establish complete control coverage.
 
+#### Scenario: Preserve the completed native page catalog
+- **WHEN** an idle catalog read consumes the completed native chooser collection, including real
+  provider-generated pages with matching titles and package IDs
+- **THEN** every source occurrence retains a distinct descriptor and its exact original page object.
+  Refresh or cancellation immediately invalidates old opening tokens; copied descriptors and
+  superseded reads cannot select a different same-named page. Startup acquisition uses a detached
+  soundless native carrier without opening or closing it. Failed or over-budget collection capture
+  publishes no partial mapping, and original native page opening/editing/persistence still works.
+
 #### Scenario: One page cannot be read
 - **WHEN** one custom page is unreadable while other mods' options were captured
 - **THEN** those results remain usable, the unreadable page is listed with its reason and normal

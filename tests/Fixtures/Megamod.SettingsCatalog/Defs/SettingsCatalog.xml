@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Distinct provider modIds keep these same-title/package menus independent. -->
+  <XmlExtensions.SettingsMenuDef>
+    <defName>MegamodCatalogAmber</defName>
+    <label>Catalog twins</label>
+    <modId>megamod.catalog.fixture.amber</modId>
+    <defaultSpacing>8</defaultSpacing>
+    <settings>
+      <li Class="XmlExtensions.Setting.Checkbox">
+        <key>enabled</key>
+        <label>Catalog amber option</label>
+        <tooltip>Amber fixture setting remains independent of cobalt.</tooltip>
+        <defaultValue>false</defaultValue>
+      </li>
+    </settings>
+  </XmlExtensions.SettingsMenuDef>
+  <XmlExtensions.SettingsMenuDef>
+    <defName>MegamodCatalogCobalt</defName>
+    <label>Catalog twins</label>
+    <modId>megamod.catalog.fixture.cobalt</modId>
+    <defaultSpacing>8</defaultSpacing>
+    <settings>
+      <li Class="XmlExtensions.Setting.Checkbox">
+        <key>enabled</key>
+        <label>Catalog cobalt option</label>
+        <tooltip>Cobalt fixture setting remains independent of amber.</tooltip>
+        <defaultValue>false</defaultValue>
+      </li>
+    </settings>
+  </XmlExtensions.SettingsMenuDef>
+</Defs>

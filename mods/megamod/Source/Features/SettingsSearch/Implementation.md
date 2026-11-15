@@ -237,3 +237,20 @@ the request finds actual foreign label/help, preserves all inspected original va
 native editing toggles/restores the original checkbox. Four diagnostic phases prove refusal,
 exception/nesting cleanup and same-instance recovery. Final console/log accounting and exact-process
 cleanup pass with unchanged normal configuration hashes. No complete discovery task closes here.
+
+`SettingsNativeCatalog` materializes the provider-completed native Options collection inside the
+neutral reader, retaining every occurrence and its exact Mod object. Reference-only descriptors
+cannot be forged by copying equal metadata. Refresh/clear revoke the previous map immediately;
+enumeration, metadata and disposal must all finish before publication, and superseded requests
+cannot overwrite a newer one. Retention is bounded at4096 pages and524288 aggregate UTF16 metadata
+units. Startup uses a detached soundless PostOpen carrier without opening/drawing/closing a window.
+
+The reviewed English catalog workflow passes112 steps with11 root-inspected captures. Two genuine
+XML Extensions pages share title/package but open their own controls; each native checkbox changes
+independently and persists through close/reopen. Ordinary edits restore both defaults, and reopening
+Options/refreshing preserves access while invalidating old descriptors. Twelve supporting native
+probes cover startup, enumeration/disposal failures, duplicate occurrences, reentrant replacement,
+source replacement and exact/over-limit aggregate bounds. Final console/log classification and
+owned cleanup pass with unchanged normal configuration. Evidence is in local
+`discovery/catalog-batch/root/verification.md`. The catalog calls no foreign page renderer; provider
+hidden drawing, automatic discovery, query/reveal and remaining D1–D3 obligations stay open.

@@ -492,3 +492,20 @@ ordinary opening and reject stale-generation tokens. The provider's ModSettingsW
 changes global provider selection and closes settings windows before WindowStack.Add, so blocking
 Add does not make its renderer safe to probe. Catalog/native opening evidence is distinct from
 hidden provider-page discovery; the latter remains an explicit unresolved integration obligation.
+
+Catalog implementation uses an explicit refresh request and the existing neutral reader. Refresh
+immediately clears old descriptors/opening tokens; a deferred attempt retains that same request,
+and completion publishes only if the request was not replaced or cancelled during the callback.
+Normal acquisition consumes the supplied completed Options instance, never reconstructing or
+filtering its list from ModHandles. Startup acquisition creates a detached soundless carrier inside
+the read and materializes its final collection before leaving isolation. Neither path draws,
+selects, opens or closes foreign pages. A copied descriptor or any earlier generation cannot resolve
+to a native page; each source occurrence gets a fresh distinct identity, even repeated references.
+
+The initial catalog budgets are4096 entries and1MiB aggregate UTF-16 metadata, measured as code units
+(524288 characters), across title, mod name, displayed author and package fields. These are explicit
+retention limits, not eligibility rules. An exceeded limit, null source/entry, failed metadata or
+enumeration/disposal, or replacement of the source enumerable fails the whole pending catalog and
+publishes no partial mapping; normal native browsing remains available. Enumerable work before its
+first yield and arbitrary callbacks cannot be preempted or rolled back generically. The catalog
+does not pretend reference equality detects in-place changes between explicit refreshes.

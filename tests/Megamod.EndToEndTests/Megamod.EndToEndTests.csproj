@@ -20,6 +20,7 @@
     <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.Diagnostics/fixture.json" />
     <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.Diagnostics.LateOptions/fixture.json" />
     <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.DrugPresets/fixture.json" />
+    <RimWorldEndToEndXmlFixture Include="../Fixtures/Megamod.SettingsCatalog/fixture.json" />
     <ProjectReference Include="../../mods/megamod/megamod.csproj" />
     <ProjectReference Include="../../shared/RimWorldDevGateway.EndToEndTesting/RimWorldDevGateway.EndToEndTesting.csproj" />
   </ItemGroup>

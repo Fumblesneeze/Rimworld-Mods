@@ -26,11 +26,15 @@ retaining preferences; this is not a coexistence claim.
 
 ## Evidence and remaining work
 
-The detached query, native recording/read-isolation components and composed single-callback reader
-are implemented; scoped English
+The detached query, native recording/read-isolation components, composed single-callback reader
+and completed native page catalog are implemented; scoped English
 component workflows and their limits are recorded in the implementation ledger and tasks. The
 listing-bounds component has a reviewed 22-step English workflow: offscreen label/help observation,
-unchanged value/viewport, then native scrolling and editing of the original checkbox. Automatic discovery, the
+unchanged value/viewport, then native scrolling and editing of the original checkbox. The catalog
+has a reviewed112-step English workflow using actual XML Extensions generated pages: equal titles
+and packages retain independent opening/editing/persistence and stale descriptor invalidation.
+Its twelve isolated diagnostic phases support bounded enumeration and publication; provider hidden
+drawing remains pending. Automatic discovery, the
 integrated search UI and original-control reveal remain unimplemented or unaccepted. [Proposal](../../../../openspec/changes/specify-megamod-settings-search/proposal.md),
 [design](../../../../openspec/changes/specify-megamod-settings-search/design.md),
 [observable spec](../../../../openspec/changes/specify-megamod-settings-search/specs/megamod-settings-search/spec.md)

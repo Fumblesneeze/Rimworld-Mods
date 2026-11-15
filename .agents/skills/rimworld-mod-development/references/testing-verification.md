@@ -172,6 +172,12 @@ Prefer action → wait → observation steps that exercise the same native path 
   and cleared scope after each attempt. A caught forbidden action that returns normally exercises
   refusal latching but does not prove exception cleanup or reuse. Keep these bounded diagnostics
   alongside the real player workflow; they do not replace its visible action/result evidence.
+- In C# native-step callbacks that use `out _`, give the context parameter a real name such as
+  `stepContext`. A single parameter named `_` is a variable, not a discard, and makes `out _` bind
+  to that context variable instead of the intended output type.
+- For an aggregate work/retention ceiling, test multiple individually admissible inputs whose
+  combined cost reaches and exceeds the boundary. A single oversized input proves only a local
+  limit. Keep other ceilings below their limits so the test isolates the intended aggregate rule.
 - Preserve native fixture data contracts. Generated human pawns may participate in later relation
   generation, so use native human-style names (`NameTriple`) instead of replacing them with
   `NameSingle` before generating additional humans. Direct setup must not create the tested result.

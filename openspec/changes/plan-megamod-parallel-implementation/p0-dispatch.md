@@ -1241,3 +1241,21 @@ The reviewed reader component passed its final27-step English native workflow an
 all seven captures, including native console and deliberate foreign-option edit/restoration.
 Failure/reuse probes, successful cleanup, unchanged config hashes and exact tested identity are in
 reader-batch/root. No automatic hooks are registered; full D1–D3, S141 and the part gate remain open.
+
+From8c3d532, root owns SettingsNativeCatalog, E2E project registration, contracts, shared outputs
+and final acceptance. `settings_catalog_research` leases only tests/Fixtures/Megamod.SettingsCatalog/
+and SettingsSearch/NativeSettingsCatalogTests.cs in Megamod.EndToEndTests, plus catalog-batch/native
+artifacts. The real XML Extensions provider emits the two fixture pages during normal startup.
+The product boundary remains inert for the native RED. The lane neither runs tests/builds, installs,
+launches nor commits. This supersedes its completed artifact-only research lease; provider hidden
+drawing and automatic search/reveal remain separately allocated and unaccepted.
+
+The catalog author's lease expanded only to NativeSettingsCatalogProbes.cs for12 supporting
+native phases; all catalog leases are now released. Independent review resolved aggregate-budget
+test coverage. Root corrected a fixture-only unrelated chooser input failure by opening the two
+already visible original cards directly; no chooser text-input coverage is claimed. The final
+reviewed112-step English workflow passed with11 root-inspected captures, independent real-provider
+edits/persistence, refresh invalidation, native console, normal config preservation and owned
+cleanup. Local evidence is in catalog-batch/root. Product catalog eligibility has no package/type
+allowlist. Remaining automatic catalog/session/reader integration, provider hidden routes,
+query/reveal and full D1–D3/S141/part gates remain allocated and unaccepted.
