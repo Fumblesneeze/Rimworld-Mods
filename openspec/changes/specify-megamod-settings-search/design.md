@@ -535,3 +535,39 @@ Cancel retains completed snapshots and catalog opening routes while stopping pen
 clears old routes/results immediately and preserves the repaint watermark. Reentrant refresh or
 cancel cannot publish the superseded callback. Game, world and language object changes invalidate
 the current driver snapshot. Dispose clears routes and releases only its owned reader guards.
+
+The common activation definition uses stable ID settingsSearch.enabled, category interface.navigation,
+order10, GlobalAndSave scope, default true and NextDisplay timing. Its ordinary effective-off policy
+uses only the exact active package ZIPender.Needle (case-insensitive), emits one bounded startup
+warning even if that identity is repeated, and retains common stored preferences/inheritance.
+Installed packages outside the active list are not input to this decision. Registration and the
+native chooser/runtime consumption must be reviewed and verified together before accepting SS-07.
+
+Owned row discovery extends the existing SettingsRenderer registrations directly. Each setting row
+projects its current translated label/help/category/status and detached requested-global,
+requested-current-save and effective display values from the common store, together with the
+definition's application timing. Effective here means current common policy, not a claim that a
+Restart/NewGameOrLoad feature has already applied the new value; owner status remains explicit.
+At the main menu there is no current-save value or inheritance state. Booleans use translated On/Off, integers use the
+existing readable integer form; composite values need an explicit owned display formatter or
+remain unknown. Never expose codec persistence strings or arbitrary ToString as display values.
+Dynamic registered rows retain their current visibility and availability; disabled rows remain
+searchable and hidden rows report that they cannot currently be revealed. A section is not a fake
+setting. Nested composite controls and separate content-browser renderers still need their own
+metadata/navigation integration; registration here must not imply that missing coverage is complete.
+
+An owned reveal request retains the exact renderer, registered row ID and activation context.
+The next ordinary draw resolves it using the very same current row placements, category headings
+and dynamic heights used for rendering. It scrolls without invoking the editor, then highlights
+the visible current bounds for three monotonic elapsed seconds starting with a visible repaint.
+Missing/hidden/stale rows refuse automatic reveal. Activation/language/view changes and user
+navigation cancel it. Ordinary value edits alone do not invalidate the row's identity. A metadata
+projection which changes the common store revision while running is discarded, not called current.
+
+The chooser's detached query composition takes the complete already-grouped S047 projection plus
+option entries carrying the very same page descriptors. It builds one search snapshot for both
+result kinds. Page entries include their currently displayed group and normalized author; option
+entries retain their own label/help/value context. Filtering page groups after matching preserves
+full-source singleton membership, and an option hit survives without a page-metadata hit. Empty
+input returns the original page projection with no option results. Rebuild this composition only
+when its captured data or browsing presentation changes, not by drawing pages for each keystroke.

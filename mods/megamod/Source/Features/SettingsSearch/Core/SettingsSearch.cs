@@ -11,7 +11,8 @@ namespace Megamod.Features.SettingsSearch;
 // Detached displayed text. Page/path identities are supplied by the native observer, not labels.
 public sealed record SettingsSearchEntry(SettingsPage Page, string PathIdentity, int Occurrence,
     string Label, string? Help = null, string? DisplayedValue = null, string? Tab = null,
-    string? Feature = null, string? Category = null, bool IsPage = false);
+    string? Feature = null, string? Category = null, bool IsPage = false,
+    string? PageNormalizedAuthor = null, string? PageDisplayGroup = null, string? PageDisplayTitle = null);
 
 public sealed record SettingsSearchHit(SettingsSearchEntry Entry, bool UsesTypo, bool LabelMatch);
 
@@ -98,12 +99,13 @@ public sealed class SettingsSearch
     private static IEnumerable<string?> Context(SettingsSearchEntry entry, string field) => field switch
     {
         "mod" => new[] { entry.Page.Title, entry.Page.ModName },
-        "author" => new[] { entry.Page.RawAuthors },
+        "author" => entry.IsPage ? new[] { entry.Page.RawAuthors, entry.PageNormalizedAuthor } : new[] { entry.Page.RawAuthors },
         "id" => new[] { entry.Page.PackageIdentity },
         "tab" => entry.IsPage ? Array.Empty<string>() : new[] { entry.Tab },
         _ when entry.IsPage => new[]
         {
-            entry.Page.Title, entry.Page.ModName, entry.Page.RawAuthors, entry.Page.PackageIdentity
+            entry.Page.Title, entry.Page.ModName, entry.Page.RawAuthors, entry.Page.PackageIdentity,
+            entry.PageNormalizedAuthor, entry.PageDisplayGroup, entry.PageDisplayTitle
         },
         _ => new[]
         {
@@ -113,6 +115,7 @@ public sealed class SettingsSearch
     };
 
     private static string? Label(SettingsSearchEntry entry) => !entry.IsPage ? entry.Label :
+        !string.IsNullOrEmpty(entry.PageDisplayTitle) ? entry.PageDisplayTitle :
         !string.IsNullOrEmpty(entry.Page.Title) ? entry.Page.Title :
         !string.IsNullOrEmpty(entry.Page.ModName) ? entry.Page.ModName : entry.Page.PackageIdentity;
 

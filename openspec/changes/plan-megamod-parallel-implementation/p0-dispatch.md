@@ -1284,3 +1284,26 @@ constructor refusal, with original PUAH/provider editing intact. Provider hidden
 driver busy/context-transition workflows, common activation, owned metadata and query/reveal remain
 allocated; no full D1–D3/S141/part task closes. `settings_family_review` next has a read-only planning
 assignment for native chooser/common-activation/lifecycle composition; no code/output ownership.
+
+Frombe3f2d6, root begins the combined chooser/search integration batch with common S141 activation
+policy and central contracts/registration/output ownership. `settings_catalog_research` has only
+chooser-integration/opening-research artifacts; `settings_bounds_review` has only
+chooser-integration/identity-research artifacts. They inspect original/native code without copying
+it, changing tracked source or running tools/builds/games. `settings_family_review` proposes the
+narrow owned metadata/reveal surface before a code lease is assigned. Existing all-mod eligibility,
+remaining tabs/provider/reveal obligations and English-only iterative native verification remain.
+
+The owned-row lane is now leased to `settings_family_review`: only new Settings/Core/
+SettingsRowObservation.cs (and a small same-directory reveal helper if warranted), existing
+Settings/Runtime/SettingsRenderer.cs and matching Megamod.Unit/Settings tests. It first supplies
+executable inert RED; root alone runs all checks. Native fixture ownership will be separately
+assigned. Root retains common search activation files, language catalogs, native chooser code,
+central registration and all builds/installs/acceptance. No direct foreign value reflection/store
+or automatic hidden-row navigation is permitted by this metadata lane.
+
+The completed identity researcher `settings_bounds_review` now leases only new
+Megamod.EndToEndTests/SettingsSearch/NativeOwnedSettingsRevealTests.cs and same-feature helper files
+announced before creation. It authors the combined actual owned-page metadata/reveal/edit workflow,
+initially against inert renderer APIs for root-run RED, without building/installing/launching.
+Opening research is frozen artifact input; `settings_catalog_research` independently reviews root's
+query/policy changes, then the owned lane after handoff. Root owns the shared native run/build gate.

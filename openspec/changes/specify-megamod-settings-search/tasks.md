@@ -3,6 +3,13 @@ S141's detached query checkpoint is followed by the verified ordinary-draw recor
 revision29. Automatic discovery/reveal and full feature acceptance remain open. Drafting or host
 checks alone accept no gameplay checkbox.
 
+The next chooser integration checkpoint has detached shared page/option query composition,
+unregistered common activation/original-Needle policy, and owned current-value/reveal policy helpers.
+Focused RED/GREEN and independent review cover displayed fallback labels, exact identities, shared
+typo scope, value provenance, revision rejection and fresh-layout/stale-target behavior. Evidence is
+under local chooser-integration/verification.md. Renderer/native query/scroll/highlight integration
+is still in progress; these host results close no gameplay or full-feature task.
+
 The automatic root-layout component now passes24 focused Harmony checks and a reviewed112-step
 English native workflow with16 root-inspected captures. All six actual pages are attempted; PUAH
 text/help is captured with unchanged settings, both XML twins fail at the native constructor guard

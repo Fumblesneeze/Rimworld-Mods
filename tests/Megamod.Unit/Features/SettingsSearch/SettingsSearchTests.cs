@@ -101,6 +101,22 @@ public sealed class SettingsSearchTests
         Assert.That(search.Find("foreign").Select(hit => hit.Entry), Is.Empty);
     }
 
+    [Test]
+    public void ExplicitDisplayedPageTitleRanksAsItsLabelWithoutAdmittingArbitraryOptionText()
+    {
+        var page = new SettingsPage("missing", "open", null, null, null);
+        var title = new SettingsSearchEntry(page, "page", 0, "Unrelated option text", IsPage: true,
+            PageDisplayTitle: "Unbenannte Einstellungen");
+        var option = new SettingsSearchEntry(page, "option", 0, "Maximum", Help: "Unbenannte Einstellungen");
+        var search = new Search(new[] { option, title });
+
+        var hits = search.Find("\"Unbenannte Einstellungen\"");
+
+        Assert.That(hits.Select(hit => hit.Entry), Is.EqualTo(new[] { title, option }));
+        Assert.That(hits.Select(hit => hit.LabelMatch), Is.EqualTo(new[] { true, false }));
+        Assert.That(search.Find("\"Unrelated option text\""), Is.Empty);
+    }
+
     [TestCase("water", "watre", true)]
     [TestCase("water", "waterr", true)]
     [TestCase("water", "watar", true)]

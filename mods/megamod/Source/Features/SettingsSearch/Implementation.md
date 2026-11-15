@@ -283,3 +283,24 @@ are retained in local `discovery/automatic-batch/root/verification.md` with exac
 Driver-specific busy deferral/resumption and actual game/world/language transition workflows remain
 unverified. They join full tabs/provider reading, unsupported numeric closures, owned metadata,
 production activation, query UI and current-control reveal as remaining D1–D3/S141 obligations.
+
+The next detached integration checkpoint adds `SettingsChooserSearch`: one query snapshot combines
+the complete S047 page projection and exact-page option entries. Page groups are filtered after
+full-list membership is established; option hits survive a missing page-title match. Current group,
+normalized author and explicit displayed fallback title are searchable page metadata, while arbitrary
+option labels/help remain excluded from page entries. Copied/stale page descriptors are rejected;
+equal-metadata independent occurrences remain intact. Empty input returns the original page view.
+
+`SettingsSearchSettings` supplies the unregistered default-on GlobalAndSave/NextDisplay definition
+and exact active-Needle effective-off policy. `SettingsRowObservation` reads requested global/save
+and common-policy effective display values directly from the common store, with application timing
+kept distinct from already-applied runtime state; no main-menu save value is invented,
+and composites need an explicit formatter or stay unknown. Revision changes discard the projection.
+`SettingsRowReveal` supplies only host-safe pending/current-layout scroll and three-second highlight
+policy, with stale/missing/ambiguous/invalid targets refused and user-scroll preservation on cancel.
+It invokes no editor and does not prove a native window was scrolled or highlighted.
+
+These host components have focused RED/GREEN and independent review, including a reproduced/fixed
+displayed-title fallback regression. Local `chooser-integration/verification.md` retains exact runs
+and source identities. Renderer observation/reveal, runtime preferences, actual chooser integration
+and their combined native gate remain in progress. No S141 gameplay checkbox closes here.

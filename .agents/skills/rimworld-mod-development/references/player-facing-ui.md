@@ -69,6 +69,11 @@ specific cookware set from the broader kitchenware category.
 All product UI text uses translated DefInjected or Keyed strings. Validate every required locale and
 render representative narrow UI surfaces; structural correctness in English is not localization.
 
+Search adapters must include the actual displayed fallback title and current group/author labels,
+not only raw source metadata. Keep that presentation context explicit so a page-name result cannot
+accidentally match unrelated option text, and retain opaque identity separately. Exercise missing
+metadata and translated fallbacks through the combined query adapter, including label ranking.
+
 ## Check the coordinate space and recovery owner
 
 Native window sizing can consume physical `Screen.width` while positioning and input use logical

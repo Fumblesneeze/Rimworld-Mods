@@ -88,6 +88,18 @@ Foreign values are marked last observed until a new draw refreshes them; missing
 - **THEN** search preserves the stored request, actual binding and common edit guards, including at
   the main menu and after switching saves.
 
+#### Scenario: Project and reveal a registered owned row
+- **WHEN** search reads owned registration metadata and requests a row outside the current viewport
+- **THEN** current global, current-save and effective values remain distinct without copying them
+  into another store; application timing remains explicit and a newly requested restart/load change
+  is not described as already applied to gameplay. A main-menu observation has no current-save value.
+  Missing composite display formatters produce unknown values rather than persistence text. The next
+  native draw resolves the actual row's current layout, scrolls and highlights it without invoking
+  its editor. The highlight lasts three elapsed seconds from its first visible repaint; hidden
+  discovery draws do not consume pending requests, move the visible viewport or restart that timer. Hidden or
+  removed rows report unavailable reveal; disabled visible rows remain discoverable. Stale context
+  or user navigation cancels the request, and ordinary edits still use the common owner persistence.
+
 ### Requirement: SS-05 Indexing respects lifecycle and bounded work
 Discovery SHALL run in bounded sessions at valid GUI phases, refresh affected observations on lifecycle changes, expose progress/cancellation and avoid recurring scans during ordinary gameplay.
 Initial capture occurs at startup when enabled or on first enable/open if needed. Querying uses
