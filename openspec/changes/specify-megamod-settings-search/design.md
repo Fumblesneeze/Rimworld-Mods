@@ -325,3 +325,25 @@ Two focused English native workflows form one batch: real typing/dragging with i
 and a native request that would clamp a listed value followed by an ordinary listed-value edit.
 Synthetic input-state probes, if used, are supporting diagnostics only. Broader hold/repeat,
 extra-button, wheel and genuine IME action delivery remain to be verified through native workflows.
+
+The reused-listing cache continuation isolates the exact two native label-scroll lists around
+Label(string,float,TipSignal?) and End. Detached temporary collections let the native callbacks
+run, while acquired finalizers restore the original field references; no copied contents are
+written back into the original collections. Preserve nullness and bind restoration to the actual
+acquired listing instance. Paired callbacks use separate concrete declaring types and existing
+first-prefix/last-finalizer admission. Snapshot at most 65,536 aggregate entries per native call,
+matching the current GUI-state pilot ceiling; reject before swapping when the budget or field
+contract is unavailable. This native UI-cache boundary does not snapshot foreign settings or undo
+arbitrary alias writes from unrelated callbacks. Ordinary calls outside the read remain untouched.
+An English native workflow scrolls an ordinary long label, requests a shifted hidden label/End,
+observes unchanged visible scroll and then scrolls normally again. Success, exception, original
+collection identity/content/nullness and repeated/nested calls receive supporting assertions.
+
+Listing-bounds research retains two effective-code prerequisites before unculling is implemented:
+the two generic numeric consumer families need publication-wide currentness (a new/changed sibling
+can escape a single closed-method receipt), and owned finalizer wrappers introduce exception
+regions that the current passive body reader rejects. Reuse the existing publication storage and
+bounded original/composed semantic checks; do not replay foreign transpilers, enumerate a fixed
+set of numeric types or call an empty publication inventory a semantic certificate. The artifact
+prototype under discovery/listing/semantics is uncompiled and unverified. These remain explicit
+implementation obligations alongside all 17 native null-to-draw consumer proofs.

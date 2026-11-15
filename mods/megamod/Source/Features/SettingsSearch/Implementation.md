@@ -164,3 +164,17 @@ cleanup; these lessons are saved in the testing skill. Exact evidence is under l
 `discovery/input-listing/root/verification.md`. Repeat/extra-button/wheel/IME native actions,
 listing culling/cache preservation, other numeric closures and integrated automatic discovery
 remain open. This component still registers no production reader callbacks.
+
+`SettingsReadListingGuards` now protects the two native label-scroll cache fields around exact
+Listing_Standard.Label/End calls. It temporarily supplies detached lists and restores the acquired
+instance's original references on success or exception. The combined snapshot limit is 65,536
+entries per call; unavailable state refuses the read without restricting provider eligibility.
+
+The reviewed English cache workflow passed 22 native steps after a retained inert RED. Root
+inspected all five captures: native scrolling exposed lines 13–20, a real hidden-read request kept
+that view unchanged, and a subsequent native scrollbar click restored the first lines. Nonempty
+seen-list state, null caches, nested/repeated calls, exceptions and exact/over-limit snapshots are
+supporting diagnostics. Both review findings concerned missing test distinctions and are resolved;
+the empty-baseline prevention is saved to the testing skill. Build/package/cleanup/config evidence
+is under local `discovery/listing/root/verification.md`. Listing unculling, generic consumer proof,
+remaining input/numeric coverage and complete provider/reader/search/reveal integration stay open.

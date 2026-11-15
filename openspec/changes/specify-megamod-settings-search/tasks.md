@@ -37,6 +37,13 @@ minimum normalization retained 7 and normal +1 edited it to 8. See local
 Broader input categories, listing culling/cache state, other numeric closures, provider collection
 and complete reader integration remain open; this checkpoint closes no D1–D3/full-feature task.
 
+The subsequent native listing-cache component passed 22 English steps after inert RED and
+independent review, with five personally inspected captures. A real hidden-read request preserves
+the already scrolled long-label view, and subsequent native scrolling still works. Nonempty seen
+state, nesting, exceptions, nullness and combined snapshot limits have supporting probes. Evidence
+is under `discovery/listing/root/verification.md`. Listing bounds/generic semantic admission and
+the remaining all-mod discovery/search/reveal obligations keep D1–D3 and full S141 open.
+
 ## Selected query and discovery-contract batch
 
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.

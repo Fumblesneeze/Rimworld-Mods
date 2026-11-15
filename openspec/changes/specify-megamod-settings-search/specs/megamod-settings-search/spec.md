@@ -166,6 +166,14 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
   native controls. Missing or unverified native input state prevents automatic reads while
   ordinary settings access remains available.
 
+#### Scenario: Reused native listings retain their label scroll state
+- **WHEN** hidden drawing submits long labels through a reused native listing and completes or
+  throws during its Label/End callbacks
+- **THEN** the original label-scroll collection identities, contents and nullness survive the
+  read, the visible label keeps its prior scroll position, and subsequent native scrolling still
+  works. Unavailable native field shapes or exceeded snapshot budgets prevent the affected read;
+  they do not exclude the mod from search or prevent ordinary settings access.
+
 ### Requirement: SS-07 Common activation preserves independent browsing
 Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at NextDisplay with normal inheritance, dormant overrides and main-menu guards.
 Effective off cancels further discovery and hides option search without changing foreign settings,

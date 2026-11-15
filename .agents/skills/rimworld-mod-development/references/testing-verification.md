@@ -69,6 +69,10 @@ still-active input. Schedule worker diagnostics asynchronously and poll completi
 bounded E2E wait; read a Task result on the GUI thread only after completion. Register independent
 cleanup obligations separately so one failing close does not skip another window or speed restore.
 
+When native cleanup empties a cache or collection, an empty before/after comparison can conceal a
+broken preservation guard. Prime a distinguishable nonempty state through its normal native path,
+assert immediately after the protected mutation/exception, and check cleanup as a separate boundary.
+
 Use a separately marked E2E project for a workflow that needs ordinary game frames, native actions, pawn jobs, waits, and player-visible observations. Set `RimWorldEndToEndTest=true` and one `RimWorldEndToEndTestOwnerPackageId`; keep the assembly outside product `Assemblies` and NUnit/VSTest. Each attributed test declares its globally stable ID, owner, complete ordered non-Gateway package set, and deadlines.
 
 ```powershell

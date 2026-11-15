@@ -1142,3 +1142,21 @@ successful cleanup and unchanged normal config hashes. Input fixture review fixe
 and retained in the testing skill. Author/reviewer leases are released. Root retains listing
 culling/cache, other numeric closures, remaining native input workflows and all provider/reader/
 search integration; the complete universal feature and part gates remain unfinished.
+
+Next listing continuation starts from 20bdb17. Root owns tracked specs, native fixtures, shared
+build/test outputs and acceptance. `settings_listing_cache` has an artifact-only design/draft
+lease under discovery/listing/cache; `settings_listing_semantics` has an artifact-only semantic
+admission prototype/research lease under discovery/listing/semantics. Neither lane changes tracked
+source, installs or launches a game. Root applies reviewed drafts only after the matching focused
+RED. This preserves all 17 native consumers, generic-wrapper composition, listing cache identity,
+ordinary editing and universal page eligibility obligations; partial components close no full task.
+
+The cache lane supplied its draft and released its artifact lease. Root retained a native inert
+RED after a real scroll/button sequence, applied the independently reviewed draft, and added the
+review-requested nonempty-seen and snapshot-boundary probes. The reviewed English native GREEN
+passed 22 steps with five root-inspected captures, successful cleanup and unchanged normal config
+hashes. Cache author/reviewer leases are released; root retains integration and the remaining work.
+The semantic lane released a research/prototype handoff under discovery/listing/semantics:
+generic family publication currentness and original/composed-body handling of owned finalizer
+exception regions are concrete dependencies. No nullable getter patch is applied from that draft;
+all 17 native consumer proofs and the actual offscreen workflow remain outstanding.
