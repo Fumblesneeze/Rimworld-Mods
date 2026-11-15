@@ -192,7 +192,7 @@ widget/write guards and unfamiliar/provider-page discovery still require the int
 
 Hidden geometry has independent group/clip/matrix state and never forwards drawing/window/input
 state changes to the visible backend. Preserve native slider/string/ref-buffer outputs, suppress
-slider rounding before its sound path, and stop native Add/ImmediateWindow/TryRemove/settings-write
+the exact native slider sound boundary, and stop native Add/ImmediateWindow/TryRemove/settings-write
 and clipboard writes before effects. Unknown lazy tooltip getters are not invoked. A caught
 forbidden-action exception must still leave failure latched. Exact native frame-loop inspection
 supports idle-input admission rather than global input shadowing: defer on actual held/down/up/
@@ -260,3 +260,48 @@ A test-only clipboard backstop runs after the production prefix and throws befor
 asserting it was never entered proves ordering without risking the user's clipboard during RED.
 This is supporting instrumentation, not evidence that a real clipboard write occurred. Other
 value/ref-buffer/scroll/tooltip guards and the complete generic reader remain D2/D3 obligations.
+
+### Native control value batch
+
+Capture original native return/ref values before the first outer prefix and restore them in the
+last outer finalizer, including exception paths. Use concrete typed callback classes so Harmony's
+state identity is unambiguous; use C01 for each prefix/finalizer receipt and current ordering.
+The helper also serves prefix-only silent native calls, avoiding dummy finalizers. Closed int/float
+numeric target methods require actual independent invocation/repatch/cleanup proof; generic
+callback declaring types are not used. Preserve null strings, float bits, vector array identity and
+only the three array entries the native vector control consumes. Short arrays retain native failure.
+
+The earlier proposal to rewrite slider `roundTo` is superseded by suppressing the exact native
+CheckPlayDragSliderSound boundary during the read, while restoring original outward slider values.
+This avoids argument rewriting and its unrelated arithmetic proof. It also covers the native
+sound check for values such as NaN where equality can differ without rounding. Idle neutral input
+still prevents direct mouse-down sound paths. Known native sound calls are suppressed; arbitrary
+foreign side effects or repatching inside callbacks remain explicit limits. Tooltip registration
+captures literal text only and skips native registration; lazy getters are never executed for search.
+
+Root retains exact native bindings/wrappers, target documents, native scenarios and outputs.
+The disjoint helper lane owns only SettingsReadControlGuard and its focused Harmony fixture; the
+idle lane drafts exact input admission under ignored artifacts before tracked implementation.
+No hidden callback registration occurs until all required guards and idle/cleanup admission exist.
+
+Native string wrappers require one additional composition rule: preserve the outermost controlled
+string return, while their nested native string calls retain normal intermediate normalization.
+The limited Widgets.TextField dereferences the simpler wrapper's normalized result; restoring null
+at every nested boundary would introduce an exception. A thread-owned string nesting token unwinds
+in the guaranteed finalizer, so later independent calls still preserve null after success/failure.
+Do not rewrite input arguments or replace the rendering/validation body to address this case.
+Arbitrary foreign reentrant side effects retain the documented nontransactional limitation.
+
+Native verification exposed a public scroll-entry gap: GUI.BeginScrollView(Rect,Vector2,Rect)
+returned the clamped position despite an admitted private BeginScrollViewImpl guard. Do not infer
+inlining or another compiled-call mechanism from that result alone. Guard all four exact public
+scroll entries at their outward boundaries too, and exercise each actual native overload plus
+both Widgets scroll modes. The private receipt does not establish those call-edge guarantees.
+
+The next D2 listing contract remains unfinished. Native research identifies17 consumers where
+null BoundingRectCached means draw without culling, including two generic numeric consumers whose
+effective publication still needs proof. Listing_Standard.IntEntry also clamps values/buffers
+after its widget call, and long labels/End mutate listing-owned scroll-cache collections. These
+are concrete native preservation obligations before a complete reader; they do not limit which
+mods are eligible. The artifact-only idle-input draft has an independent source review, but still
+needs runtime compilation and native input workflows, including focused-but-idle resumption.

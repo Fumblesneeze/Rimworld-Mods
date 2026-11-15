@@ -57,6 +57,11 @@ Use `POST /api/v1/defs/export` to retain a bounded deterministic JSON view of fi
 
 ## Grouped multi-frame E2E tests
 
+Match the native control's actual gesture. On the inspected Windows 1.7 path,
+Widgets.HorizontalSlider arms on mouse-down but updates through MouseDrag, so a successful
+native click receipt does not prove a slider edit. Use NativeWindowDragActionStep with real
+movement from the current handle to the desired value, then assert and inspect the changed value.
+
 Use a separately marked E2E project for a workflow that needs ordinary game frames, native actions, pawn jobs, waits, and player-visible observations. Set `RimWorldEndToEndTest=true` and one `RimWorldEndToEndTestOwnerPackageId`; keep the assembly outside product `Assemblies` and NUnit/VSTest. Each attributed test declares its globally stable ID, owner, complete ordered non-Gateway package set, and deadlines.
 
 ```powershell

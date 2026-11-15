@@ -127,3 +127,23 @@ and console. Native assertions additionally verify the disposable saved baseline
 backstop order. See local `discovery/actions/root/verification.md` for exact identities, logs and
 successful cleanup. This does not close D2/D3: widget/ref/scroll/tooltip guards, idle admission,
 provider collection and complete automatic discovery/search/reveal remain required.
+
+`SettingsReadControlGuard` and `SettingsReadControlGuards` now preserve outward values at 26 exact
+native control boundaries. Typed snapshots retain strings, numeric buffers, vectors, sliders,
+ranges and scroll positions; separate prefixes suppress native slider-drag sound checks and hidden
+tooltip registration while recording literal help. String nesting preserves native intermediate
+normalization and restores only the outer string return. C01 validates first-prefix/last-finalizer
+order and exclusive paired state, refusing unresolved relevant factories without executing them.
+Ordinary calls outside an admitted read retain their native behavior. No production hook is added.
+
+The independently reviewed batch passes 40 focused Harmony checks and the English native-control
+workflow's 31 steps. Root personally inspected five captures: unchanged full text/0.3737 slider
+after two real requests, then deliberate native typing and a slider drag to 0.9344, followed by the
+native console. Native numeric/vector/range/scroll/tooltip/sound checks are supporting diagnostics.
+Actual RED found the initial truncation, then a public scroll-call gap; all four public scroll
+entries now have their own guards. The final fixture uses the native slider's required drag gesture.
+Review fixes and these recurring lessons are retained in the development skills. Exact build,
+source/process identities, logs and successful cleanup are in local
+`artifacts/Implementation/megamod-p0/settings-search/discovery/values/root/verification.md`.
+Idle input, Listing_Standard culling/value/cache preservation, other numeric closures, provider
+collection, integrated automatic discovery and search/reveal remain open D2/D3 obligations.

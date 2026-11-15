@@ -20,6 +20,15 @@ native checkbox click worked. Disposable file/IME/clipboard-backstop checks supp
 workflow. Exact evidence is under `discovery/actions/root/verification.md`. No production reader
 hooks are registered; remaining widget/idle/provider/integrated reader obligations keep D2/D3 open.
 
+The native control component now has 40 passing focused Harmony checks, resolved independent
+reviews and a 31-step English native workflow with five personally inspected captures. Two real
+button requests retain the original visible text/slider; later native typing and dragging still
+edit them. Native closure/ref/scroll/tooltip/sound assertions support that component workflow.
+The 26-target binder includes four public scroll entries after an actual native preservation
+failure. Evidence is under `discovery/values/root/verification.md`; no automatic production
+callbacks are registered. Idle admission, native listing culling/value/cache preservation, other
+numeric closures and complete provider/reader/search integration keep D1–D3 and full S141 open.
+
 ## Selected query and discovery-contract batch
 
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.

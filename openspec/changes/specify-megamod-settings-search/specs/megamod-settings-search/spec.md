@@ -142,6 +142,21 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
 - **THEN** no automatic read starts, other owners' patches remain intact, and normal page access
   remains available with an explicit discovery gap.
 
+#### Scenario: Native controls normalize values during an idle draw
+- **WHEN** a hidden native draw would truncate or normalize text, initialize numeric buffers,
+  round or clamp sliders/ranges, or clamp scroll positions without a player edit
+- **THEN** the original outward values and buffer identities are retained, including nulls and
+  exact float values; native slider drag sounds and hidden tooltip registration are suppressed.
+  Literal help may be recorded, but search never evaluates a lazy help getter. Subsequent ordinary
+  native typing and slider input still edit the original visible controls.
+
+#### Scenario: Control composition throws or loses preservation admission
+- **WHEN** a controlled native call throws, or another patch prevents the required entry/exit
+  ordering or shares its preservation state slot
+- **THEN** acquired original values are restored even on exception, nesting cleanup allows later
+  independent calls, and unavailable preservation prevents automatic read entry. Other owners'
+  registrations remain intact; no full transaction over arbitrary foreign effects is claimed.
+
 ### Requirement: SS-07 Common activation preserves independent browsing
 Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at NextDisplay with normal inheritance, dormant overrides and main-menu guards.
 Effective off cancels further discovery and hides option search without changing foreign settings,

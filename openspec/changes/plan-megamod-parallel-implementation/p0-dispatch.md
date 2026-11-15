@@ -1101,3 +1101,28 @@ The native write test was strengthened to use a distinct attempted value; the pr
 in the testing skill. All author/reviewer leases are released. Root retains remaining widget/ref/
 scroll/tooltip guards, idle admission, catalog/neutral-reader integration, search/reveal and every
 full-feature/part obligation. No automatic callback registration or D2/D3 closure follows here.
+
+2026-11-15 next batch: `settings_value_guard` leases only SettingsSearch/Harmony/
+SettingsReadControlGuard.cs and its Megamod.Harmony fixture plus ignored discovery/values/harmony.
+It holds the Harmony output lease, without builds/install/game/commits. The exact API and prefix/
+optional-finalizer contract are in its dispatch and SS-READ-CONTROL-ENTRY/EXIT. `settings_idle_contract`
+is artifact-only under discovery/values/idle. Root owns native callbacks/bindings, documents/index,
+shared outputs, native scenarios, review/acceptance and commits. All remaining feature obligations
+and the all-mod eligibility requirement remain intact.
+
+The native-control author first drafted under ignored discovery/values/native artifacts, then
+received the sole tracked SettingsReadControlGuards.cs lease after root's inert-binder native RED.
+That file and the artifact-only idle contract are now handed off and their leases released. Root's
+native fixture and the native binder have an independent no-finding static review. The helper
+review found duplicate state callback registrations could overwrite preservation state; its author
+has resumed only the helper/test/evidence lease, including focused Harmony outputs, to reproduce
+and fix that finding. Root retains all build/install/native acceptance and integration work.
+
+The native-control batch is now frozen, independently reviewed and component-verified: 40 focused
+Harmony checks and 31 English native steps with five personally inspected captures. Review's
+duplicate/state-sharing/factory findings are fixed; native RED also exposed a public scroll-call
+gap, now covered by all four exact public entries. The corrected fixture performs a native slider
+drag, and root observed the intended edit after unchanged hidden reads. All tracked leases and
+shared-output leases are released. Idle-input and listing research remain artifact-only (the idle
+draft has a source review); listing IntEntry and label-scroll caches are additional retained D2
+obligations. Root owns their implementation/integration and all remaining all-mod discovery work.

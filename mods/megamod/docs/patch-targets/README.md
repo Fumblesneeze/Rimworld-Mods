@@ -81,6 +81,15 @@ reader integration and complete S141 acceptance remain pending:
 - [SS-READ-CLIPBOARD](SS-READ-CLIPBOARD.md)
 - [SS-READ-IME](SS-READ-IME.md)
 
+The S141 native control guard batch has 40 focused host checks and a reviewed 31-step English
+component workflow with five personally inspected captures. Integrated discovery remains open.
+These contracts cover existing native controls; they do not restrict eligible settings providers:
+
+- [SS-READ-CONTROL-ENTRY](SS-READ-CONTROL-ENTRY.md)
+- [SS-READ-CONTROL-EXIT](SS-READ-CONTROL-EXIT.md)
+- [SS-READ-SLIDER-SOUND](SS-READ-SLIDER-SOUND.md)
+- [SS-READ-TOOLTIP](SS-READ-TOOLTIP.md)
+
 The normative requirements are in
 [megamod-patch-target-specs](../../../../openspec/changes/add-megamod-foundation/specs/megamod-patch-target-specs/spec.md)
 and the executable development rules in [AGENTS.md](../../AGENTS.md). Documentation and checks must

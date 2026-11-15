@@ -98,6 +98,13 @@ An observation-only hook should still require only the callable and execution fa
   need distinct concrete declaring types, or one deliberately shared state contract. A partial
   class does not separate those identities. Prove co-installation, normal/throwing invocation and
   exact-owner cleanup together; isolated callback tests cannot reveal a shared-slot collision.
+  When preserving private prefix/finalizer state, check foreign registrations that share that
+  declaring type and consume the state, including postfixes. Comparing only the sorted callback
+  MethodInfo cannot distinguish a second owner's registration of the same method. Pair rejection
+  with an intervening mutator regression and prove rollback retains the foreign registration;
+  unrelated state-free concrete callbacks on that type need not be rejected. A postfix factory's
+  declaring type cannot prove its returned callback does not share this state; unresolved returned
+  state usage is a consumed unknown for a paired preservation guard, without executing the factory.
   For inherited target lookup, distinguish `ReflectedType` from the actual declaration: looking up
   one inherited method through a subclass can produce unequal MethodInfo objects. Compare the
   module/token and exact declaring type within the admitted callable shape. Do not substitute
@@ -114,6 +121,10 @@ An observation-only hook should still require only the callable and execution fa
   runtime/CoreLib path and version separately from the host test runtime; confirm the loaded image
   in fresh native evidence before accepting call-edge/inlining behavior. A historical Mono assumption
   does not establish behavior for the inspected1.7 installation's Waylith CLR.
+  Exercise the actual public entrypoints: an admitted private implementation patch did not retain
+  GUI.BeginScrollView's public return in a real 1.7 run. Guarding the four public outward boundaries
+  corrected those calls. Patch publication alone is not call-edge proof; do not label the cause
+  inlining without evidence of the compiled mechanism.
 - Before observing a closed generic method or a method on a constructed generic type, prove
   code isolation on owned targets in the selected runtime/provider. Distinct MethodInfo keys and
   closed operands do not establish independent native code: a retained host canary changed one
