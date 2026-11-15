@@ -3,6 +3,18 @@ S141's detached query checkpoint is followed by the verified ordinary-draw recor
 revision29. Automatic discovery/reveal and full feature acceptance remain open. Drafting or host
 checks alone accept no gameplay checkbox.
 
+The automatic root-layout component now passes24 focused Harmony checks and a reviewed112-step
+English native workflow with16 root-inspected captures. All six actual pages are attempted; PUAH
+text/help is captured with unchanged settings, both XML twins fail at the native constructor guard
+while retaining ordinary routes, and cancellation preserves a successful capture across10 repaints.
+Refresh and constructor-reentrant replacement/cancellation pass; a normal startup carrier calls
+hidden PostOpen once and retired carriers never do. The real open provider window is preserved,
+then all three original pages support native editing/close/persistence/reopen/restoration. Its cache
+baseline is empty; nonempty-cache restoration is not claimed. Local `discovery/automatic-batch/root/`
+retains RED/GREEN, reviews, exact build/process/config/log/cleanup evidence. The driver has no
+production owner/hooks yet. Driver-specific busy resume and actual context transitions, complete
+tabs/provider reads, owned metadata, query/reveal and the other gaps below keep D1–D3/S141 unchecked.
+
 Revision30 checkpoint: bounded session passes110 affected host checks after independent review.
 The state component has reviewed English native RED/GREEN,24steps/five personally inspected
 captures and successful subsequent typing without refocus. Its same-ID editor/style probes are

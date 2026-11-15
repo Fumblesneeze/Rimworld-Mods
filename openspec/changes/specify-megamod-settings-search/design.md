@@ -497,8 +497,9 @@ Catalog implementation uses an explicit refresh request and the existing neutral
 immediately clears old descriptors/opening tokens; a deferred attempt retains that same request,
 and completion publishes only if the request was not replaced or cancelled during the callback.
 Normal acquisition consumes the supplied completed Options instance, never reconstructing or
-filtering its list from ModHandles. Startup acquisition creates a detached soundless carrier inside
-the read and materializes its final collection before leaving isolation. Neither path draws,
+filtering its list from ModHandles. Startup acquisition constructs a detached soundless native
+carrier on the GUI owner thread before the read, then calls PostOpen and materializes its final
+collection inside isolation. Neither path draws,
 selects, opens or closes foreign pages. A copied descriptor or any earlier generation cannot resolve
 to a native page; each source occurrence gets a fresh distinct identity, even repeated references.
 
@@ -509,3 +510,28 @@ enumeration/disposal, or replacement of the source enumerable fails the whole pe
 publishes no partial mapping; normal native browsing remains available. Enumerable work before its
 first yield and arbitrary callbacks cannot be preempted or rolled back generically. The catalog
 does not pretend reference equality detects in-place changes between explicit refreshes.
+
+The next integration composes catalog, discovery session and neutral reader in one GUI-thread
+driver. An explicit refresh schedules acquisition; after visible widget calls have returned,
+ReadNext admits at most one attempt per monotonically advancing repaint, including deferred input
+and catalog work. Successful catalog acquisition creates one session containing every descriptor.
+Each initial page pass calls its original Dialog_ModSettings.DoWindowContents through an unopened
+native wrapper, using InitialSize contracted by the native StandardMargin. No wrapper PreOpen,
+Add, Close or persistence callback is used. The wrapper is constructed outside the read; the actual
+renderer runs only inside it. These root-layout observations remain Partial; tab traversal, owned
+metadata, public search presentation and runtime registration remain separate required integration.
+
+Generic Window(IWindowDrawing) construction is refused inside reads, before the inspected native
+constructor body. It prevents XML Extensions' inspected BaseSettingsWindow body from changing
+selection/cache or closing windows before Add. This exact boundary does not guarantee rollback of
+arbitrary foreign constructor arguments or pre-base initializers. Constructor finalizers are not
+admitted because suppressing the refusal could resume a derived constructor. A refusal becomes
+that page's failed capture and does not remove its descriptor or normal opening route. Direct
+provider menu rendering is not substituted: its OnFrameActions/cache behavior requires separate
+work. All pages remain eligible and provider coverage remains explicitly incomplete.
+
+Busy attempts retain their exact in-flight work without charging a callback or advancing the page.
+Cancel retains completed snapshots and catalog opening routes while stopping pending work; refresh
+clears old routes/results immediately and preserves the repaint watermark. Reentrant refresh or
+cancel cannot publish the superseded callback. Game, world and language object changes invalidate
+the current driver snapshot. Dispose clears routes and releases only its owned reader guards.

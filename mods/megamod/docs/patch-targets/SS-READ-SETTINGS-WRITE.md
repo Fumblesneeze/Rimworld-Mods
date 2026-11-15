@@ -40,7 +40,8 @@ latched and prevents publishing successful observations.
 
 ## Admission, failure, and diagnostics
 
-C01 admits the six guards as one atomic family. Acquired guards are enabled during installation;
+C01 admits the action guards, including the later native window-construction guard, as one atomic
+family. Acquired guards are enabled during installation;
 the reader admits no read scope until every member succeeds.
 A missing/changed/ambiguous target, inspection exception, unsafe order or install failure leaves
 automatic discovery unavailable while ordinary page editing remains native. Roll back only newly

@@ -590,7 +590,7 @@ retains S141 with the expanded contract; no new lease, code, build, game run or 
 ### Revision 23 — 2026-11-14 intake while implementation is paused
 
 Add S140–S152 once, retaining S053 RePowered and S059 Best Mix as existing entries. S141 now
-specifies Needle-inspired owned settings search; the other twelve are intake, with full sequential
+specifies Needle-inspired all-mod option search; the other twelve are intake, with full sequential
 source research and separate owned OpenSpec contracts required before any implementation lease.
 See the [decision and identity record](../../../mods/megamod/docs/refinement/2026-11-14-source-additions.md). The current total is 140 drafts
 plus 12 intake entries, with the same 27 chunks/nine parts. Historical dated counts below stay unchanged.

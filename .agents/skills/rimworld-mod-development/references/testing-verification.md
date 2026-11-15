@@ -72,6 +72,15 @@ cleanup obligations separately so one failing close does not skip another window
 When native cleanup empties a cache or collection, an empty before/after comparison can conceal a
 broken preservation guard. Prime a distinguishable nonempty state through its normal native path,
 assert immediately after the protected mutation/exception, and check cleanup as a separate boundary.
+The same rule applies to cancellation: prove a successful nonempty observation exists while work
+remains pending before cancelling, then retain that exact observation across subsequent ordinary
+pumps. Failed-only or empty results cannot establish successful-result preservation.
+
+Native UI labels may be truncated before the GUI recorder sees them. Bind actions to the actual
+native object/order and observed bounds, validating the displayed string with the native truncation
+contract where needed. If native code caches labels independently of width, read its existing cache
+rather than recomputing at the current width. Do not populate that cache, require a full metadata
+title to equal an ellipsized label, or recover from that mismatch with an ambiguous fuzzy click.
 
 Use a separately marked E2E project for a workflow that needs ordinary game frames, native actions, pawn jobs, waits, and player-visible observations. Set `RimWorldEndToEndTest=true` and one `RimWorldEndToEndTestOwnerPackageId`; keep the assembly outside product `Assemblies` and NUnit/VSTest. Each attributed test declares its globally stable ID, owner, complete ordered non-Gateway package set, and deadlines.
 

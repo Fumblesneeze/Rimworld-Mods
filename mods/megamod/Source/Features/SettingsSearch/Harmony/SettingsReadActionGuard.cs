@@ -12,16 +12,17 @@ public sealed class SettingsReadActionGuard
 {
     private static readonly Dictionary<MethodBase, SettingsReadActionGuard> Routes = new();
     private static readonly MethodInfo PrefixMethod = typeof(SettingsReadActionGuard).GetMethod(nameof(Prefix), BindingFlags.Static | BindingFlags.NonPublic)!;
-    private readonly MethodInfo target;
+    private readonly MethodBase target;
     private readonly string failureReason;
     private readonly OwnedHarmonyPatch receipt;
     private bool installed, enabled;
 
-    public SettingsReadActionGuard(MethodInfo target, string patchId, string failureReason)
+    public SettingsReadActionGuard(MethodBase target, string patchId, string failureReason)
     {
         // A lookup through a subclass may change ReflectedType without changing the declaration.
         // Normalize only that exact declaration, never GetBaseDefinition (which conflates overrides).
-        this.target = target.DeclaringType?.GetMethods(BindingFlags.Public | BindingFlags.NonPublic |
+        this.target = target;
+        if (target is MethodInfo) this.target = target.DeclaringType?.GetMethods(BindingFlags.Public | BindingFlags.NonPublic |
             BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
             .SingleOrDefault(method => method.Module == target.Module && method.MetadataToken == target.MetadataToken &&
                 method.DeclaringType == target.DeclaringType && method.IsGenericMethod == target.IsGenericMethod) ?? target;
@@ -47,6 +48,9 @@ public sealed class SettingsReadActionGuard
 
     private string? Validate()
     {
+        if ((target is not MethodInfo && target is not ConstructorInfo) ||
+            (target is ConstructorInfo && target.IsStatic))
+            return "The settings-read action requires a runtime method or instance constructor.";
         if (target.IsAbstract || target.IsGenericMethod || target.ContainsGenericParameters ||
             target.DeclaringType == null || target.DeclaringType.IsGenericType || target.GetMethodBody() == null ||
             target.CustomAttributes.Any(attribute => attribute.AttributeType.FullName is
@@ -89,6 +93,9 @@ public sealed class SettingsReadActionGuard
         string? failure = null;
         bool inspected = HarmonyPublication.Inspect(target, snapshot =>
         {
+            // Suppressing a base-constructor refusal could resume the derived constructor body.
+            if (target is ConstructorInfo && snapshot.Finalizers.Count != 0)
+            { failure = "A constructor finalizer can suppress the settings-read refusal."; return true; }
             if (snapshot.Prefixes.Any(patch => patch.IsFactory))
             { failure = "A prefix factory prevents safe settings-read action ordering inspection."; return true; }
             var owned = snapshot.Prefixes.Where(patch => patch.Owner == OwnedHarmonyPatch.OwnerId).ToArray();

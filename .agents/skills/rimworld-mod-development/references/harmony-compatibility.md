@@ -200,5 +200,12 @@ An observation-only hook should still require only the callable and execution fa
   suppressor remains installed. Pair it with a compatible void exception observer and confirm a
   caught refusal still leaves the read failed.
 
+Native constructors and property getters can reenter an owner through installed callbacks. When
+they can refresh or cancel work, construct/read into a local, recheck the acquired generation, then
+retain or dispatch it. A shared-field `??=` can write the retired object back after reentrant cleanup;
+an unconditional pending-request assignment can similarly overwrite a newer request. Exercise a
+refresh from a later page's constructor so stale content differs from the replacement's first page,
+and count retired work as well as checking the eventual final snapshot.
+
 Keep provider-specific details in the owned adapter and target document. These checks do not justify
 rejecting all foreign owners, requiring pristine game methods, or building a general IL interpreter.

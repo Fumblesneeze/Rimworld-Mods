@@ -203,6 +203,17 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
   This component does not establish preservation for unsupported generic numeric struct closures;
   that known gap remains unaccepted and does not exclude their owning pages from eligibility.
 
+#### Scenario: Compose automatic reads and isolate a window-opening page
+- **WHEN** a discovery session advances from the completed native catalog after ordinary chooser
+  drawing, with an unfamiliar inline page and a page that constructs its own settings window
+- **THEN** it attempts every catalog occurrence, performs at most one catalog or page attempt per
+  repaint, defers busy input, retains successful partial observations and reports failed pages
+  independently. A native window construction during a read is refused before that constructor
+  body; constructor finalizers that could suppress refusal prevent admission. This does not undo
+  arbitrary derived initializer work before the native base boundary. Normal page opening remains
+  available. Cancel retains completed observations but stops further calls; refresh revokes old
+  work and page identities. A language/game/world change clears stale observations before reuse.
+
 ### Requirement: SS-07 Common activation preserves independent browsing
 Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at NextDisplay with normal inheritance, dormant overrides and main-menu guards.
 Effective off cancels further discovery and hides option search without changing foreign settings,
@@ -231,8 +242,10 @@ An exception-free draw alone does not establish complete control coverage.
 - **WHEN** an idle catalog read consumes the completed native chooser collection, including real
   provider-generated pages with matching titles and package IDs
 - **THEN** every source occurrence retains a distinct descriptor and its exact original page object.
-  Refresh or cancellation immediately invalidates old opening tokens; copied descriptors and
-  superseded reads cannot select a different same-named page. Startup acquisition uses a detached
+  Refresh or cancellation of catalog acquisition immediately invalidates old opening tokens;
+  cancellation of an acquired discovery session retains its completed observations and opening
+  routes under SS-05. Copied descriptors and superseded reads cannot select a different same-named
+  page. Startup acquisition uses a detached
   soundless native carrier without opening or closing it. Failed or over-budget collection capture
   publishes no partial mapping, and original native page opening/editing/persistence still works.
 

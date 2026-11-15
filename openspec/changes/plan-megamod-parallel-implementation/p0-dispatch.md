@@ -1259,3 +1259,28 @@ edits/persistence, refresh invalidation, native console, normal config preservat
 cleanup. Local evidence is in catalog-batch/root. Product catalog eligibility has no package/type
 allowlist. Remaining automatic catalog/session/reader integration, provider hidden routes,
 query/reveal and full D1–D3/S141/part gates remain allocated and unaccepted.
+
+Fromadc7044, root owns the automatic discovery driver, catalog startup adjustment, contracts,
+shared outputs, review integration and final native acceptance. `settings_catalog_research` has
+only automatic-batch/provider-research artifacts. `settings_family_review` changes to implementer
+for SettingsReadActionGuard.cs, SettingsReadActionGuards.cs and new host constructor-guard tests;
+it hands off executable RED before implementation. Root runs every test/build/install/game and
+commit. This batch composes all catalog pages with one root-layout attempt per repaint; full tab
+traversal, public query/reveal, common activation and production registration remain allocated.
+
+`settings_bounds_review` changes to native-scenario author for only NativeSettingsDiscoveryTests.cs
+and announced same-feature helpers. It uses the real PUAH and XML Extensions packages plus the
+existing emitted-page fixture, without spoofed loaded mods. The initial automatic pass, deliberate
+cancel/refresh, warm native provider refusal, subsequent original editing and console form the
+selected combined workflow. A different agent reviews authored code; root alone runs it.
+
+All automatic-batch edit leases are released. Independent review resolved constructor finalizer
+admission, retired wrapper/carrier reentrancy, meaningful successful-result cancellation coverage,
+native persistence observations and cached-label fixture targeting. Root's final batch passes24
+focused host checks and112 English native steps, with all16 captures personally inspected, normal
+config hashes preserved and graceful process/stage/credential cleanup. Exact evidence is local in
+automatic-batch/root. The accepted scope is root-layout automatic attempts and the exercised native
+constructor refusal, with original PUAH/provider editing intact. Provider hidden reading, full tabs,
+driver busy/context-transition workflows, common activation, owned metadata and query/reveal remain
+allocated; no full D1–D3/S141/part task closes. `settings_family_review` next has a read-only planning
+assignment for native chooser/common-activation/lifecycle composition; no code/output ownership.

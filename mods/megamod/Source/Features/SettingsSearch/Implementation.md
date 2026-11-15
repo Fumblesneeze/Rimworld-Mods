@@ -1,9 +1,9 @@
-# S141 query, recorder and discovery-session checkpoints
+# S141 query and automatic discovery checkpoints
 
-Owner `fumblesneeze.megamod`. Supplied-text matching and the ordinary-draw recorder are implemented;
-the recorder has scoped native verification below. Nothing is registered with the native chooser.
-Automatic discovery, metadata projection, reveal, coverage UI, lifecycle, preferences/catalogs and
-full-feature acceptance remain open. No per-mod eligibility list exists.
+Owner `fumblesneeze.megamod`. Query, recording, isolated reading, catalog and root-layout discovery
+components are implemented with scoped verification below. Nothing is registered with the native
+chooser. Full tab/provider discovery, metadata projection, reveal, coverage UI, lifecycle integration,
+preferences/catalogs and full-feature acceptance remain open. No per-mod eligibility list exists.
 
 `SettingsSearch` copies immutable `SettingsSearchEntry` descriptors and pre-normalizes their text.
 Each retains S047's actual opaque `SettingsPage` descriptor, path identity and occurrence; native
@@ -254,3 +254,32 @@ source replacement and exact/over-limit aggregate bounds. Final console/log clas
 owned cleanup pass with unchanged normal configuration. Evidence is in local
 `discovery/catalog-batch/root/verification.md`. The catalog calls no foreign page renderer; provider
 hidden drawing, automatic discovery, query/reveal and remaining D1–D3 obligations stay open.
+
+`SettingsDiscoveryDriver` now composes that catalog, the bounded session and neutral reader. After
+ordinary visible widgets return, it advances at most one catalog/page attempt per repaint and calls
+each exact native page through an unopened `Dialog_ModSettings` wrapper. Captures remain Partial;
+failed pages retain their original opening routes. Cancel keeps completed observations, refresh
+revokes old work, and reentrant construction cannot retain or dispatch a superseded wrapper/carrier.
+Context checks clear stale game/world/language snapshots. The eventual runtime owner must still
+register lifecycle and chooser hooks; the current executable workflow supplies test-only scheduling.
+
+The action family now also refuses exact native Window construction inside a read, before the
+inspected XML Extensions constructor can change provider selection/cache or close existing windows.
+Constructor finalizers refuse admission because they could suppress that exception. This does not
+undo arbitrary pre-base initializer/argument effects. Provider pages remain eligible but their
+hidden option coverage is failed; direct provider rendering is not substituted.
+
+The reviewed batch passes24 focused Harmony checks and112 English native steps, with16 captures
+personally inspected by root. Automatic attempts cover all six actual catalog occurrences; PUAH
+label/help is captured with its12 scalar settings and storage list unchanged. Native cancellation
+retains a nonempty successful capture through10 further repaints; refresh retries every page.
+The later-page constructor-refresh regression and startup normal/cancel/replacement paths pass,
+including one normal and zero retired hidden PostOpen calls. An already-open Amber provider page
+remains unchanged. PUAH and both same-title provider pages then support ordinary native edits,
+close/persistence/reopen and restoration. The provider cache is empty in this fixture; nonempty-cache
+restoration is not claimed. Console/log classification, graceful cleanup and normal config hashes
+are retained in local `discovery/automatic-batch/root/verification.md` with exact build identities.
+
+Driver-specific busy deferral/resumption and actual game/world/language transition workflows remain
+unverified. They join full tabs/provider reading, unsupported numeric closures, owned metadata,
+production activation, query UI and current-control reveal as remaining D1–D3/S141 obligations.

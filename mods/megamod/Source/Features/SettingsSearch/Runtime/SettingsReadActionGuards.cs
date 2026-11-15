@@ -25,6 +25,8 @@ public sealed class SettingsReadActionGuards : IDisposable
         admission = new AdmissionCoordinator(warning);
         group = new PatchGroup("settings-search.read-actions", AdmissionPhase.GameReady, new[]
         {
+            Bind("SS-READ-WINDOW-CONSTRUCTION", typeof(Window), ConstructorInfo.ConstructorName, false, typeof(void),
+                "settings-read-window-construction", typeof(IWindowDrawing)),
             Bind("SS-READ-WINDOW-ADD", typeof(WindowStack), "Add", false, typeof(void),
                 "settings-read-window-add", typeof(Window)),
             Bind("SS-READ-IMMEDIATE-WINDOW", typeof(WindowStack), "ImmediateWindow", false, typeof(void),
@@ -54,7 +56,7 @@ public sealed class SettingsReadActionGuards : IDisposable
         get
         {
             RequireOwner();
-            if (!initialized || disposed || guards.Count != 6) return false;
+            if (!initialized || disposed || guards.Count != 7) return false;
             try { return guards.All(guard => guard.Available); }
             catch (Exception) { return false; }
         }
@@ -83,14 +85,18 @@ public sealed class SettingsReadActionGuards : IDisposable
     private PatchCandidate Bind(string id, Type? declaringType, string name, bool isStatic,
         Type result, string reason, params Type[] arguments)
     {
-        MethodInfo? target = null;
+        MethodBase? target = null;
         try
         {
-            target = declaringType?.GetMethod(name, BindingFlags.Public | BindingFlags.DeclaredOnly |
-                (isStatic ? BindingFlags.Static : BindingFlags.Instance), null, arguments, null);
+            var flags = BindingFlags.Public | BindingFlags.DeclaredOnly |
+                (isStatic ? BindingFlags.Static : BindingFlags.Instance);
+            target = name == ConstructorInfo.ConstructorName
+                ? declaringType?.GetConstructor(flags, null, arguments, null)
+                : declaringType?.GetMethod(name, flags, null, arguments, null);
         }
         catch (Exception) { /* A failed exact lookup becomes a normal rejected C01 candidate. */ }
-        if (target == null || target.DeclaringType != declaringType || target.ReturnType != result ||
+        if (target == null || target.DeclaringType != declaringType ||
+            (target is MethodInfo method && method.ReturnType != result) ||
             target.IsStatic != isStatic || !target.IsPublic || target.IsGenericMethod || target.ContainsGenericParameters ||
             !target.GetParameters().Select(parameter => parameter.ParameterType).SequenceEqual(arguments))
             return new PatchCandidate(id, id, (declaringType?.FullName ?? "UnityStubs.Internal.ImeComposition") + "." + name,

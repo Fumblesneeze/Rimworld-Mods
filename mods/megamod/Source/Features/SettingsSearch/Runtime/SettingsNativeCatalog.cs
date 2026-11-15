@@ -15,11 +15,12 @@ public sealed class SettingsNativeCatalog
 {
     private const int MaximumPages = 4096;
     private const int MaximumTextUnits = 524288;
-    private sealed record Request(Dialog_Options? Source, string Identity);
+    private sealed record Request(Dialog_Options Source, string Identity, bool Startup = false);
     private sealed record Entry(SettingsPage Page, Mod Native);
     private readonly int thread = Environment.CurrentManagedThreadId;
     private Dictionary<SettingsPage, Mod> native = new(ReferenceEqualityComparer.Instance);
     private Request? pending;
+    private long generation;
     public IReadOnlyList<SettingsPage> Pages { get; private set; } = Array.Empty<SettingsPage>();
     public bool Pending => pending != null;
 
@@ -30,7 +31,16 @@ public sealed class SettingsNativeCatalog
         pending = new(completedOptions, Guid.NewGuid().ToString("N"));
     }
 
-    public void RefreshStartup() { Clear(); pending = new(null, Guid.NewGuid().ToString("N")); }
+    public void RefreshStartup()
+    {
+        Clear();
+        // Our exact native carrier is constructed before isolation. Foreign window construction
+        // during PostOpen/enumeration remains refused by the reader's constructor guard.
+        long currentGeneration = generation;
+        var source = new Dialog_Options { soundAppear = null, soundAmbient = null };
+        if (generation == currentGeneration)
+            pending = new(source, Guid.NewGuid().ToString("N"), true);
+    }
 
     public SettingsNeutralReadStatus ReadPending(SettingsNeutralReader reader, out string? reason)
     {
@@ -79,6 +89,7 @@ public sealed class SettingsNativeCatalog
     public void Clear()
     {
         RequireThread();
+        generation++;
         pending = null;
         Pages = Array.Empty<SettingsPage>();
         native.Clear();
@@ -87,11 +98,7 @@ public sealed class SettingsNativeCatalog
     private static Entry[] Materialize(Request request)
     {
         var source = request.Source;
-        if (source == null)
-        {
-            source = new Dialog_Options { soundAppear = null, soundAmbient = null };
-            source.PostOpen();
-        }
+        if (request.Startup) source.PostOpen();
         var field = typeof(Dialog_Options).GetField("cachedModsWithSettings",
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
         if (field == null || !typeof(IEnumerable<Mod>).IsAssignableFrom(field.FieldType))
