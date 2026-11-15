@@ -71,6 +71,13 @@ Read `docs/TestingEnvironments.md` before adding a test that depends on RimWorld
 
 ### Megamod-only orchestration exception
 
+The user's 2026-11-16 clarification requires source-first **coherent implementation batches**:
+decompile/inspect the respective original mods, base our independent implementation on their
+working approach, then test, review and fix the affected batch together. For megamod this
+supersedes serial test/build/native-run cycles for each internal helper. Follow the durable
+delivery rules in `mods/megamod/AGENTS.md`; do not narrow requested behavior or weaken final
+native acceptance. Other mods retain the normal workflow below.
+
 For `fumblesneeze.megamod` only, the user explicitly authorizes grouping multiple owned feature
 changes into parallel implementation chunks and postponing their final live verification to an
 integrated part gate. Follow [its coordinated plan](openspec/changes/plan-megamod-parallel-implementation/design.md),

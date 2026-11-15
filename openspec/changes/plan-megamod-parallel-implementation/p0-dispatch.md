@@ -1307,3 +1307,11 @@ announced before creation. It authors the combined actual owned-page metadata/re
 initially against inert renderer APIs for root-run RED, without building/installing/launching.
 Opening research is frozen artifact input; `settings_catalog_research` independently reviews root's
 query/policy changes, then the owned lane after handoff. Root owns the shared native run/build gate.
+
+The reviewed host checkpoint is committed as3e5d848. The owned renderer workflow then reached its
+intended native RED after the actual request button: Pending was expected, inert Unavailable was
+returned; the real target was below the initial viewport. Root inspected its initial capture and
+verified owned cleanup. The retired settings_family_review renderer lease is superseded by
+`owned_renderer_implementation`, limited to Settings/Runtime/SettingsRenderer.cs. The committed
+host helpers and frozen native fixture remain read-only inputs. Root retains tests, builds,
+independent-review coordination, native acceptance and commits. Full S141 and the part stay open.

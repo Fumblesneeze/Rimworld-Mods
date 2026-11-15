@@ -132,6 +132,12 @@ splitting, and the actual native ingestion-to-Health result in separate exact-mo
 
 ## Implement in vertical slices
 
+For megamod, apply the user's source-first batch cadence in `mods/megamod/AGENTS.md` instead of
+serializing the loop below for every helper. Inspect original source/decompilation first, implement
+the complete selected workflow, then test/review/fix its affected batch together. Existing native
+RED and authored regressions can drive the integrated batch without another run for every small
+internal API adjustment. Keep final native acceptance and evidence truthful.
+
 For each requirement:
 
 1. Identify a user-observable rule and its owning mod or tooling component.

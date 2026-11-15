@@ -11,6 +11,32 @@ OpenSpec files stay at the repository root. A feature is not owned by its upstre
 
 ## Coordinated implementation exception — this mod only
 
+### Source-first batches — user direction, 2026-11-16
+
+The user explicitly reinforced the delivery cadence after excessive component-by-component work:
+**decompile the respective original mods, understand their implementation, base our independent
+implementation on those inspected working designs, then test and fix the whole coherent batch.**
+This is a standing instruction for every continuation of the megamod goal.
+
+- Start each replacement batch from the actual original source or read-only decompilation. Reuse
+  its demonstrated game hooks and approach where they fit our specification; do not repeatedly
+  rediscover them or copy upstream code, assets or assemblies into the product.
+- A batch delivers a complete player workflow or a closely related set of features. Do not make
+  isolated helper classes, planning documents or unregistered scaffolds the default delivery unit.
+- Author the relevant regression/native scenarios while implementing the batch, then run its
+  affected host checks, independent review, build/package checks and focused English native
+  scenarios together. Fix findings as a batch and rerun only affected checks. Do not serialize an
+  extra test/build/game cycle for every helper or small internal API adjustment.
+- Use the simplest implementation that meets the actual requirements. Add compatibility guards
+  for concrete consumed contracts; do not expand a feature into speculative general frameworks or
+  exhaustive third-party analysis before delivering its ordinary working path.
+- Commit logical integrated checkpoints. Maintain all seven translations, verify English during
+  implementation, and retain the full language gate for the final accumulated suite.
+
+This scheduling direction supersedes the earlier per-helper verification cadence. It preserves
+all requested feature scope and the final live acceptance, credential, process, package and
+repository boundaries. Unverified behavior must still remain explicitly unaccepted.
+
 The user explicitly authorized parallel multi-feature chunks with orchestrator-run integrated
 verification. Read the [shared architecture and delivery protocol](../../openspec/changes/plan-megamod-parallel-implementation/design.md),
 [roadmap](../../openspec/changes/plan-megamod-parallel-implementation/roadmap.md) and

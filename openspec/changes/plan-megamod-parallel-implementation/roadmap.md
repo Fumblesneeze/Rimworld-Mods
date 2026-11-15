@@ -1,12 +1,27 @@
 # Coordinated implementation roadmap
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **30**, 2026-11-14. Status: **implementation active; automatic generic settings discovery batch; focused English batches; aggregate acceptance incomplete**.
+Plan revision **31**, 2026-11-16. Status: **implementation active; source-first integrated settings-search batch; focused English batches; aggregate acceptance incomplete**.
 The [design](design.md) defines shared-component contracts and delivery protocol; [tasks](tasks.md)
 is the governing gate checklist. The [feature ledger](../../../mods/megamod/docs/refinement/specification-progress.md)
 remains the source-ID/research record. Individual feature specs and user decisions remain authoritative.
 
 ## How to execute and revise this plan
+
+Revision31 applies the user's explicit correction after3e5d848: too many isolated helper and
+verification cycles delayed usable features. Inspect/decompile the respective original mods,
+base our independent implementation on their working design, complete coherent player workflows,
+then test/review/fix the selected batch together. The standing cadence is in `mods/megamod/AGENTS.md`
+and the development skill. Prior source research and completed component checks are inputs to reuse,
+not reasons to repeat discovery or launch more per-helper gates. Final live acceptance remains required.
+
+The immediate delivery target remains integrated S047/S141: one existing chooser query, page and
+all-mod individual-option results, owned current values, foreign observations, discovery progress
+and refresh/cancel, original page opening and current-control reveal. Use the inspected Needle
+implementation as the implementation reference, retaining our specified behavior and seven-language
+catalogs. Finish and test the combined path; do not redefine the batch as another unregistered helper.
+All152 feature obligations, all27 chunks and all9 parts remain; no acceptance is inferred here.
+The earlier revision30 text below records the prior allocation and evidence, not the new cadence.
 
 Revision30 follows verified recorder checkpoint58e87c9 with S141-D1–D3: bounded discovery sessions,
 neutral native page reads and provider-completed collection acquisition. The exact state-isolation
