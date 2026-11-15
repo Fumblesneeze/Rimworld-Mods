@@ -2,8 +2,9 @@
 
 Owner `fumblesneeze.megamod`, S141 SS-06 in the
 [settings search spec](../../../../openspec/changes/specify-megamod-settings-search/specs/megamod-settings-search/spec.md).
-This is the target contract for the pending getter integration. The original-instruction checker
-and passive generic-family inventory are prerequisites, not an installed getter guard.
+The scoped getter integration is implemented with the original-instruction checker, exact native
+catalog and coherent composition/generic-family certificates. It is acquired by the reader's
+initializer; no automatic production reader callbacks are registered by this component.
 
 ## Target and consumed behavior
 
@@ -38,6 +39,9 @@ native getter and supplies null; its paired finalizer retains null through inter
 postfixes. Outside a read it does nothing. Exceptions remain failures rather than partial captures.
 Preserve acquired state independently of later scope/admission changes. Require paired-state and
 ordering checks, and roll back only patches acquired by this owner through C01.
+The getter itself also requires known exception propagation. Reject unproved exception-suppressing
+finalizers, including effectively aliased writable exception bindings; last position alone cannot
+recover an exception already cleared by an earlier callback.
 
 Original-body semantics must be tied to coherent effective-composition evidence. Existing owned
 value/cache wrappers can add exception regions outside that body; their concrete contracts must
@@ -58,7 +62,7 @@ Custom virtualization can still withhold rows and must remain an honest coverage
 can change native gap placement; reveal must resolve fresh visible layout instead of treating
 captured rectangles as persistent control identity.
 
-## Pending native verification
+## Scoped native verification
 
 The focused English workflow must use a real button to read an offscreen native option, observe
 the found label/help and unchanged viewport/value, scroll normally to the original control, edit
@@ -66,4 +70,14 @@ it and personally inspect the causal captures. Supporting probes cover all 17 co
 throwing scroll delegates, warm cache preservation, null/default bounds, result replacement,
 callback exceptions, compatible composition and relevant repatch invalidation. Ordinary execution
 and exact-owner cleanup must still work afterward. Retain reviewed build/process/config identities
-and logs under local `discovery/listing/` evidence. No native acceptance is claimed by this document.
+and logs under local `discovery/listing/` evidence.
+
+The reviewed English component workflow now passes 22 steps with six personally inspected captures.
+Root observed the real read button find an offscreen label/help with value false and unchanged first
+rows/scroll thumb, then native scrolling reveal the unchecked control and a native click set it true.
+Supporting probes exercise all 17 consumers, cold/seeded-warm caches, compatible getter observers,
+result replacement, retained exception identity/failure, actual refusal under return-suppressing
+finalizers (including an aliased exception-value input), and struct-generic sibling repatch/cleanup.
+The provider rejects writable exception injection, so that attempted test shape is retained as a
+fixture error, not a compatibility claim. See local `discovery/listing/integration-root/verification.md`.
+Transformed consumer proof and complete automatic discovery/search/reveal remain unaccepted.

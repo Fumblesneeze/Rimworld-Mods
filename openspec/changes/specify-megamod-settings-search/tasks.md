@@ -60,6 +60,17 @@ and the offscreen workflow are still required; these host components close no D1
 
 ## Selected query and discovery-contract batch
 
+The native listing integration now has 93 distinct passing focused host checks and a reviewed
+22-step English native workflow with six root-inspected captures. A real read request finds the
+offscreen label/help without changing value/viewport; normal scrolling reveals the original
+unchecked option and a native click checks it. All 17 consumers, caches, callback exceptions,
+suppression refusal and struct-generic sibling publication/repatch/cleanup have supporting probes.
+Review fixes cover aliased preservation state and aggregate memoized metadata bounds. Local
+`discovery/listing/integration-root/verification.md` retains RED/GREEN, reviewed hashes, exact
+build/process/config identities, observations and successful cleanup. No automatic production
+reader hooks are registered. Transformed consumer bodies and remaining input/numeric/provider/
+discovery/search/reveal obligations keep D1–D3 and full S141 open.
+
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.
 - [ ] S141-Q2 Add bounded typo fallback and deterministic exact/label/page/path/occurrence ranking; reuse S047's immutable page descriptor and keep page matches confined to page metadata.
 - [ ] S141-Q3 Independently review this host-only tranche, fix findings as one affected batch, run focused checks and owning build/package validation, and record remaining native discovery/reveal/lifecycle obligations without registering an incomplete search UI.

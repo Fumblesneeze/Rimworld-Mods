@@ -156,7 +156,7 @@ public sealed class SettingsReadControlGuard
 
     private bool SharesPairedState(HarmonyPublication.OuterRegistration patch, MethodInfo? expected) =>
         !patch.IsFactory && patch.Method.DeclaringType == prefix.DeclaringType &&
-        patch.Method.GetParameters().Any(parameter => parameter.Name == "__state") &&
+        patch.Method.GetParameters().Any(parameter => HarmonyArgumentBinding.Resolve(target, parameter).Name == "__state") &&
         (patch.Owner != OwnedHarmonyPatch.OwnerId || patch.Method != expected);
 
     private string? InspectSlot(IReadOnlyList<HarmonyPublication.OuterRegistration> slot, MethodInfo callback, bool acquired, bool first)

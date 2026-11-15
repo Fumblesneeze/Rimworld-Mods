@@ -88,6 +88,7 @@ These contracts cover existing native controls; they do not restrict eligible se
 - [SS-READ-CONTROL-ENTRY](SS-READ-CONTROL-ENTRY.md)
 - [SS-READ-CONTROL-EXIT](SS-READ-CONTROL-EXIT.md)
 - [SS-READ-LISTING-CACHE](SS-READ-LISTING-CACHE.md)
+- [SS-READ-LISTING-BOUNDS](SS-READ-LISTING-BOUNDS.md) — reviewed scoped getter guard; 22-step English component workflow verified, automatic reader registration remains pending.
 - [SS-READ-SLIDER-SOUND](SS-READ-SLIDER-SOUND.md)
 - [SS-READ-TOOLTIP](SS-READ-TOOLTIP.md)
 

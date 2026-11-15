@@ -15,6 +15,12 @@ Before coding, classify Harmony as either a design-time fallback because the ins
   that is the actual contract; do not assume a method's return preserves its input arguments.
 - Avoid transpilers unless no stable call boundary exists. If unavoidable, match structural landmarks, fail closed with a clear warning, and add a live compatibility probe for the exact installed game/mod version.
 - Keep patches idempotent and side-effect-free during discovery. Avoid hot-path allocations and recursive logging.
+- Bound total metadata work, not just recursion depth or each node's width. Repeated nested value
+  types can revisit the same small graph exponentially, including overlapping explicit-layout
+  fields. Share an aggregate field/type budget across the capture and memoize completed shapes;
+  retain subtree height so a later deeper reuse cannot bypass the depth bound. Exercise a small
+  over-budget graph and compatible shared-subtree/depth-boundary cases without running an unbounded
+  pathological traversal as the initial RED test.
 - Put test patch acquisition inside the try whose finally removes its exact owner. A provider may
   throw after partial publication; starting the try after Patch returns leaves that failure unowned.
 - Never touch Unity or Verse live state from network, timer, threaded-log, or worker callbacks. Queue it to the game main thread.
@@ -131,8 +137,11 @@ An observation-only hook should still require only the callable and execution fa
   precedence, and refuse only unproved consumed bindings. Test an actual aliased output writer and
   a harmless renamed observer; a reflection-only raw-name test cannot establish composition safety.
   Classify the injected payload as well as its declared type: a mutable argument array remains
-  writable through object/interface parameters, while by-ref private patch state is not a target
-  argument or result writer. Pair those rejection and compatible-state cases on the actual provider.
+  writable through object/interface parameters. Patch-private state is not normally a target
+  writer, but callbacks on the same declaring type share the provider's state slot. Apply effective
+  alias resolution to paired-state ownership too: an aliased by-ref state parameter can corrupt
+  an acquired value before its finalizer restores it. Exercise that actual same-type overwrite
+  and retain a compatible separate-type private-state case; raw parameter-name checks are insufficient.
 - Identify the selected game's actual runtime before making JIT/inlining assumptions. Inspect its bundled
   runtime/CoreLib path and version separately from the host test runtime; confirm the loaded image
   in fresh native evidence before accepting call-edge/inlining behavior. A historical Mono assumption
@@ -185,6 +194,11 @@ An observation-only hook should still require only the callable and execution fa
 - Acquired transient scopes need cleanup even when later compatibility inspection fails. Put the
   acquired-token cleanup in an independent `finally`, preserve the original exception, and isolate
   reporting failures. Rejected nested scopes must not borrow a parent's provenance or authority.
+  If a read must retain callback failures, last-finalizer ordering alone is insufficient: an
+  earlier finalizer can clear the exception before that observer receives it. Guard the effective
+  exception return/reference effects, including aliases, and exercise actual invocation while the
+  suppressor remains installed. Pair it with a compatible void exception observer and confirm a
+  caught refusal still leaves the read failed.
 
 Keep provider-specific details in the owned adapter and target document. These checks do not justify
 rejecting all foreign owners, requiring pristine game methods, or building a general IL interpreter.

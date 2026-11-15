@@ -426,3 +426,38 @@ including detecting an additional native consumer after a game change. The curre
 research inventory cannot silently excuse a newly discovered unproved consumer. This bounded
 native prerequisite check is distinct from universal foreign-page eligibility and does not scan
 arbitrary foreign callbacks to promise transactionality.
+
+The initial composition certificate combines up to 64 native consumer declarations and at most
+1,024 method inspections, including actually published generic family members and repeated
+descriptors so they cannot amplify work past the bound. Existing
+per-family and global publication limits still apply. Inspect detached coherent snapshots, then
+recheck every identity/family and exact owned preservation receipt outside publication callbacks;
+the provider monitors are non-reentrant. A lost prerequisite invalidates that certificate forever.
+Preservation exceptions bind concrete owned prefix/finalizer pairs and their current guard receipts,
+never merely an owner string. Shared effective argument-alias resolution must retain its existing
+S138 behavior and avoid constructing attributes. Unknown consumed skip, alias, result or exception
+suppression effects refuse this original-body route. Ordinary transpilers need separate actual
+published-body proof; this first route does not claim transformed generic/EH/ABI support.
+
+Foreign injected observations must retain consumed scalar/value relationships. Reference-free
+value inspection has pilot bounds of 16 nested types and 64 instance fields per type, with at most
+1,024 distinct value types and 1,024 inspected instance fields across a capture. Memoize successful
+shapes with their height so shared subtrees do not multiply work or bypass the depth bound. These
+aggregate limits leave substantial headroom for native rectangle/nullable scalar shapes while
+bounding unfamiliar metadata cost. Immutable strings are allowed. Unknown or reference-bearing
+payloads are not called generally safe, and
+mutable argument arrays refuse admission regardless of their declared object/interface type.
+These inspection bounds do not restrict eligible mod pages. A callback with no injected writer
+can still have arbitrary global effects; this certificate is not a callback transaction.
+
+The getter guard acquires only after the existing native value/cache wrappers and all consumer
+certificates are current. Its exact paired callbacks preserve an acquired null result independently
+of later availability changes; outside a read they leave native execution alone. The getter's own
+exception effects must also be proved: an earlier foreign finalizer must not be able to suppress
+a callback exception and turn a failed hidden read into an accepted capture.
+
+Native inventory bounds are 256 declared methods/constructors/type initializer, 65,536 IL bytes and
+4,096 operations per member, and 1 MiB aggregate IL. Reuse bounded token decoding to identify all
+getter method references, including function-pointer references, without applying consumer EH
+semantics to unrelated members. Unknown direct users refuse the prerequisite; ordinary page
+eligibility remains universal. Exact consumed methods then require the original semantic proof.

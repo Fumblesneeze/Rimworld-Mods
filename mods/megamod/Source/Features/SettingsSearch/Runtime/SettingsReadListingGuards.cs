@@ -25,6 +25,10 @@ public sealed class SettingsReadListingGuards : IDisposable
     private readonly List<SettingsReadControlGuard> guards = new();
     private readonly PatchGroup group;
     private bool initialized, disposed;
+    private (MethodInfo Target, SettingsListingBoundsAdmission.Preservation Contract)? labelPreservation;
+
+    internal SettingsListingBoundsAdmission.Preservation? ListingPreservationFor(MethodInfo method) =>
+        labelPreservation is { } pair && pair.Target == method ? pair.Contract : null;
 
     public SettingsReadListingGuards(Action<string> warning)
     {
@@ -97,6 +101,12 @@ public sealed class SettingsReadListingGuards : IDisposable
             return;
         }
         guards.Add(guard);
+        if (callbacks == typeof(LabelCache))
+            labelPreservation = (typeof(Listing_Standard).GetMethod(name,
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly, null, arguments, null)!,
+                new(callbacks.GetMethod("Prefix", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly)!,
+                    callbacks.GetMethod("Finalizer", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly)!,
+                    () => initialized && !disposed && guard.Available));
         for (int index = 0; index < guard.Candidates.Count; index++)
         {
             var candidate = guard.Candidates[index] with { TargetSpecId = "SS-READ-LISTING-CACHE" };

@@ -1205,3 +1205,21 @@ eligible. Root retains final review/build/package evidence in listing/continuati
 reader leaves published-body generic/EH/ABI restrictions intact. SS-READ-LISTING-BOUNDS records the
 pending integration contract: no getter/automatic callback is registered, and exact native bindings,
 effective wrapper/family composition and the actual offscreen player workflow remain unaccepted.
+
+From 0ee4ea0, the next integrated listing batch leases SettingsListingBoundsAdmission.cs and its
+matching Harmony fixture to `settings_family_publication`, plus a shared HarmonyArgumentBinding
+extraction and forwarding-only edit of the old DrugToleranceArgumentBinding entrypoint. The native
+catalog lane `settings_bounds_checker` owns only new Runtime/SettingsListingBoundsTargets.cs and
+its native-binding artifacts. Root owns existing runtime guard integration, the new getter guard,
+NativeSettingsListingBoundsTests, shared outputs and native acceptance. Both lanes begin with
+inert interfaces and root-run RED; no child builds, installs, launches or commits. The initial
+native catalog button is a diagnostic tracer, not the final offscreen discovery workflow.
+
+The catalog lease then added only NativeSettingsListingBoundsProbes.cs for supporting all 17/native
+generic-family diagnostics; root retained the main workflow. All leases are now released after
+independent review and fixes. The integrated listing component has 93 affected host checks and a
+reviewed 22-step English native workflow, with six root-inspected captures and successful isolated
+cleanup/config preservation. Root observed offscreen label/help capture with unchanged original
+value/viewport, then native scrolling and checkbox editing. Evidence is in listing/integration-root.
+Full S141 remains open: this component registers no automatic reader callbacks, and transformed
+consumers plus the remaining input/numeric/provider/discovery/search/reveal work are still required.

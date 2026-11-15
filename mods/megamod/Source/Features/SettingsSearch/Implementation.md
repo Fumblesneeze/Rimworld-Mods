@@ -200,7 +200,21 @@ provider reader, preserving generic context and copied branches/locals. It passe
 checks; the existing published-body reader's 18 checks also pass with its restrictions intact.
 Current batch evidence is in local `discovery/listing/continuation-root/verification.md`.
 
-No getter patch or production reader registration is added. Exact native binding and all 17
-consumer proofs, coherent effective-wrapper/generic-family composition, and the offscreen player
-workflow remain outstanding. The host helpers do not establish these engine contracts or accept
-listing unculling/full S141. See `docs/patch-targets/SS-READ-LISTING-BOUNDS.md` for the pending gate.
+The native listing integration binds all 17 direct consumers and checks the declaring class for
+additional getter references. Original-body semantics are combined with exact owned value/cache
+preservation, effective callback arguments and current generic publication families. The acquired
+getter skips native bounds calculation only inside a read and retains the null sentinel through
+the last finalizer. Exception-suppressing finalizers refuse admission. No automatic production
+reader callbacks are registered.
+
+This batch has 93 distinct passing focused host checks: 20 admission, 40 common control guard and
+33 existing argument-binding consumer regressions. Independent review fixes cover aliased shared
+state, bounded memoized value-shape inspection, independent rollback attempts and getter exception
+suppression. The reviewed English native workflow passes 22 steps with six root-inspected captures:
+a real read request finds an offscreen option/help without moving the viewport or changing its
+value, normal scrolling reveals the original unchecked control, and a native click checks it.
+All 17 row calls, cold/warm caches, getter effects and struct-generic publication/repatch/cleanup
+have supporting diagnostic probes. Catalog/getter/review RED and final build/process/config/cleanup
+evidence is retained in local `discovery/listing/integration-root/verification.md`.
+Transformed consumer bodies and the remaining input/numeric/provider/automatic discovery/search/
+reveal obligations stay open. This integration is a component of S141, not full feature acceptance.

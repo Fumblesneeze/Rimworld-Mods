@@ -174,6 +174,18 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
   works. Unavailable native field shapes or exceeded snapshot budgets prevent the affected read;
   they do not exclude the mod from search or prevent ordinary settings access.
 
+#### Scenario: Read native rows below the current viewport
+- **WHEN** an admitted neutral read draws a bounded native listing with an offscreen option
+- **THEN** the option's label and literal help can be observed without moving the original viewport
+  or changing its value, and subsequent ordinary native scrolling and editing still work. During
+  that read the bounds getter does not invoke its scroll callback or populate/change its cache.
+
+#### Scenario: Getter callbacks can hide a read failure
+- **WHEN** a getter finalizer can suppress a callback exception before the read's final observer
+- **THEN** read admission is refused; an attempted scoped getter call fails before native getter
+  effects and leaves the read failed even if its caller catches the exception. Compatible void
+  observers and ordinary getter execution outside reads remain available.
+
 #### Scenario: Standard listing culling or a numeric method family changes
 - **WHEN** a hidden read uses the native unbounded-listing behavior, or a patch changes any
   published generic numeric listing variant after its discovery contract was captured

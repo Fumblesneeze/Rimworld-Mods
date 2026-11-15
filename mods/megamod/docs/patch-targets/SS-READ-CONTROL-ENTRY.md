@@ -34,6 +34,9 @@ refuse paired admission: their returned callback may share that state, and inspe
 execute them to guess otherwise. State-free concrete callbacks remain compatible; prefix-only
 guards do not consume finalizer/state guarantees. Mid-callback arbitrary repatching and unrelated
 foreign side effects remain explicit limits. No speculative replay of transpilers is performed.
+State-slot checks use effective HarmonyArgument bindings, including parameter/method/type aliases,
+without constructing attributes. A renamed reference to the acquired slot is still shared state;
+an unrelated declaring type's own private state remains eligible.
 
 ## Admission, failure, and diagnostics
 

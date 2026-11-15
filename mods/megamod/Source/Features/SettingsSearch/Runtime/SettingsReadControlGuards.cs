@@ -22,6 +22,10 @@ public sealed class SettingsReadControlGuards : IDisposable
     private readonly List<PatchCandidate> candidates = new();
     private readonly PatchGroup group;
     private bool initialized, disposed;
+    private (MethodInfo Target, SettingsListingBoundsAdmission.Preservation Contract)? listingPreservation;
+
+    internal SettingsListingBoundsAdmission.Preservation? ListingPreservationFor(MethodInfo method) =>
+        listingPreservation is { } pair && pair.Target == method ? pair.Contract : null;
 
     public SettingsReadControlGuards(Action<string> warning)
     {
@@ -199,6 +203,11 @@ public sealed class SettingsReadControlGuards : IDisposable
             return;
         }
         guards.Add(guard);
+        if (callbacks == typeof(ListingIntBuffer))
+            listingPreservation = (target!, new(
+                callbacks.GetMethod("Prefix", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly)!,
+                callbacks.GetMethod("Finalizer", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly)!,
+                () => initialized && !disposed && guard.Available));
         for (int index = 0; index < guard.Candidates.Count; index++)
         {
             var candidate = guard.Candidates[index];
