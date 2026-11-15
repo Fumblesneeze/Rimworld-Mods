@@ -44,6 +44,13 @@ state, nesting, exceptions, nullness and combined snapshot limits have supportin
 is under `discovery/listing/root/verification.md`. Listing bounds/generic semantic admission and
 the remaining all-mod discovery/search/reveal obligations keep D1–D3 and full S141 open.
 
+The following host component has 12 passing detached inventory checks and 28 passing Harmony
+checks for passive generic-family currentness and nullable listing control flow. Two independently
+identified control-flow defects have executable RED/GREEN regressions, paired with benign paths.
+See local `discovery/listing/proof-root/verification.md`. No getter patch or reader registration is
+added; derived/sequential draws, generic operands, effective wrappers, all 17 native consumers
+and the offscreen player workflow remain unverified. No D1–D3/full-feature task closes here.
+
 ## Selected query and discovery-contract batch
 
 - [ ] S141-Q1 Implement the detached terms/phrases/exclusions/field matching and readable Unicode normalization with focused nonzero RED/GREEN, preserving unfamiliar and duplicate page identities.

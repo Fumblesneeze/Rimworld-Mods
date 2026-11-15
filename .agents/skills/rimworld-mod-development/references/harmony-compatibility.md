@@ -15,6 +15,8 @@ Before coding, classify Harmony as either a design-time fallback because the ins
   that is the actual contract; do not assume a method's return preserves its input arguments.
 - Avoid transpilers unless no stable call boundary exists. If unavoidable, match structural landmarks, fail closed with a clear warning, and add a live compatibility probe for the exact installed game/mod version.
 - Keep patches idempotent and side-effect-free during discovery. Avoid hot-path allocations and recursive logging.
+- Put test patch acquisition inside the try whose finally removes its exact owner. A provider may
+  throw after partial publication; starting the try after Patch returns leaves that failure unowned.
 - Never touch Unity or Verse live state from network, timer, threaded-log, or worker callbacks. Queue it to the game main thread.
 
 If an eagerly loaded product assembly references Harmony types, declare `brrainz.harmony` as a required dependency and load it before the owning mod. The external compatibility mod remains optional and must not appear under hard dependencies. Default external-API integration to string/reflection lookup; permit a compile-time adapter only when a documented loader boundary and an absent-mod Unity smoke prove it is safe.
@@ -76,6 +78,10 @@ An observation-only hook should still require only the callable and execution fa
   Exercise the alternate incoming path through a real owned-patch fixture before calling it guarded.
   Pair a rejection with a compatible counterexample: a branch entering at the start of an intact
   producer chain is not a bypass when it still executes that complete chain.
+  Follow control flow through and after the first consumer: a later backedge can reach an unsafe
+  value read, and a block physically after the draw can execute a mutation before it. Bound the
+  protected lifetime by reachable paths, not instruction order or an absorbing first draw. Pair
+  these executable regressions with harmless post-draw work and reentry through the intact guard.
 - Distinguish the original body, actual incoming transpiler stream and final provider composition.
   On providers with inner patches, being last among ordinary transpilers does not establish that a
   required call/store survives. Check relevant final effects with the existing supported adapter;

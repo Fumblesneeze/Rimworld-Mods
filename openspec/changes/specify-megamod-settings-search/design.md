@@ -347,3 +347,31 @@ bounded original/composed semantic checks; do not replay foreign transpilers, en
 set of numeric types or call an empty publication inventory a semantic certificate. The artifact
 prototype under discovery/listing/semantics is uncompiled and unverified. These remain explicit
 implementation obligations alongside all 17 native null-to-draw consumer proofs.
+
+The first family inventory component is passive and scoped to a generic method definition on a
+concrete nongeneric declaring type. Under the existing provider composition/state monitors, retain
+all matching publication keys and immutable payload identities, including an open-definition key
+if present. Recheck the whole family; a newly published, removed or replaced member invalidates the
+old receipt permanently, while unrelated method publications do not. Currentness alone is never
+semantic admission. Bound inspection to 65,536 global publication entries, 256 matching family
+members and 4 MiB per consumed payload; exceeding a bound is an explicit unavailable capture,
+not a type/provider whitelist.
+Do not deserialize or execute foreign callbacks while collecting this inventory. Unknown method-key
+shapes, contention and malformed consumed publication state must not be interpreted as an empty
+verified family. Family receipt and original/composed body proof remain separate responsibilities.
+
+The retained provider's ordinary unpatch path republishes an entry with a newly serialized payload;
+it does not erase the key. Test capture-empty → patch → unpatch → first-currentness-check without
+an intermediate observation, so this history premise is exercised rather than inferred from an
+already latched failure. This is a contract of the inspected provider path, not a promise to
+recover history after arbitrary external mutation of its private dictionary. Detached inventory
+policy tests do not stand in for real provider publication/currentness tests.
+
+The nullable checker initially bounds an inspected body to 4,096 operations, at most 4,096 labels
+on one operation and 8,192 labels overall. It proves the exact receiver/getter/HasValue/Value/
+overlap slice and its draw argument relationship; control-flow checks must include later backedges
+and tail blocks that execute before drawing, rather than stopping at the first draw or relying on
+lexical instruction order. Preserve unrelated work and compatible paths while refusing unproved
+mutations. This original-instruction component still needs derived-rectangle/sequential-draw,
+generic operand, effective wrapper and all 17 actual native consumer integration before unculling
+can be registered. It does not itself confer a live or complete-reader acceptance claim.

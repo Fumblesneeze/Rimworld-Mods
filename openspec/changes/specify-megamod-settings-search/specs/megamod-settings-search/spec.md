@@ -174,6 +174,14 @@ do not claim forced preemption or transactional rollback of arbitrary callback i
   works. Unavailable native field shapes or exceeded snapshot budgets prevent the affected read;
   they do not exclude the mod from search or prevent ordinary settings access.
 
+#### Scenario: Standard listing culling or a numeric method family changes
+- **WHEN** a hidden read uses the native unbounded-listing behavior, or a patch changes any
+  published generic numeric listing variant after its discovery contract was captured
+- **THEN** only a proved null-to-draw relationship may be used for offscreen rows. A changed or
+  unproved relevant composition invalidates that capture, including newly published sibling
+  variants; a later refresh cannot revive an old result. Unrelated method changes do not revoke
+  the family proof, and ordinary page access remains available without a numeric-type whitelist.
+
 ### Requirement: SS-07 Common activation preserves independent browsing
 Settings search SHALL default on through one common GlobalAndSave Boolean in Interface/navigation, applying at NextDisplay with normal inheritance, dormant overrides and main-menu guards.
 Effective off cancels further discovery and hides option search without changing foreign settings,

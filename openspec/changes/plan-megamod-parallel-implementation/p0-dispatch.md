@@ -1160,3 +1160,24 @@ The semantic lane released a research/prototype handoff under discovery/listing/
 generic family publication currentness and original/composed-body handling of owned finalizer
 exception regions are concrete dependencies. No nullable getter patch is applied from that draft;
 all 17 native consumer proofs and the actual offscreen workflow remain outstanding.
+
+From c2bcab4, the next disjoint implementation batch is the listing nullable semantic checker and
+passive generic-family publication inventory. `settings_family_publication` owns only
+Patching/Harmony/HarmonyPublication.cs and Patching/HarmonyPublicationFamilyTests.cs in the Harmony
+test project. `settings_bounds_checker` owns new SettingsSearch/Harmony/SettingsListingBoundsSemantics.cs
+and its matching Harmony fixture. Both prepare their tracer tests and inert boundaries first;
+root alone runs the combined focused RED/GREEN and owns shared output, specs, native integration
+and acceptance. Neither lane installs, launches or commits. These components do not themselves
+register a listing getter patch or close native semantic/discovery obligations.
+
+The family lease additionally includes Patching/Core/PublishedMethodFamilyInventory.cs and its
+matching Megamod.Unit/Patching fixture for detached inventory/budget policy. Real publication and
+monitor behavior remains in the Harmony fixture; synthetic inventory inputs never mutate provider
+state or pretend a mod is loaded. Root retains serialized test-output ownership for both tiers.
+
+This host batch reaches 12/12 detached inventory and 28/28 Harmony checks. Family review's test
+cleanup finding and nullable review's two executable control-flow findings are fixed; final
+re-review/build/package evidence belongs to root's local listing/proof-root ledger. Both leases
+remain confined to the components above. The next integration still owes derived/sequential row
+proofs, generic operands, effective wrappers, all 17 native consumer contracts and the offscreen
+player workflow. A host checkpoint is not listing unculling or all-mod search acceptance.

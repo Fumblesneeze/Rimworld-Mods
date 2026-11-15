@@ -178,3 +178,16 @@ supporting diagnostics. Both review findings concerned missing test distinctions
 the empty-baseline prevention is saved to the testing skill. Build/package/cleanup/config evidence
 is under local `discovery/listing/root/verification.md`. Listing unculling, generic consumer proof,
 remaining input/numeric coverage and complete provider/reader/search/reveal integration stay open.
+
+The next host component adds passive generic-family publication inventory and an original-body
+nullable listing proof. Inventory includes every published variant of the selected declaration,
+without a numeric-type list; relevant publication changes permanently invalidate its receipt.
+Currentness is separate from semantic admission. The checker follows the exact null/overlap draw
+relationship, including post-draw backedges and tail blocks that can modify a row before drawing.
+
+Focused RED/GREEN covers 12 detached inventory and 28 Harmony checks, with executable regressions
+for both control-flow review findings and compatible-path controls. Exact runs and review evidence
+are in local `discovery/listing/proof-root/verification.md`. No getter patch or production reader
+registration is added. Derived rectangles, sequential draws, generic operands, effective wrappers
+and all 17 native consumer proofs remain outstanding, alongside the offscreen player workflow.
+This host checkpoint does not accept listing unculling or full S141.

@@ -132,6 +132,58 @@ internal static class HarmonyPublication
 
     internal readonly record struct Operation(OpCode Code, object? Operand);
 
+    // Passive whole-family receipt only; it does not approve any original or composed body.
+    internal sealed class FamilyIdentity
+    {
+        private readonly MethodInfo definition;
+        private readonly PublishedMethodFamilyInventory inventory;
+        private int invalidated;
+        internal IReadOnlyList<MethodInfo> PublishedMembers => inventory.Members;
+
+        internal FamilyIdentity(MethodInfo definition, PublishedMethodFamilyInventory inventory)
+        {
+            this.definition = definition;
+            this.inventory = inventory;
+        }
+
+        internal bool IsCurrent()
+        {
+            if (Volatile.Read(ref invalidated) != 0) return false;
+            bool current = TryReadFamily(definition, out var now) && inventory.SamePublications(now!);
+            if (!current) Interlocked.Exchange(ref invalidated, 1);
+            // A refused receipt cannot be revived by a concurrent successful check.
+            return current && Volatile.Read(ref invalidated) == 0;
+        }
+    }
+
+    internal static bool TryCaptureFamily(MethodInfo definition, out FamilyIdentity? identity)
+    {
+        identity = null;
+        if (!TryReadFamily(definition, out var inventory)) return false;
+        identity = new FamilyIdentity(definition, inventory!);
+        return true;
+    }
+
+    private static bool TryReadFamily(MethodInfo definition, out PublishedMethodFamilyInventory? inventory)
+    {
+        inventory = null;
+        try
+        {
+            object gate = Gate;
+            if (Monitor.IsEntered(gate) || !Monitor.TryEnter(gate)) return false;
+            try
+            {
+                if (StateField!.GetValue(null) is not Dictionary<MethodBase, byte[]> state ||
+                    state.GetType() != typeof(Dictionary<MethodBase, byte[]>) ||
+                    Monitor.IsEntered(state) || !Monitor.TryEnter(state)) return false;
+                try { return PublishedMethodFamilyInventory.TryCreate(definition, state, out inventory); }
+                finally { Monitor.Exit(state); }
+            }
+            finally { Monitor.Exit(gate); }
+        }
+        catch (Exception) { return false; }
+    }
+
     internal sealed class Identity
     {
         private readonly MethodBase target;
