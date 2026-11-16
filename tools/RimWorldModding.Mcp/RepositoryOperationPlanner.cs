@@ -103,7 +103,8 @@ public static class RepositoryOperationPlanner
         string suite,
         string? filter,
         string configuration,
-        string? gameRoot = null)
+        string? gameRoot = null,
+        string? harmonyAssemblyPath = null)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         RequireLiteral(suite, "suite");
@@ -127,6 +128,15 @@ public static class RepositoryOperationPlanner
         {
             arguments.Add("-RimWorldPath");
             arguments.Add(GameInstallation.Inspect(gameRoot).Root);
+        }
+        if (harmonyAssemblyPath is not null)
+        {
+            if (!Path.IsPathFullyQualified(harmonyAssemblyPath) ||
+                !harmonyAssemblyPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
+                !File.Exists(harmonyAssemblyPath))
+                throw new ArgumentException("Harmony provider must be an existing absolute DLL path.", nameof(harmonyAssemblyPath));
+            arguments.Add("-HarmonyAssemblyPath");
+            arguments.Add(Path.GetFullPath(harmonyAssemblyPath));
         }
         return new AdapterCommand(
             "test_run",

@@ -135,7 +135,8 @@ public sealed class OperationRegistry
                         RequiredString(arguments, "suite"),
                         OptionalString(arguments, "filter"),
                         OptionalString(arguments, "configuration") ?? "Release",
-                        OptionalString(arguments, "gameRoot")),
+                        OptionalString(arguments, "gameRoot"),
+                        OptionalString(arguments, "harmonyAssemblyPath")),
                     cancellationToken)),
             Register(
                 "package_validate",

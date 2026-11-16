@@ -67,9 +67,10 @@ public static class McpTools
         [Description("Optional exact dotnet test filter.")] string? filter,
         [Description("Build configuration: Release or Debug.")] string? configuration,
         [Description("Optional exact installed game root used by compiled fixtures.")] string? gameRoot,
+        [Description("Optional absolute existing Harmony DLL path; the test adapter validates and records its assembly identity.")] string? harmonyAssemblyPath,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
-            "test_run", JsonSerializer.SerializeToElement(new { suite, filter, configuration, gameRoot }), cancellationToken));
+            "test_run", JsonSerializer.SerializeToElement(new { suite, filter, configuration, gameRoot, harmonyAssemblyPath }), cancellationToken));
 
     [McpServerTool(Name = "package_validate"), Description("Validate and hash one universal profile's exact allowlisted product package.")]
     public static async Task<string> ValidatePackage(

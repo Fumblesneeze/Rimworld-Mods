@@ -57,6 +57,26 @@ public sealed class RepositoryOperationTests
         Assert.That(result.StandardOutput, Does.Contain("0 failed"));
     }
 
+    [Test]
+    public void TestPlan_PreservesAnExplicitHarmonyProviderPath()
+    {
+        var path = Path.Combine(_root, "provider with spaces", "0Harmony.dll");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, "fixture; assembly validation belongs to the adapter");
+        var plan = RepositoryOperationPlanner.TestRun(_root, "GuestBedGizmo.Harmony", null, "Release",
+            harmonyAssemblyPath: path);
+        Assert.That(plan.Arguments.TakeLast(2), Is.EqualTo(new[] { "-HarmonyAssemblyPath", path }));
+    }
+
+    [TestCase("relative/0Harmony.dll")]
+    [TestCase("missing")]
+    public void TestPlan_RejectsInvalidHarmonyProviderPath(string value)
+    {
+        var path = value == "missing" ? Path.Combine(_root, "missing", "0Harmony.dll") : value;
+        Assert.Throws<ArgumentException>(() => RepositoryOperationPlanner.TestRun(_root, "GuestBedGizmo.Harmony",
+            null, "Release", harmonyAssemblyPath: path));
+    }
+
     [TestCase("Guest Bed")]
     [TestCase("../outside")]
     [TestCase("x; Remove-Item C:\\")]

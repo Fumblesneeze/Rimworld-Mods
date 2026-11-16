@@ -8,5 +8,6 @@
 - [x] 3.1 Independent review, affected host checks, OpenSpec validation and clean builds.
 - [x] 3.2 Exercise both target runners and retain exact input/build/workflow evidence.
 - [x] 3.3 Publish the accepted combined package and verify the separate page update.
+- [x] 3.4 Expose the existing host-test Harmony path override through typed MCP/CLI arguments and verify it with the Guest Bed Gizmo host suite.
 
 Both rolling major/minor caches and cached login were exercised. The accepted 1.6/1.7 bundle and separate page update are verified on Workshop item `3782589902`. Local ignored verification ledger: `artifacts/Releases/fumblesneeze.immersivechefs/acceptance/20261116-split-matrix/evidence.md`. The interrupted publisher-run cleanup exception remains explicitly open in `split-workshop-publication/tasks.md`.

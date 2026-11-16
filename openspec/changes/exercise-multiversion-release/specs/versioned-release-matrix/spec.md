@@ -26,6 +26,10 @@ Repository tooling RimWorldModding.Mcp SHALL select games solely by major/minor,
 ### Requirement: A mod declares its matrix once
 The release profile SHALL name supported compile targets and a development target. Builds SHALL isolate intermediate/output/reference roots per target and merge exactly one product assembly for every declared compatibility folder. Generated About versions, package validation and Workshop version tags SHALL agree with that declaration.
 
+#### Scenario: Host verification selects the installed Harmony provider
+- **WHEN** the selected game target uses a version-specific Harmony directory and the legacy Current directory is absent
+- **THEN** typed `test_run` accepts an explicit existing absolute Harmony DLL path, forwards it as one argument to its owned adapter, and retains the adapter's assembly-identity evidence; missing or relative paths are rejected before execution
+
 #### Scenario: Both target builds succeed
 - **WHEN** a profile declares 1.6 and 1.7 and each independent build succeeds
 - **THEN** the combined allowlisted package contains both version folders and metadata lists exactly those versions
