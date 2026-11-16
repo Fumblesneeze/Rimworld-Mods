@@ -18,7 +18,7 @@ public sealed class SteamGameTargetsTests
     }
 
     [Test]
-    public void Exact_target_reuses_approved_files_and_refuses_corruption()
+    public void Target_accepts_game_updates_within_major_minor_without_hash_or_manifest_pins()
     {
         var root = TestRepository.FindRoot();
         var cache = Path.Combine(Path.GetTempPath(), "steam-target-" + Guid.NewGuid().ToString("N"));
@@ -33,16 +33,14 @@ public sealed class SteamGameTargetsTests
             File.WriteAllText(Path.Combine(game, "RimWorldWin64.exe"), "fixture only");
             File.WriteAllText(Path.Combine(managed, "Assembly-CSharp.dll"), "fixture only");
             File.WriteAllText(Path.Combine(managed, "UnityEngine.CoreModule.dll"), "fixture only");
-            File.WriteAllText(Path.Combine(game, ".DepotDownloader", "294104_123456.manifest"), "exact manifest");
-            var target = SteamGameTargets.Snapshot(root, "rw16-fixture", cache, game);
+            var target = new SteamGameTarget("1.6", "1.6", "game", "version-1.6");
             Assert.That(SteamGameTargets.Validate(root, target, cache).Root, Is.EqualTo(game));
-            var injected = Path.Combine(managed, "Undeclared.dll");
-            File.WriteAllText(injected, "unapproved compiler/runtime input");
-            Assert.That(() => SteamGameTargets.Validate(root, target, cache), Throws.InvalidOperationException.With.Message.Contains("inventory"));
-            File.Delete(injected);
-            File.WriteAllText(Path.Combine(managed, "Assembly-CSharp.dll"), "corrupted");
-            Assert.That(() => SteamGameTargets.Validate(root, target, cache),
-                Throws.InvalidOperationException.With.Message.Contains("changed"));
+            File.WriteAllText(Path.Combine(managed, "NewEngineAssembly.dll"), "new Steam update");
+            File.WriteAllText(Path.Combine(managed, "Assembly-CSharp.dll"), "changed Steam update");
+            File.WriteAllText(Path.Combine(game, "Version.txt"), "1.6.9999 rev12345");
+            Assert.That(SteamGameTargets.Validate(root, target, cache).MajorVersion, Is.EqualTo("1.6"));
+            Assert.That(() => SteamGameTargets.Validate(root, target with { Id = "1.7", Version = "1.7", Branch = "unstable" }, cache),
+                Throws.InvalidOperationException.With.Message.Contains("major/minor"));
         }
         finally { Directory.Delete(cache, true); }
     }

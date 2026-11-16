@@ -6,10 +6,6 @@
   "author": "Fumblesneeze",
   "distributionKind": "Product",
   "rimWorldVersion": "1.7",
-  "rimWorldBuild": "1.7.5011 rev24",
-  "rimWorldRuntimeBuild": "1.7.5011 rev24",
-  "steamBuildId": "26690443",
-  "managedAssemblySha256": "7FBCE7A5B2A26CAC500150D3CFF408CDBBD8F1797456BC741252E44C2D27BDC4",
   "steamAppId": 294100,
   "steamUserId": "76561198077136238",
   "publishedFileId": "3782589902",
@@ -41,8 +37,8 @@
   "previousChangeNote": "Colonists now share cutlery stacks correctly, look near their dining spot, and use clean cutlery already in their inventory.",
   "changeNote": "Adds RimWorld 1.7 beta support alongside RimWorld 1.6 in one package. Each version uses its own compiled mod.",
   "supportedTargets": [
-    "rw-1.6.4871-win64",
-    "rw-1.7.5011-win64"
+    "1.6",
+    "1.7"
   ],
-  "developmentTarget": "rw-1.7.5011-win64"
+  "developmentTarget": "1.7"
 }

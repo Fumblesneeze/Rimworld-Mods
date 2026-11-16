@@ -1,19 +1,27 @@
 ## ADDED Requirements
 
-### Requirement: Exact Steam targets live outside the repository
-Repository tooling `RimWorldModding.Mcp` SHALL expose typed acquisition using pinned DepotDownloader, external cache paths, bounded owned processes and no credential-bearing durable repository output. Branch discovery SHALL be onboarding only; publication builds SHALL consume reviewed exact depot/file identities.
+### Requirement: Game targets use major and minor only
+Repository tooling RimWorldModding.Mcp SHALL select games solely by major/minor, such as 1.6 and 1.7. Catalogs, profiles and download arguments SHALL reject patch/revision numbers, Steam build IDs, depot-manifest IDs and game-file hash pins. Downloading SHALL use the declared rolling branch, external owned cache paths, bounded processes and credential-free repository evidence. Observed full versions MAY be retained in run evidence but MUST NOT gate builds, launches or publication.
 
 #### Scenario: Agent acquires two game versions
 - **WHEN** the owning user authenticates and the agent requests 1.6 and 1.7 in separate external directories
-- **THEN** the existing Steam installation remains intact and each acquired target records its exact manifests, game version and approved hashes
+- **THEN** each rolling branch downloads into its owned cache, remembered login is reused, and the normal Steam installation remains intact
 
-#### Scenario: Target cache changed
-- **WHEN** a file or manifest differs from a pinned target
-- **THEN** the build refuses that cache rather than falling back to another installation
+#### Scenario: Steam updates a supported line
+- **WHEN** game files, patch numbers or revision numbers change while the major/minor remains the same
+- **THEN** validation accepts the cache without a catalog hash or manifest update and an explicit download can refresh it
 
-#### Scenario: Additional game input
-- **WHEN** an undeclared file appears outside the explicit Mods, downloader-state, marker and inventory paths
-- **THEN** exact-target validation rejects the changed file set even if all previously approved hashes still match
+#### Scenario: Version file differs from live runtime
+- **WHEN** Version.txt and the live Gateway report different patches or revisions within the same major/minor
+- **THEN** launch validation accepts them and records observations without creating a runtime revision pin
+
+#### Scenario: Forbidden game pin
+- **WHEN** a caller adds a full-version, runtime-revision, Steam-build, depot-manifest or game-hash field
+- **THEN** central operation admission and strict schemas reject it before external effects, including non-download operations
+
+#### Scenario: Wrong major or minor
+- **WHEN** the selected cache or live runtime has a different major/minor
+- **THEN** validation rejects it without falling back to the normal installation
 
 ### Requirement: A mod declares its matrix once
 The release profile SHALL name supported compile targets and a development target. Builds SHALL isolate intermediate/output/reference roots per target and merge exactly one product assembly for every declared compatibility folder. Generated About versions, package validation and Workshop version tags SHALL agree with that declaration.
@@ -34,9 +42,9 @@ The release profile SHALL name supported compile targets and a development targe
 - **WHEN** both target native workflows have been reviewed and package upload is requested
 - **THEN** publication uploads the exact combined package without compiling against the publisher runtime
 
-#### Scenario: Exact target native verification
+#### Scenario: Major/minor target native verification
 - **WHEN** the agent requests `release_target_test` with a declared target and explicit workflow IDs
-- **THEN** the runner validates the exact external cache, installs the frozen combined candidate, compiles only the test/Gateway infrastructure, and retains unchanged product hashes with native action/result evidence
+- **THEN** the runner validates the owned major/minor external cache, installs the frozen combined candidate, compiles only the test/Gateway infrastructure, and retains unchanged product hashes with native action/result evidence
 
 #### Scenario: Wrong product verification
 - **WHEN** a selected project has another owner or a selected native group omits the requested product

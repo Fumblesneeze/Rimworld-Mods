@@ -69,7 +69,7 @@ public sealed class ReleaseMatrixBuildTests
         var targets = SteamGameTargets.LoadCatalog(root);
         var run = Path.Combine(root, "artifacts", "matrix-command-fixture");
         var commands = targets.Select(target => ReleaseMatrixBuild.PlanTarget(root, profile, target,
-            new GameInstallation(Path.Combine("F:/cache", target.Id), target.FullVersion, target.Version,
+            new GameInstallation(Path.Combine("F:/cache", target.Id), target.Version + ".9999 rev123", target.Version,
                 "unused.exe", Path.Combine("F:/cache", target.Id, "refs"), target.Version == "1.6" ? "net480" : "net10.0"), run, "Release")).ToArray();
         foreach (var property in new[] { "BaseIntermediateOutputPath", "MSBuildProjectExtensionsPath", "OutputFolder", "RimWorldPath", "RimWorldManagedPath" })
         {

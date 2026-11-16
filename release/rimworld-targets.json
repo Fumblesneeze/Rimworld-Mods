@@ -1,73 +1,17 @@
 {
-  "schema": "RimWorldSteamTargets/v1",
+  "schema": "RimWorldGameTargets/v2",
   "targets": [
     {
-      "id": "rw-1.6.4871-win64",
+      "id": "1.6",
       "version": "1.6",
-      "fullVersion": "1.6.4871 rev590",
       "cacheDirectory": "onboarding/1.6-20261116",
-      "inventorySha256": "7DB310C6D05DB634545009AAD27721924FBC2D32E48D74A1E1AF3BFA343A63BC",
-      "depots": [
-        {
-          "depotId": "1149644",
-          "manifestId": "7712315113955907793",
-          "sha256": "B91930D664CF6B754F05DAC2097B2F99049D5841216DEC9D68B973046CF082C3"
-        },
-        {
-          "depotId": "294104",
-          "manifestId": "3464668865934009251",
-          "sha256": "0693D082C51946B116EEFECC4A96A789A9C6AFE686D355F8A152F012E705FA79"
-        },
-        {
-          "depotId": "294106",
-          "manifestId": "7975096610581311259",
-          "sha256": "F265EBD3E70A819F2C2A3D4903D2034591EC0A4CF9058EB606D8E5E01EFB9B6A"
-        },
-        {
-          "depotId": "294114",
-          "manifestId": "3762571110834931121",
-          "sha256": "94A2F5532DAF80F6E788F0511C6AEE7D0EFE3488BCEAB169B959109FF3754F59"
-        },
-        {
-          "depotId": "367684",
-          "manifestId": "70831690190040109",
-          "sha256": "BEFF7B97212D24A986FAEA8A22CDA2D2CE68F25C7D860C798030D3C1167BC29F"
-        }
-      ]
+      "branch": "version-1.6"
     },
     {
-      "id": "rw-1.7.5011-win64",
+      "id": "1.7",
       "version": "1.7",
-      "fullVersion": "1.7.5011 rev24",
       "cacheDirectory": "onboarding/1.7-20261116",
-      "inventorySha256": "D72FCCFF470CFABCB7DDCA0081D9E0425BCC76BA55765A0D1130FEB35BC2F318",
-      "depots": [
-        {
-          "depotId": "1149644",
-          "manifestId": "4139238380139049454",
-          "sha256": "386F067731D4C191D2259F6D875E77A58F4A89042B9628235558F7B0C1079F39"
-        },
-        {
-          "depotId": "294104",
-          "manifestId": "4109411158423507562",
-          "sha256": "F1E604059F6D852B8FBC231BDF59887874B158320B919DC129B2BC4EA684EC62"
-        },
-        {
-          "depotId": "294106",
-          "manifestId": "344655858083780858",
-          "sha256": "0C9B7B43EBFA1A872D7C2D439AA966B5C6025DBBE502E5B561E1B1C008B06745"
-        },
-        {
-          "depotId": "294114",
-          "manifestId": "3318062465645801250",
-          "sha256": "464325DA7624768F6620C600535C17DA4C72E7B19DD4D2B20284EC28AEFF97E7"
-        },
-        {
-          "depotId": "367684",
-          "manifestId": "3958002269948653984",
-          "sha256": "2D5AC6D26D8FC05DE9BC18070C859A664CA159EBED3D7623289EC81C57392E90"
-        }
-      ]
+      "branch": "unstable"
     }
   ]
 }

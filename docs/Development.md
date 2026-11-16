@@ -1,19 +1,12 @@
 # Development workflow
 
-## Exact multi-version releases
+## Major/minor release targets
 
-`release/rimworld-targets.json` pins approved game targets by version, depot manifests and external
-file inventory hashes. Game files stay outside Git in `F:\RimWorldVersions` (override with
-`RIMWORLD_RELEASE_CACHE` or the operations' `cacheRoot`). The ordinary Steam installation is unchanged.
+release/rimworld-targets.json declares only major/minor IDs, owned external cache paths and rolling Steam branches. Game content stays in F:\RimWorldVersions (override with RIMWORLD_RELEASE_CACHE or cacheRoot).
 
-Use the typed `game_depot_download` operation with the pinned DepotDownloader executable, a separate
-`targetDirectory`, `branch`, and `accountName`. For initial authentication set `interactiveLogin:true`
-and enter the password/Steam Guard code directly in its console. It always uses `-remember-password`:
-the resulting token lives in Windows per-user isolated storage, outside this repository. Subsequent
-downloads use `interactiveLogin:false`; a revoked or expired token requires signing in again.
-Branch downloads are discovery only. Use `game_target_snapshot` to inventory the download, review and
-commit its exact target in the catalog, and `game_target_validate` to verify reuse. Exact depot requests
-must supply both `depotId` and `manifestId`. Never use a normal Steam or Workshop directory as a cache.
+Only major/minor RimWorld selectors are allowed, such as 1.6 and 1.7. Patch/revision numbers, Steam build IDs, depot manifest IDs and game-file hashes must never gate acquisition, builds, runs or publication. Strict catalog/profile/operation validation rejects those fields. Rolling branch downloads can refresh the same owned external cache. Full observed game details may be retained as evidence only. Tool/dependency versions and immutable mod package/source/image hashes remain separate concerns.
+
+Use game_depot_download with downloaderPath, targetDirectory, targetId (1.6 or 1.7), and accountName. It resolves the rolling version-1.6 or unstable branch and can refresh the same owned cache. For initial authentication use interactiveLogin:true and enter password/Steam Guard directly in the console. The -remember-password option stores the token in Windows per-user isolated storage outside the repo; subsequent downloads use interactiveLogin:false. A revoked or expired token requires signing in again. game_target_validate checks ownership, required layout and major/minor compatibility. Never use Steam-managed or Workshop directories.
 
 A profile opts in with `supportedTargets` and `developmentTarget`, version-neutral `tags`, and
 `{version}/...` package includes. `mod_build` or `release_matrix_build` compiles each target with
@@ -25,7 +18,7 @@ Run the exact native workflows against each frozen target before publishing, for
 
 ```powershell
 dotnet run --project tools/RimWorldModding.Mcp -- tool call release_target_test `
-  --arguments '{"packageId":"fumblesneeze.immersivechefs","targetId":"rw-1.7.5011-win64","projectPath":"tests/ImmersiveChefs.EndToEndTests/ImmersiveChefs.EndToEndTests.csproj","testIds":["immersive-chefs.dirty-cookware-cooking-workflow","immersive-chefs.dining-place-cutlery-acquisition"],"timeoutSeconds":1200,"dryRun":false}' -o json
+  --arguments '{"packageId":"fumblesneeze.immersivechefs","targetId":"1.7","projectPath":"tests/ImmersiveChefs.EndToEndTests/ImmersiveChefs.EndToEndTests.csproj","testIds":["immersive-chefs.dirty-cookware-cooking-workflow","immersive-chefs.dining-place-cutlery-acquisition"],"timeoutSeconds":1200,"dryRun":false}' -o json
 ```
 
 Use `dryRun:true` first. The runner installs the frozen bundle into the selected cached game's Mods

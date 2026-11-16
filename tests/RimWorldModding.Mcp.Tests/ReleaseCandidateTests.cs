@@ -218,7 +218,6 @@ public sealed class ReleaseCandidateTests
         var profile = new ReleaseProfile(
             "RimWorldModRelease/v1", Path.Combine(root, "release.json"), project,
             "example.mod", "Example", "Fumblesneeze", "Product", "1.6",
-            "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
             294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], [], [], CustomAssemblyReferences(),
             "mod_build", "presentation_render", package, ["About/", "1.6/"], description,
             preview, null, "Initial release.");
@@ -237,7 +236,7 @@ public sealed class ReleaseCandidateTests
             var bundled = ReleaseCandidateBuilder.Inspect(package, profile.PackageInclude);
             Assert.That(
                 Assert.Throws<InvalidOperationException>(() => ReleasePackageValidator.Validate(profile, bundled))!.Message,
-                Does.Contain("exactly its one declared product assembly"));
+                Does.Contain("exactly its own assembly in every declared version folder"));
             File.Delete(Path.Combine(package, "1.6", "Assemblies", "0Harmony.dll"));
 
             var about = Path.Combine(package, "About", "About.xml");
@@ -284,7 +283,6 @@ public sealed class ReleaseCandidateTests
         var profile = new ReleaseProfile(
             "RimWorldModRelease/v1", Path.Combine(root, "release.json"), project,
             "example.mod", "Example", "Fumblesneeze", "Product", "1.6",
-            "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
             294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["3509486825"], [], CustomAssemblyReferences(),
             "mod_build", "presentation_render", package, ["About/", "1.6/"], description,
             preview, null, "Initial release.");

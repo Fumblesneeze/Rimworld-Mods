@@ -6,23 +6,28 @@
   "author": "Fumblesneeze",
   "distributionKind": "Product",
   "rimWorldVersion": "1.7",
-  "rimWorldBuild": "1.7.5005 rev1082",
-  "rimWorldRuntimeBuild": "1.7.5005 rev1082",
-  "steamBuildId": "26571351",
-  "managedAssemblySha256": "82387F78262461E53BB06A67C3945912B876D1FDB07235122BBB6E59D073F125",
   "steamAppId": 294100,
   "steamUserId": "76561198077136238",
   "allowFirstPublication": true,
   "visibility": "Private",
-  "tags": ["Mod", "1.7"],
-  "requiredWorkshopItems": ["2009463077"],
+  "tags": [
+    "Mod",
+    "1.7"
+  ],
+  "requiredWorkshopItems": [
+    "2009463077"
+  ],
   "requiredDlcAppIds": [],
   "hardRuntimeAssemblyReferences": [],
   "workshopLinks": [],
   "buildOperation": "mod_build",
   "presentationOperation": "presentation_render",
   "packageSource": "artifacts/Mods/fumblesneeze.megamod",
-  "packageInclude": ["About/About.xml", "1.7/Assemblies/Megamod.dll", "1.7/Languages/"],
+  "packageInclude": [
+    "About/About.xml",
+    "1.7/Assemblies/Megamod.dll",
+    "1.7/Languages/"
+  ],
   "description": "workshop/description.bbcode.txt",
   "preview": "workshop/preview.svg",
   "changeNote": "Development scaffold only. No gameplay features or replacements are implemented; not approved for publication."

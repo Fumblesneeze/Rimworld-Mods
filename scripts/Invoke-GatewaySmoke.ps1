@@ -6211,8 +6211,10 @@ try {
         -ExpectedProcessStartUtc $launchedProcessStartUtc
 
     $baseUrl = [string]$manifest.baseUrl
-    if (([string]$manifest.gameVersion).Trim() -cne $rimWorldVersion.Trim()) {
-        throw "Configured RimWorld '$rimWorldVersion' differs from live Gateway '$($manifest.gameVersion)'."
+    $liveMajorMinor = [regex]::Match(([string]$manifest.gameVersion).Trim(), '^1\.[67](?=[.\s]|$)').Value
+    $configuredMajorMinor = [regex]::Match($rimWorldVersion.Trim(), '^1\.[67](?=[.\s]|$)').Value
+    if ([string]::IsNullOrEmpty($liveMajorMinor) -or $liveMajorMinor -cne $configuredMajorMinor) {
+        throw "Configured RimWorld major/minor $configuredMajorMinor differs from live Gateway $liveMajorMinor."
     }
     $unauthorized = Invoke-TrackedGatewayRequest `
         -Method 'GET' `

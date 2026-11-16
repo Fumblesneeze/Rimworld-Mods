@@ -305,6 +305,18 @@ public sealed class PerformanceBaselineTests
     }
 
     [Test]
+    public void Patch_and_revision_updates_remain_compatible_with_a_baseline()
+    {
+        var baseline = Snapshot("accepted", Measurement(100d));
+        var current = Snapshot("current", Measurement(100d));
+        baseline.Cases[0].Compatibility.GameVersion = "1.6.4871 rev590";
+        current.Cases[0].Compatibility.GameVersion = "1.6.9999 rev12345";
+        var result = PerformanceBaselineComparer.Compare(current, [baseline], Policy(), false);
+        Assert.That(result.Passed, Is.True);
+        Assert.That(result.Comparisons.Single().ThresholdsApplied, Is.True);
+    }
+
+    [Test]
     public void Cross_version_identity_drift_is_informational_only_when_explicitly_requested()
     {
         var baseline = Snapshot("accepted", Measurement(100d));
@@ -530,7 +542,7 @@ public sealed class PerformanceBaselineTests
             value => value.GroupId = "other-group",
             value => value.WorkloadVersion = "other-workload",
             value => value.ActivePackageIds = ["brrainz.harmony", "ludeon.rimworld", "astryl.circinus", "optional.mod", "fumblesneeze.rimworlddevgateway"],
-            value => value.GameVersion = "1.6.other",
+            value => value.GameVersion = "1.7",
             value => value.ProductAssemblyIdentity = "other-product",
             value => value.TestAssemblyIdentity = "other-tests",
             value => value.CircinusAssemblyIdentity = "other-circinus",

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace RimWorldModding.Mcp;
 
-/// <summary>External Steam onboarding; branch discovery is not a release target approval.</summary>
+/// <summary>Steam acquisition from rolling major/minor branches into an owned external cache.</summary>
 internal static class SteamDepotAcquisition
 {
     // Official 3.4.0 Windows x64 ZIP: 41C9E9F0DF54B3AD02E67A11726756E5C73283BD7C2E1B04ACFA5AE4C2ED3767.
@@ -12,8 +12,8 @@ internal static class SteamDepotAcquisition
     internal const string DownloaderSha256 = "6281279EFCE8F1E20DB9532A58E42382F81AFB9E3827A8B965FFCB43FBE4531F";
 
     public static async Task<AdapterOperationResult> DownloadAsync(string repositoryRoot, string downloaderPath,
-        string targetDirectory, string branch, string? depotId, string? manifestId, bool interactiveLogin,
-        string? accountName, bool manifestOnly, CancellationToken cancellationToken)
+        string targetDirectory, SteamGameTarget gameTarget, bool interactiveLogin,
+        string? accountName, CancellationToken cancellationToken)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         var target = Path.GetFullPath(targetDirectory);
@@ -21,17 +21,13 @@ internal static class SteamDepotAcquisition
         RequireExternal(root, target);
         RequireExternal(root, executable);
         ValidateOwnedTarget(target);
-        if (!Regex.IsMatch(branch, "^[a-zA-Z0-9._-]{1,64}$") ||
-            (depotId is null) != (manifestId is null) ||
-            depotId is not null && (!uint.TryParse(depotId, out var depot) || depot == 0 ||
-                !ulong.TryParse(manifestId, out var manifest) || manifest == 0))
-            throw new ArgumentException("Require a safe branch and either no depot selection or one exact nonzero depot/manifest pair.");
+        SteamGameTargets.ValidateDeclaration(gameTarget);
         if (!File.Exists(executable) || ReleaseCandidateBuilder.Hash(executable) != DownloaderSha256)
             throw new ArgumentException("Downloader must be the pinned official DepotDownloader 3.4.0 Windows x64 executable.");
         if ((!interactiveLogin || accountName is not null) && (string.IsNullOrWhiteSpace(accountName) || !Regex.IsMatch(accountName, "^[a-zA-Z0-9_]{1,64}$")))
             throw new ArgumentException("Cached authentication requires the Steam account name; use interactiveLogin for QR authentication.");
-        if (File.Exists(Path.Combine(target, "Version.txt")) && depotId is null)
-            throw new ArgumentException("Branch onboarding requires a fresh directory; existing installations require exact depot/manifest selection.");
+        if (File.Exists(Path.Combine(target, "Version.txt")) && GameInstallation.Inspect(target).MajorVersion != gameTarget.Version)
+            throw new ArgumentException("Existing cache belongs to a different major/minor version.");
         Directory.CreateDirectory(target);
         var marker = Path.Combine(target, ".rimworld-release-cache");
         if (!File.Exists(marker)) DurableFile.WriteAllText(marker, "RimWorldSteamCache/v1\n" + target);
@@ -53,12 +49,9 @@ internal static class SteamDepotAcquisition
             RedirectStandardError = !interactiveLogin,
             RedirectStandardInput = !interactiveLogin
         };
-        foreach (var argument in new[] { "-app", "294100", "-branch", branch, "-os", "windows", "-osarch", "64",
+        foreach (var argument in new[] { "-app", "294100", "-branch", gameTarget.Branch, "-os", "windows", "-osarch", "64",
                      "-dir", target, "-validate", "-loginid", "16417001", "-remember-password" })
             start.ArgumentList.Add(argument);
-        if (depotId is not null)
-            foreach (var argument in new[] { "-depot", depotId, "-manifest", manifestId! }) start.ArgumentList.Add(argument);
-        if (manifestOnly) start.ArgumentList.Add("-manifest-only");
         if (interactiveLogin && accountName is null) start.ArgumentList.Add("-qr");
         else
         {
@@ -88,19 +81,16 @@ internal static class SteamDepotAcquisition
         if (stdout is not null) _ = await stdout;
         if (stderr is not null) _ = await stderr;
         if (process.ExitCode != 0)
-            throw new InvalidOperationException($"DepotDownloader exited with {process.ExitCode}; inspect the interactive console or retry authentication, not a different manifest.");
-        var manifests = Directory.GetFiles(Path.Combine(target, ".DepotDownloader"), "*.manifest")
-            .Select(path => new { file = Path.GetFileName(path), sha256 = ReleaseCandidateBuilder.Hash(path) })
-            .OrderBy(item => item.file, StringComparer.Ordinal).ToArray();
-        if (manifests.Length == 0 || depotId is not null && !manifests.Any(item => item.file == $"{depotId}_{manifestId}.manifest"))
-            throw new InvalidOperationException("Downloader did not retain the requested Steam manifest identity.");
-        var installation = manifestOnly ? null : GameInstallation.Inspect(target);
+            throw new InvalidOperationException($"DepotDownloader exited with {process.ExitCode}; inspect the interactive console or retry authentication.");
+        var installation = GameInstallation.Inspect(target);
+        if (installation.MajorVersion != gameTarget.Version)
+            throw new InvalidOperationException("Downloaded branch does not match the requested major/minor version.");
         var evidence = new
         {
             schema = "RimWorldSteamAcquisition/v1", source = "DepotDownloader-3.4.0", downloaderSha256 = DownloaderSha256,
-            branchDiscoveryOnly = depotId is null, branch, depotId, manifestId, targetDirectory = target,
+            targetId = gameTarget.Id, branch = gameTarget.Branch, targetDirectory = target,
             processId = process.Id, processStartUtc = began, completedUtc = DateTimeOffset.UtcNow,
-            installation, manifests, credentialsRetained = false
+            installation, credentialsRetained = false
         };
         var evidenceRoot = Path.Combine(root, "artifacts", "GameAcquisition", DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssfffZ"));
         Directory.CreateDirectory(evidenceRoot);

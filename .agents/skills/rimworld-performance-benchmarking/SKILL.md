@@ -57,7 +57,7 @@ controls, or baseline policy.
 - Instrumented minus armed-disabled estimates active timing/sampling overhead; armed-disabled minus
   fully disarmed estimates wrapper overhead; instrumented minus fully disarmed estimates total method
   instrumentation overhead. None is an analyzer-absent control.
-- Version-over-version regression is valid only across compatible workload, package, game, product,
+- Version-over-version regression is valid only across compatible workload, package, major/minor game version, product,
   profiler, schema/policy, unit, denominator, lens, and hardware/runtime identities.
 - Preserve raw units and denominators. Do not relabel per-recorded-cycle means as per-call means or
   adaptive estimated calls as continuously timed calls.
@@ -82,6 +82,8 @@ Use explicit per-selector absolute/relative thresholds when a trend is mature en
 reviewed threshold, retain a compatible historical delta as informational. Missing metrics, workload drift, profiler
 refusal/incomplete/truncation, identity drift, new runtime errors, or incompatible units fail a
 comparison. Baseline creation must produce a review candidate; never overwrite an accepted baseline.
+
+RimWorld patch/revision/build/depot/hash pins are forbidden in baseline compatibility. Retain full observed game versions only in run evidence; compare major/minor only.
 
 ## Use DPA only for bounded diagnosis
 

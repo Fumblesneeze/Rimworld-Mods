@@ -6,23 +6,28 @@
   "author": "Fumblesneeze",
   "distributionKind": "Product",
   "rimWorldVersion": "1.7",
-  "rimWorldBuild": "1.7.4985 rev1269",
-  "rimWorldRuntimeBuild": "1.7.4985 rev1269",
-  "steamBuildId": "26115268",
-  "managedAssemblySha256": "0BE7A7EA4B3111D4430F45B36C234A5E43287880B0514B23915F2EF9A0629E16",
   "steamAppId": 294100,
   "steamUserId": "76561198077136238",
   "allowFirstPublication": true,
   "visibility": "Private",
-  "tags": ["Mod", "1.7"],
-  "requiredWorkshopItems": ["2009463077"],
+  "tags": [
+    "Mod",
+    "1.7"
+  ],
+  "requiredWorkshopItems": [
+    "2009463077"
+  ],
   "requiredDlcAppIds": [],
   "hardRuntimeAssemblyReferences": [],
   "workshopLinks": [],
   "buildOperation": "mod_build",
   "presentationOperation": "presentation_render",
   "packageSource": "artifacts/Mods/fumblesneeze.pathfindinglab",
-  "packageInclude": ["About/About.xml", "1.7/Assemblies/PathfindingLab.dll", "1.7/Languages/"],
+  "packageInclude": [
+    "About/About.xml",
+    "1.7/Assemblies/PathfindingLab.dll",
+    "1.7/Languages/"
+  ],
   "description": "workshop/description.bbcode.txt",
   "preview": "workshop/preview.svg",
   "changeNote": "Local experimental prototype; not approved for publication."

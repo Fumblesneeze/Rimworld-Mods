@@ -1,13 +1,13 @@
 ---
 name: release-rimworld-mods
-description: Prepare, verify, and publish reproducible RimWorld mod releases across exact game versions. Use when planning or operating release manifests, Steam depot acquisition and caching, version-isolated builds, generated Workshop descriptions or graphics, exact-version regression runs, staged packages, or guarded Steam Workshop updates in this repository.
+description: Prepare, verify, and publish reproducible RimWorld mod releases across major/minor game versions. Use when planning or operating release manifests, Steam depot acquisition and caching, version-isolated builds, generated Workshop descriptions or graphics, major/minor regression runs, staged packages, or guarded Steam Workshop updates in this repository.
 ---
 
 # Release RimWorld Mods
 
 ## Overview
 
-Build a release from pinned Steam inputs without committing game-version source trees or compiled assemblies. Keep acquisition, compilation, player-workflow verification, presentation rendering, and Workshop publication connected by one immutable evidence chain.
+Build a release for declared major/minor Steam branches without committing game-version source trees or compiled assemblies. Keep acquisition, compilation, player-workflow verification, presentation rendering, and Workshop publication connected by one immutable evidence chain.
 
 Read [references/release-checklist.md](references/release-checklist.md) before changing release contracts or operating a release. Also read the repository's `rimworld-mod-development` skill and its routed references because its build, package, live-run, and acceptance gates remain mandatory.
 
@@ -19,23 +19,15 @@ Read [references/release-checklist.md](references/release-checklist.md) before c
 4. Keep out-of-band release work isolated from active gameplay work. Never stage, rewrite, or commit another agent's files.
 5. Refuse publication from an uncommitted or dirty candidate. A dirty override may create a non-publishable local candidate only when the implemented tool explicitly supports it.
 
-## Resolve exact game targets
+## Resolve major/minor game targets
 
-The implemented typed path is `game_depot_download` → reviewed `game_target_snapshot` catalog entry
-→ `game_target_validate` → `release_matrix_build` (also used by matrix-aware `mod_build`) →
-`release_target_test` for each target. The latter preserves the frozen product bundle while building
-verification infrastructure. Use the matching CLI registry if a connected MCP process predates the
-new operations. Read `docs/Development.md` for concrete arguments and cached-login behavior.
+release/rimworld-targets.json declares only major/minor IDs, owned external cache paths and rolling Steam branches. Game content stays in F:\RimWorldVersions (override with RIMWORLD_RELEASE_CACHE or cacheRoot).
 
-Prepared verification must bind the E2E project owner and selected active groups to the requested
-product, and compile against its frozen target assembly. Skipping a deployment loop is insufficient
-when a test project's ProjectReference can rebuild the product during discovery. Exact caches also
-require equality of the immutable file inventory, not only hashes of files already listed.
+Only major/minor RimWorld selectors are allowed, such as 1.6 and 1.7. Patch/revision numbers, Steam build IDs, depot manifest IDs and game-file hashes must never gate acquisition, builds, runs or publication. Strict catalog/profile/operation validation rejects those fields. Rolling branch downloads can refresh the same owned external cache. Full observed game details may be retained as evidence only. Tool/dependency versions and immutable mod package/source/image hashes remain separate concerns.
 
-1. Accept only target IDs declared by both the mod manifest and the committed target catalog.
-2. Acquire the catalog's exact Steam depot manifests. Use the pinned selective downloader for compilation inputs and the full-install path for regression; never substitute the normal installation or a nearby version.
-3. Put proprietary files and downloader session state in the configured external ignored cache. Verify the immutable cache identity and every approved file hash before use.
-4. Treat an inaccessible historical manifest as a blocked target. Do not redistribute cached game files, approve a different manifest implicitly, or place them in a mod artifact.
+Use game_depot_download with downloaderPath, targetDirectory, targetId (1.6 or 1.7), and accountName. It resolves the rolling version-1.6 or unstable branch and can refresh the same owned cache. For initial authentication use interactiveLogin:true and enter password/Steam Guard directly in the console. The -remember-password option stores the token in Windows per-user isolated storage outside the repo; subsequent downloads use interactiveLogin:false. A revoked or expired token requires signing in again. game_target_validate checks ownership, required layout and major/minor compatibility. Never use Steam-managed or Workshop directories.
+
+Use game_target_validate, then release_matrix_build (or matrix-aware mod_build), then release_target_test for each target. No historical manifest lookup or snapshot approval is required. Prepared native verification binds the project owner and active groups to the requested product and compiles tests against its frozen target DLL; it must not rebuild that product through a ProjectReference.
 
 ## Build and stage
 
@@ -48,7 +40,7 @@ require equality of the immutable file inventory, not only hashes of files alrea
 ## Prove compatibility
 
 1. Run focused and owning tests, guarded repository tests, Release builds, strict OpenSpec validation, and package inspection.
-2. Run every target's declared scenario in a fresh exact-version RimWorld process with unique savedata and the complete ordered mod list.
+2. Run every target's declared scenario in a fresh RimWorld process for that major/minor with unique savedata and the complete ordered mod list.
 3. Exercise the native player workflow and personally inspect before/action/after screenshots from that exact process. Compilation, startup, logs, Gateway JSON, direct state mutation, and static end-state screenshots are supporting evidence only.
 4. Gateway-based native player workflows satisfy live release acceptance; a separate run without the Gateway is not required. Preserve the normal `ModsConfig.xml` before/after hash and exact-PID cleanup evidence. Verify product independence through dependency metadata, package contents, and assembly references.
 5. Use the `code-review` skill on the scoped diff, resolve findings, and repeat any verification invalidated by review fixes.
@@ -125,14 +117,14 @@ guaranteed unsubscribe/restore cleanup, never as a publication gate.
 
 ## Preserve evidence and clean up
 
-Keep source revision/dirty policy, manifest and tool hashes, depot/file identities, per-target builds, tests, player actions/screenshots, package and presentation digests, publication authorization, Gateway process identity, Steam result, remote verification, and cleanup together. Exclude passwords, Steam Guard codes, downloader sessions, bearer tokens, and live Gateway discovery files.
+Keep source revision/dirty policy, manifest and tool hashes, observed game details, per-target builds, tests, player actions/screenshots, package and presentation digests, publication authorization, Gateway process identity, Steam result, remote verification, and cleanup together. Exclude passwords, Steam Guard codes, downloader sessions, bearer tokens, and live Gateway discovery files.
 
 Request graceful process shutdown first, use exact-PID fallback only when required, release cache/stage leases, and confirm the user's normal configuration hash is unchanged. Never claim an accepted Workshop update was rolled back automatically; recovery is an explicit reviewed republish of a prior verified candidate.
 
 ## Pause conditions
 
 - Pause before publishing only when the user has not explicitly ordered publication or the prepared material mutation differs from that order. Never require a second digest/nonce confirmation for an already authorized matching plan.
-- Leave the target unsupported if its exact Steam manifest cannot be acquired and verified.
+- Leave the target unsupported if its major/minor branch cannot be acquired or verified.
 - Leave gameplay compatibility incomplete when a native player workflow or personally inspected live evidence is missing.
 - Leave presentation incomplete when rendered assets or inline hosting have not been reviewed and proven.
 - Preserve an indeterminate post-submit operation for diagnosis; do not start another update until remote state resolves it.

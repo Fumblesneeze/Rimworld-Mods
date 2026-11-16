@@ -35,7 +35,7 @@ summary:
    `Fumblesneeze`, and keep the generated `About/About.xml` owned by the project metadata.
 3. Create the owning OpenSpec change and a strict `Release/release.json` before using the universal
    MCP operations. The profile is the source of truth for the project, package allowlist, supported
-   game build, dependencies, preview, and verification workflow.
+   major/minor game version, dependencies, preview, and verification workflow. Never pin game patches, revisions, Steam build/depot manifests or assembly hashes.
    Every new distributable mod starts with complete `English`, `German`, `Spanish`, `French`,
    `ChineseSimplified`, `Russian`, and `Japanese` catalogs. Author them from gameplay context and
    keep their keyed and DefInjected inventories exact; do not defer the baseline languages until release.

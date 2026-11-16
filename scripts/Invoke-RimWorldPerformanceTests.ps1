@@ -774,7 +774,7 @@ function New-PerformanceCurrentSnapshot {
             WorkloadVersion = [string]$processPlan.workloadVersion
             EvidenceLens = [string]$normalized.controlMode
             ActivePackageIds = @($processPlan.activePackageIds | ForEach-Object { [string]$_ })
-            GameVersion = [string]$result.SmokeResult.LiveGameVersion
+            GameVersion = [regex]::Match(([string]$result.SmokeResult.LiveGameVersion).Trim(), '^[0-9]+\.[0-9]+(?=[.\s]|$)').Value
             ProductAssemblyIdentity = if ([int]$processPlan.evidenceLens -eq 3) {
                 'not-loaded'
             }

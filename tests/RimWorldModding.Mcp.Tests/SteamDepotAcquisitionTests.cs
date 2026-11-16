@@ -7,7 +7,7 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class SteamDepotAcquisitionTests
 {
     [Test]
-    public void Exact_depot_download_rejects_an_unowned_existing_directory()
+    public void Branch_download_rejects_an_unowned_existing_directory()
     {
         var target = Path.Combine(Path.GetTempPath(), "unowned-steam-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(target);
@@ -17,7 +17,7 @@ public sealed class SteamDepotAcquisitionTests
             var registry = OperationRegistry.CreateDefault(TestRepository.FindRoot());
             Assert.That(async () => await registry.InvokeAsync("game_depot_download", JsonSerializer.SerializeToElement(new
             {
-                branch = "public", depotId = "294104", manifestId = "123", targetDirectory = target,
+                targetId = "1.6", targetDirectory = target,
                 downloaderPath = Path.Combine(target, "DepotDownloader.exe"), interactiveLogin = true
             }), CancellationToken.None), Throws.ArgumentException.With.Message.Contains("owned"));
             Assert.That(File.ReadAllText(Path.Combine(target, "keep.txt")), Is.EqualTo("user content"));
@@ -32,7 +32,7 @@ public sealed class SteamDepotAcquisitionTests
         var registry = OperationRegistry.CreateDefault(root);
         Assert.That(async () => await registry.InvokeAsync("game_depot_download", JsonSerializer.SerializeToElement(new
         {
-            branch = "version-1.6", targetDirectory = Path.Combine(root, "artifacts", "game"),
+            targetId = "1.6", targetDirectory = Path.Combine(root, "artifacts", "game"),
             downloaderPath = Path.Combine(root, "DepotDownloader.exe"), interactiveLogin = true
         }), CancellationToken.None), Throws.ArgumentException.With.Message.Contains("external"));
     }

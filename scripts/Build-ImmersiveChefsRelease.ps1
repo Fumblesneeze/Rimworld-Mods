@@ -20,6 +20,8 @@ param(
     [string]$Output = 'table'
 )
 
+throw "Retired: use typed mod_build, release_prepare and release_package_upload/release_page_update operations."
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -652,28 +654,13 @@ if ($release.schema -cne 'ImmersiveChefs/Release/v1' -or
 $resolvedRimWorldPath = [IO.Path]::GetFullPath($RimWorldPath)
 $versionPath = Join-Path $resolvedRimWorldPath 'Version.txt'
 $managedAssemblyPath = Join-Path $resolvedRimWorldPath 'RimWorldWin64_Data\Managed\Assembly-CSharp.dll'
-$steamManifestPath = Join-Path ([IO.DirectoryInfo]::new($resolvedRimWorldPath).Parent.Parent.FullName) 'appmanifest_294100.acf'
 if (-not (Test-Path -LiteralPath $versionPath -PathType Leaf) -or
-    -not (Test-Path -LiteralPath $managedAssemblyPath -PathType Leaf) -or
-    -not (Test-Path -LiteralPath $steamManifestPath -PathType Leaf)) {
-    Exit-InvalidInput 'The exact RimWorld release inputs are incomplete.'
+    -not (Test-Path -LiteralPath $managedAssemblyPath -PathType Leaf)) {
+    Exit-InvalidInput 'RimWorld inputs are incomplete.'
 }
-$rawRimWorldBuild = (Get-Content -LiteralPath $versionPath -Raw).Trim()
-$assemblyVersion = [Reflection.AssemblyName]::GetAssemblyName($managedAssemblyPath).Version
-$actualRimWorldBuild = '{0}.{1}.{2} rev{3}' -f `
-    $assemblyVersion.Major,
-    $assemblyVersion.Minor,
-    ($assemblyVersion.Build - 4805),
-    [int]($assemblyVersion.Revision * 2 / 60)
-$actualManagedHash = (Get-FileHash -LiteralPath $managedAssemblyPath -Algorithm SHA256).Hash
-$steamManifestText = Get-Content -LiteralPath $steamManifestPath -Raw
-$buildMatch = [regex]::Match($steamManifestText, '"buildid"\s+"(?<id>\d+)"')
-if ($rawRimWorldBuild -cne [string]$release.rimWorldBuild -or
-    $actualRimWorldBuild -cne [string]$release.rimWorldRuntimeBuild -or
-    -not $buildMatch.Success -or
-    $buildMatch.Groups['id'].Value -cne [string]$release.steamBuildId -or
-    $actualManagedHash -cne [string]$release.managedAssemblySha256) {
-    Exit-InvalidInput 'The installed RimWorld build does not match the pinned release inputs.'
+$compatibilityVersion = [regex]::Match((Get-Content -LiteralPath $versionPath -Raw).Trim(), '^1\.[67](?=[.\s]|$)').Value
+if ($compatibilityVersion -cne [string]$release.rimWorldVersion) {
+    Exit-InvalidInput 'The installed RimWorld major/minor version does not match the release.'
 }
 $releaseStateRoot = Join-Path $repositoryRoot 'artifacts\Releases\fumblesneeze.immersivechefs'
 $sourcePublishedFileIdPath = Join-Path $repositoryRoot 'mods\ImmersiveChefs\About\PublishedFileId.txt'
@@ -908,10 +895,6 @@ $plan = [pscustomobject][ordered]@{
     title = [string]$release.title
     author = [string]$release.author
     rimWorldVersion = [string]$release.rimWorldVersion
-    rimWorldBuild = [string]$release.rimWorldBuild
-    rimWorldRuntimeBuild = [string]$release.rimWorldRuntimeBuild
-    steamBuildId = [string]$release.steamBuildId
-    managedAssemblySha256 = [string]$release.managedAssemblySha256
     visibility = if ($effectivePublishedFileId -eq 0) { 'Private' } else { [string]$release.visibility }
     tags = @($release.tags)
     requiredWorkshopItems = @($release.requiredWorkshopItems)

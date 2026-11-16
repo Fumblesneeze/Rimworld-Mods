@@ -10,7 +10,7 @@ namespace ImmersiveChefs.Tests;
 public sealed class ImmersiveChefsReleaseCandidateTests
 {
     [Test]
-    public void Release_descriptor_and_stager_define_the_published_public_RimWorld_1_6_release()
+    public void Release_descriptor_declares_the_public_major_minor_matrix()
     {
         var root = FindRepositoryRoot();
         var manifestPath = Path.Combine(root, "mods", "ImmersiveChefs", "Release", "release.json");
@@ -34,11 +34,7 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(release["packageId"], Is.EqualTo("fumblesneeze.immersivechefs"));
             Assert.That(release["title"], Is.EqualTo("Immersive Chefs"));
             Assert.That(release["author"], Is.EqualTo("Fumblesneeze"));
-            Assert.That(release["rimWorldVersion"], Is.EqualTo("1.6"));
-            Assert.That(release["rimWorldBuild"], Is.EqualTo("1.6.4871 rev590"));
-            Assert.That(release["rimWorldRuntimeBuild"], Is.EqualTo("1.6.4871 rev591"));
-            Assert.That(release["steamBuildId"], Is.EqualTo("23969874"));
-            Assert.That(release["managedAssemblySha256"], Is.EqualTo("5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A"));
+            Assert.That(release["rimWorldVersion"], Is.EqualTo("1.7"));
             Assert.That(release["steamUserId"], Is.EqualTo("76561198077136238"));
             Assert.That(release["visibility"], Is.EqualTo("Public"));
             Assert.That(release["allowFirstPublication"], Is.False);
@@ -63,7 +59,8 @@ public sealed class ImmersiveChefsReleaseCandidateTests
             Assert.That(script, Does.Contain("package-files.json"));
             Assert.That(script, Does.Contain("publication-plan.json"));
             Assert.That(script, Does.Contain("UseArtifactsOutput=true"));
-            Assert.That(script, Does.Contain("managedAssemblySha256"));
+            Assert.That(script, Does.Contain("Retired: use typed"));
+            Assert.That(script, Does.Not.Contain("managedAssemblySha256"));
             Assert.That(script, Does.Contain("description.bbcode"));
             Assert.That(script, Does.Contain("preview-main.png"));
         });

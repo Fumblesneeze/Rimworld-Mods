@@ -7,7 +7,7 @@
     <RequestedRimWorldVersion>$(RimWorldVersion)</RequestedRimWorldVersion>
     <RimWorldVersion>unsupported</RimWorldVersion>
     <RimWorldFullVersion Condition="Exists('$(RimWorldPath)/Version.txt')">$([System.IO.File]::ReadAllText('$(RimWorldPath)/Version.txt').Trim())</RimWorldFullVersion>
-    <RimWorldVersion Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(RimWorldFullVersion)', '^1\.[67]\.[0-9]+( rev[0-9]+)?$'))">$([System.String]::Copy('$(RimWorldFullVersion)').Substring(0, 3))</RimWorldVersion>
+    <RimWorldVersion Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(RimWorldFullVersion)', '^1\.[67](?=[.\s]|$)'))">$([System.String]::Copy('$(RimWorldFullVersion)').Substring(0, 3))</RimWorldVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(RimWorldVersion)' == '1.6'">
     <DefineConstants>$(DefineConstants);RIMWORLD_1_6</DefineConstants>

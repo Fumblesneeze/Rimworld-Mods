@@ -92,8 +92,8 @@ public sealed record WorkshopRemoteBaseline(
     {
         if (GatewayWorkshopClient.UInt64(status, "CurrentUserSteamId").ToString() != profile.SteamUserId)
             throw new InvalidOperationException("The live RimWorld Steam user does not match the release profile.");
-        if (requireProductRuntime && !string.Equals(GatewayWorkshopClient.String(status, "RimWorldVersion"), profile.RimWorldRuntimeBuild, StringComparison.Ordinal))
-            throw new InvalidOperationException("The live RimWorld runtime build does not match the release profile.");
+        if (requireProductRuntime && !profile.SupportedVersions.Contains(GameInstallation.CompatibilityVersion(GatewayWorkshopClient.String(status, "RimWorldVersion") ?? "")))
+            throw new InvalidOperationException("The live RimWorld major/minor version does not match the release profile.");
     }
 
     public void AssertValid()

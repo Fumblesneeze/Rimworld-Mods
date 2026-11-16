@@ -680,7 +680,7 @@ public static class PerformanceBaselineComparer
         Difference(result, "groupId", baseline.GroupId, current.GroupId);
         Difference(result, "workloadVersion", baseline.WorkloadVersion, current.WorkloadVersion);
         if (!baseline.ActivePackageIds.SequenceEqual(current.ActivePackageIds, StringComparer.Ordinal)) result.Add("activePackageIds");
-        Difference(result, "gameVersion", baseline.GameVersion, current.GameVersion);
+        Difference(result, "gameVersion", MajorMinor(baseline.GameVersion), MajorMinor(current.GameVersion));
         Difference(result, "productAssemblyIdentity", baseline.ProductAssemblyIdentity, current.ProductAssemblyIdentity);
         Difference(result, "testAssemblyIdentity", baseline.TestAssemblyIdentity, current.TestAssemblyIdentity);
         Difference(result, "circinusAssemblyIdentity", baseline.CircinusAssemblyIdentity, current.CircinusAssemblyIdentity);
@@ -694,6 +694,13 @@ public static class PerformanceBaselineComparer
         if (baseline.RepetitionCount != current.RepetitionCount) result.Add("repetitionCount");
         Difference(result, "aggregationPolicyIdentity", baseline.AggregationPolicyIdentity, current.AggregationPolicyIdentity);
         return result;
+    }
+
+    private static string MajorMinor(string observedVersion)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(observedVersion.Trim(), @"^[0-9]+\.[0-9]+(?=[.\s]|$)");
+        if (!match.Success) throw new ArgumentException("Performance game version requires a major/minor identity.");
+        return match.Value;
     }
 
     private static bool IsCrossVersionDifference(string value) => value is

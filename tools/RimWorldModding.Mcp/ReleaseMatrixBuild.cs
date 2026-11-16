@@ -91,7 +91,7 @@ internal static class ReleaseMatrixBuild
         GameInstallation installation, string runRoot, string configuration)
     {
         if (configuration is not ("Release" or "Debug")) throw new ArgumentException("Configuration must be Release or Debug.");
-        if (installation.MajorVersion != target.Version || installation.Version != target.FullVersion)
+        if (installation.MajorVersion != target.Version)
             throw new InvalidOperationException("Compiler inputs do not match the declared target.");
         var targetRoot = RepositoryRoot.ContainedPath(repositoryRoot, Path.Combine(runRoot, "targets", target.Id));
         var intermediate = Path.Combine(targetRoot, "obj") + Path.DirectorySeparatorChar;

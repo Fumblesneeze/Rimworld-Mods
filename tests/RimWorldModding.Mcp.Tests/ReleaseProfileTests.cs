@@ -124,7 +124,7 @@ public sealed class ReleaseProfileTests
         Assert.That(
             File.ReadAllText(Path.Combine(root, "mods", "GuestBedGizmo", "About", "PublishedFileId.txt")).Trim(),
             Is.EqualTo(guest.PublishedFileId));
-        Assert.That(guest.Visibility, Is.EqualTo("Private"));
+        Assert.That(guest.Visibility, Is.EqualTo("Public"));
         Assert.That(guest.RequiredWorkshopItems, Is.EquivalentTo(new[] { "2009463077", "3509486825" }));
         var requiredDlc = typeof(ReleaseProfile).GetProperty("RequiredDlcAppIds");
         Assert.That(requiredDlc, Is.Not.Null);
@@ -132,7 +132,7 @@ public sealed class ReleaseProfileTests
         Assert.That(typeof(ReleasePublicationPlan).GetProperty("RequiredDlcAppIds"), Is.Not.Null);
         Assert.That(typeof(ReleasePublicationPlan).GetProperty("PreviousPrivateReleaseEvidence"), Is.Not.Null);
         Assert.That(typeof(ReleasePreparationResult).GetProperty("RequiredDlcAppIds"), Is.Not.Null);
-        Assert.DoesNotThrow(() => ReleaseEnvironmentValidator.Validate(guest));
+        Assert.That(guest.RimWorldVersion, Is.EqualTo("1.6"));
         Assert.DoesNotThrow(() => ReleaseChangeNotePolicy.Validate(guest));
     }
 

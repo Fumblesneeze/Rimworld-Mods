@@ -15,6 +15,10 @@ This repository is the Windows development monorepo for Fumblesneeze's RimWorld 
 
 Each OpenSpec change and capability has exactly one owner: either one mod or one repository-tooling component. Repository-owned mods do not depend on one another, and product mods never ship, reference, or load-order-hint the Gateway; it is isolated development infrastructure, not a gameplay dependency.
 
+RimWorld compatibility uses **major/minor only**, such as 1.6 and 1.7. Patch, revision, Steam build,
+depot-manifest and game-assembly hash pins are forbidden in targets, profiles and admission checks.
+Observed runtime details belong only in run evidence. See [the release workflow](docs/Development.md).
+
 ## Requirements
 
 | Tool | Purpose |

@@ -3,14 +3,14 @@
 **Owning mod:** RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
 
 ### Requirement: Release manifests are explicit and repository-owned
-The repository SHALL define one reviewable release manifest per publishable mod. It SHALL declare the package ID, an existing Steam Workshop item identity or one explicit first-publication bootstrap, authoritative supported RimWorld targets, current development target, required and optional mod relationships, exact Steam build/depot/manifest inputs directly or by committed target ID, per-target package mapping, and presentation sources. It MUST NOT select a product-specific subscriber, gameplay, or smoke-test workflow. Each uploaded RimWorld compatibility folder SHALL map to exactly one exact compile target; additional exact builds MAY be regression-only and reuse that folder's compiled product. A release command MUST reject undeclared targets, duplicate package IDs or compatibility folders, a development target outside the supported set, invalid dependency metadata, a missing publication identity without the explicit bootstrap, and manifest/source disagreement before downloading, building, launching, or publishing.
+The repository SHALL define one reviewable release manifest per publishable mod. It SHALL declare the package ID, an existing Steam Workshop item identity or one explicit first-publication bootstrap, authoritative supported RimWorld targets, current development target, required and optional mod relationships, major/minor game targets and rolling branch selection, per-target package mapping, and presentation sources. It MUST NOT select a product-specific subscriber, gameplay, or smoke-test workflow. Each uploaded RimWorld compatibility folder SHALL map to exactly one major/minor compile target; patch/revision-specific selectors and game build/depot/hash pins SHALL be rejected. A release command MUST reject undeclared targets, duplicate package IDs or compatibility folders, a development target outside the supported set, invalid dependency metadata, a missing publication identity without the explicit bootstrap, and manifest/source disagreement before downloading, building, launching, or publishing.
 
 #### Scenario: Undeclared target is rejected without side effects
 - **WHEN** an operator requests a RimWorld version absent from the selected mod's release manifest
 - **THEN** the release command fails before it downloads game content, builds a package, launches RimWorld, or changes a Workshop item
 
 #### Scenario: Two compile targets collide on one package folder
-- **WHEN** a release manifest maps two exact compile targets to the same RimWorld compatibility folder
+- **WHEN** a release manifest maps two compile targets to the same RimWorld compatibility folder
 - **THEN** validation rejects the ambiguous payload before either target is built
 
 ### Requirement: Compatibility metadata drives every release projection
@@ -50,16 +50,28 @@ Canonical mod XML SHALL remain version-neutral in the ordinary mod source tree. 
 - **WHEN** an XML override selector matches an unexpected number of nodes after canonical XML changes
 - **THEN** that target build fails before packaging and reports the source file, selector, expected cardinality, and observed cardinality
 
-### Requirement: Proprietary game inputs are exact, cached, and uncommitted
-The release tooling SHALL acquire the exact declared RimWorld Steam content needed for compilation, verify it against Steam manifest metadata plus local file hashes, and project only the required managed assemblies into an ignored content-addressed cache. It MUST NOT commit, redistribute in a product package, or silently substitute locally installed or newer game assemblies for a declared target.
+### Requirement: Game targets use major and minor only
+Repository tooling RimWorldModding.Mcp SHALL select games solely by major/minor, such as 1.6 and 1.7. Catalogs, profiles and download arguments SHALL reject patch/revision numbers, Steam build IDs, depot-manifest IDs and game-file hash pins. Downloading SHALL use the declared rolling branch, external owned cache paths, bounded processes and credential-free repository evidence. Observed full versions MAY be retained in run evidence but MUST NOT gate builds, launches or publication.
 
-#### Scenario: Exact assembly cache is reused
-- **WHEN** the declared Steam manifest and every required cached assembly hash already match
-- **THEN** the tool performs no redundant game-content download and reports the same immutable dependency identity
+#### Scenario: Agent acquires two game versions
+- **WHEN** the owning user authenticates and the agent requests 1.6 and 1.7 in separate external directories
+- **THEN** each rolling branch downloads into its owned cache, remembered login is reused, and the normal Steam installation remains intact
 
-#### Scenario: Cache corruption fails closed
-- **WHEN** any cached managed assembly differs from its recorded hash
-- **THEN** the tool quarantines or reacquires that cache entry and does not compile against it
+#### Scenario: Steam updates a supported line
+- **WHEN** game files, patch numbers or revision numbers change while the major/minor remains the same
+- **THEN** validation accepts the cache without a catalog hash or manifest update and an explicit download can refresh it
+
+#### Scenario: Version file differs from live runtime
+- **WHEN** Version.txt and the live Gateway report different patches or revisions within the same major/minor
+- **THEN** launch validation accepts them and records observations without creating a runtime revision pin
+
+#### Scenario: Forbidden game pin
+- **WHEN** a caller adds a full-version, runtime-revision, Steam-build, depot-manifest or game-hash field
+- **THEN** strict validation rejects it before external effects
+
+#### Scenario: Wrong major or minor
+- **WHEN** the selected cache or live runtime has a different major/minor
+- **THEN** validation rejects it without falling back to the normal installation
 
 ### Requirement: Every supported target is built independently
 For each supported RimWorld target, the release tooling SHALL perform a clean compilation against only that target's resolved managed assemblies and SHALL place outputs into that target's generated package folder. Repository source directories MUST remain shared and version-neutral, while version-named source folders, checked-in compiled DLLs, and cross-target output reuse are forbidden.
@@ -96,12 +108,12 @@ Development-only mods MAY explicitly opt out. RimWorld Dev Gateway SHALL be clas
 - **WHEN** repository release validation sees `fumblesneeze.rimworlddevgateway`
 - **THEN** its explicit development-only classification exempts it from player-language coverage without weakening the rule for distributable product mods
 
-### Requirement: Isolated regression runs can select an exact game build
-The scenario and grouped E2E runners SHALL accept a declared RimWorld target, resolve or acquire its complete exact game build into an ignored cache, launch a fresh exact-PID process with isolated savedata and the target package layout, and record the game/depot/manifest/file identity in evidence. They MUST retain all existing configuration-hash, cleanup, player-action, and personal screenshot-inspection acceptance gates.
+### Requirement: Isolated regression runs select a major/minor game target
+The scenario and grouped E2E runners SHALL resolve a declared major/minor target to an owned external cache and launch a fresh process with isolated savedata and matching mod binaries. Runtime checks SHALL compare only major/minor. Evidence MAY retain full observed game versions; those observations MUST NOT become prerequisites. Existing configuration-hash, cleanup, native player-action and personal screenshot-inspection gates remain mandatory.
 
-#### Scenario: Regression executes on a historical target
-- **WHEN** an operator selects a cached historical target for an applicable scenario group
-- **THEN** the runner launches that exact game build, uses the matching mod binaries, and records observable workflow evidence attributed to both identities
+#### Scenario: Regression executes on another major/minor
+- **WHEN** an operator selects a cached supported major/minor for an applicable scenario group
+- **THEN** the runner launches that cache, uses matching mod binaries and records observable workflow evidence
 
 ### Requirement: Workshop presentation is separate and generated
 The release system SHALL treat in-game `About/About.xml` metadata and the Steam Workshop presentation as separate outputs. It SHALL compile the Workshop description from a versioned text template and structured content, and SHALL render banners and explanatory graphics deterministically from versioned templates, authored text, and repository-owned sprites without overwriting source art.
@@ -309,7 +321,7 @@ Development installation SHALL synchronize the reviewed package into RimWorld's 
 - **THEN** publication leaves that local package untouched and never subscribes to the repository-owned Workshop item
 
 ### Requirement: Release evidence is complete and secret-free
-Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, exact game and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, presentation provenance, publication authorization and plan admission, Gateway process identity, Steam item/dependency results, the before/after modified timestamps, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.
+Each release attempt SHALL record source revision and dirty-state policy, release-manifest hash, tool versions, observed game details and required/optional mod dependency identities, per-target compile symbols and XML projection provenance, compilation/package manifests, presentation provenance, publication authorization and plan admission, Gateway process identity, Steam item/dependency results, the before/after modified timestamps, and cleanup outcome. Durable evidence MUST exclude account passwords, Steam Guard codes, session credentials, bearer tokens, and live Gateway discovery files.
 
 #### Scenario: Release receipt is audited
 - **WHEN** a publication attempt reaches a terminal state

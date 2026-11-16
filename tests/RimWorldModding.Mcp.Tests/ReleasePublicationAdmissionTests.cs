@@ -695,8 +695,7 @@ public sealed class ReleasePublicationAdmissionTests
             ReleaseCandidateBuilder.Hash(frozenProfile));
         var frozen = new ReleaseProfile(
             "RimWorldModRelease/v1", frozenProfile, project, "fumblesneeze.example", "Example", "Fumblesneeze",
-            "Product", "1.6", "1.6.4871 rev590", "1.6.4871 rev591", "23969874", new string('A', 64),
-            294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["2009463077"], [], [],
+            "Product", "1.6", 294100, "76561198077136238", null, true, "Private", ["Mod", "1.6"], ["2009463077"], [], [],
             "mod_build", "presentation_render", candidate, ["1.6/Assemblies/Product.dll"], description, preview,
             null, "Initial release.")
         {

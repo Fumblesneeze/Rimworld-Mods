@@ -13,30 +13,9 @@ public static class ReleaseEnvironmentValidator
 
     public static void Validate(ReleaseProfile profile)
     {
-        var versionPath = Path.Combine(RimWorldRoot, "Version.txt");
-        RequireExactText(versionPath, profile.RimWorldBuild, "RimWorld Version.txt");
-
-        var manifestPath = Path.Combine(RimWorldRoot, "..", "..", $"appmanifest_{profile.SteamAppId}.acf");
-        if (!File.Exists(manifestPath))
-            throw new InvalidOperationException($"Steam app manifest is missing: {Path.GetFullPath(manifestPath)}");
-        var match = Regex.Match(File.ReadAllText(manifestPath), "\\\"buildid\\\"\\s*\\\"(?<id>[0-9]+)\\\"");
-        if (!match.Success || !string.Equals(match.Groups["id"].Value, profile.SteamBuildId, StringComparison.Ordinal))
-            throw new InvalidOperationException("Installed Steam depot build does not match the pinned release profile.");
-
         var installation = GameInstallation.Inspect(RimWorldRoot);
-        if (installation.MajorVersion != profile.RimWorldVersion)
-            throw new InvalidOperationException("Selected runtime does not match the release profile.");
-        var managed = Path.Combine(installation.ManagedPath, "Assembly-CSharp.dll");
-        if (!File.Exists(managed) ||
-            !string.Equals(ReleaseCandidateBuilder.Hash(managed), profile.ManagedAssemblySha256, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Installed Assembly-CSharp.dll does not match the pinned release profile.");
-        ReleasePackageValidator.ValidatePlatformAssemblyInventory(Path.GetDirectoryName(managed)!, installation.MajorVersion);
-    }
-
-    private static void RequireExactText(string path, string expected, string label)
-    {
-        if (!File.Exists(path) || !string.Equals(File.ReadAllText(path).Trim(), expected, StringComparison.Ordinal))
-            throw new InvalidOperationException($"{label} does not match the pinned release profile.");
+        if (!profile.SupportedVersions.Contains(installation.MajorVersion))
+            throw new InvalidOperationException("Selected game major/minor version is not supported by this release.");
     }
 }
 
@@ -425,7 +404,7 @@ public static class ReleasePackageValidator
     }
 
     private static readonly HashSet<string> PlatformAssemblyReferences17 = ReadBetaInventory();
-    // Metadata inspection of the pinned 1.7.5000 installation: files, not managed AssemblyRefs.
+    // Known native files in the 1.7 platform: these are not managed AssemblyRefs.
     private static readonly HashSet<string> NativePlatformFiles17 = new(StringComparer.Ordinal)
     {
         "clretwrc", "clrgc", "clrgcexp", "clrjit", "coreclr", "freetype", "glfw3", "hostfxr",
@@ -437,7 +416,7 @@ public static class ReleasePackageValidator
     private static HashSet<string> ReadBetaInventory()
     {
         using var stream = typeof(ReleasePackageValidator).Assembly.GetManifestResourceStream("RimWorldModding.Mcp.PlatformAssemblies17.txt")
-            ?? throw new InvalidOperationException("Missing pinned 1.7 platform inventory.");
+            ?? throw new InvalidOperationException("Missing 1.7 platform reference names.");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
     }
@@ -449,22 +428,6 @@ public static class ReleasePackageValidator
     };
     internal static bool IsPlatformReference(string reference, string version = "1.6") =>
         PlatformInventory(version).Contains(reference) && (version != "1.7" || !NativePlatformFiles17.Contains(reference));
-
-    internal static void ValidatePlatformAssemblyInventory(string managedDirectory, string version = "1.6")
-    {
-        var expected = PlatformInventory(version);
-        var actual = Directory.GetFiles(managedDirectory, "*.dll", SearchOption.TopDirectoryOnly)
-            .Select(Path.GetFileNameWithoutExtension)
-            .ToHashSet(StringComparer.Ordinal);
-        if (!actual.SetEquals(expected))
-        {
-            var missing = actual.Except(expected, StringComparer.Ordinal).OrderBy(value => value, StringComparer.Ordinal);
-            var stale = expected.Except(actual, StringComparer.Ordinal).OrderBy(value => value, StringComparer.Ordinal);
-            throw new InvalidOperationException(
-                "Pinned RimWorld Managed AssemblyRef inventory drifted. Missing declarations: [" +
-                string.Join(", ", missing) + "]; no longer present: [" + string.Join(", ", stale) + "].");
-        }
-    }
 
     private static void ValidateAbout(ReleaseProfile profile, string packagePath, XDocument project)
     {

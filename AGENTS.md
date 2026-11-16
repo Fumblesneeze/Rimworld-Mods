@@ -8,6 +8,17 @@ When starting a thread in this repo, read the `README.md` first to understand th
 
 ## Mission and boundaries
 
+### RimWorld version policy — explicit user requirement
+
+RimWorld compatibility, acquisition, build, launch and publication gates MUST use only major/minor
+versions, such as `1.6` and `1.7`. Never pin or require a patch/build/revision, Steam build ID, depot
+manifest ID, game-assembly hash or game-file inventory hash. Updates within the same major/minor
+version are accepted. Reject these pin fields in active schemas and cover the rule with regression
+tests. This requirement supersedes older exact-game-build or manifest-pinning instructions anywhere
+in this repository, including OpenSpec and skills. Full versions and game-file hashes may be retained
+as observations in per-run evidence, never as compatibility or release prerequisites. Immutable mod
+package/image hashes and source commit identities remain required evidence; they are not game-version pins.
+
 This is a RimWorld mod monorepo:
 
 - OpenSpec proposals, designs, capability specs, and task lists live under `openspec/` at the repository root.

@@ -27,6 +27,8 @@ param(
     [ValidateSet('table', 'json')][string]$Output = 'table'
 )
 
+throw "Retired: use typed release_package_upload and release_page_update operations."
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $exactConfirmation = 'publish immersive chefs to steam workshop'
@@ -473,10 +475,6 @@ if ([string]$plan.schema -cne 'ImmersiveChefs/WorkshopPublicationPlan/v1' -or
     [string]$plan.title -cne 'Immersive Chefs' -or
     [string]$plan.author -cne 'Fumblesneeze' -or
     [string]$plan.rimWorldVersion -cne '1.6' -or
-    [string]$plan.rimWorldBuild -cne '1.6.4871 rev590' -or
-    [string]$plan.rimWorldRuntimeBuild -cne '1.6.4871 rev591' -or
-    [string]$plan.steamBuildId -cne '23969874' -or
-    [string]$plan.managedAssemblySha256 -cne '5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A' -or
     [int]$plan.steamAppId -ne 294100 -or
     [string]$plan.steamUserId -cne '76561198077136238' -or
     [string]$plan.visibility -cne $expectedPlanVisibility -or

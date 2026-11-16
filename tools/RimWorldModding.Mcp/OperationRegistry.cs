@@ -22,7 +22,7 @@ public sealed class OperationRegistry
     {
         var registrations = new[]
         {
-            Register("release_target_test", "Verify the frozen combined package through native workflows on one exact cached game target.",
+            Register("release_target_test", "Verify the frozen combined package through native workflows on one major/minor cached game target.",
                 OperationRisk.DestructiveLocal, true, 3900, "Retains matrix identity and native action/screenshots/config/cleanup evidence without rebuilding the product.",
                 static async (registry, arguments, cancellationToken) =>
                 {
@@ -33,8 +33,8 @@ public sealed class OperationRegistry
                         RequiredString(arguments, "projectPath"), OptionalStringArray(arguments, "testIds"),
                         OptionalInt32(arguments, "timeoutSeconds", 900), OptionalBoolean(arguments, "dryRun", false), cancellationToken);
                 }),
-            Register("release_matrix_build", "Build each declared exact target independently, merge and install the combined product package.",
-                OperationRisk.DestructiveLocal, true, 1800, "Retains exact cache, source, compiler and per-target package hashes; never publishes.",
+            Register("release_matrix_build", "Build each declared major/minor target independently, merge and install the combined product package.",
+                OperationRisk.DestructiveLocal, true, 1800, "Retains observed cache, source, compiler and per-target mod package hashes; never publishes.",
                 static async (registry, arguments, cancellationToken) =>
                 {
                     RefuseRunningRimWorld();
@@ -44,25 +44,25 @@ public sealed class OperationRegistry
                         OptionalString(arguments, "modsRoot") ?? @"F:\Steam\steamapps\common\RimWorld\Mods",
                         OptionalString(arguments, "configuration") ?? "Release", cancellationToken);
                 }),
-            Register("game_target_snapshot", "Inventory an acquired external game target for review and catalog pinning.",
-                OperationRisk.WorkspaceWrite, false, 180, "Writes external file hashes only; no catalog approval or Steam mutation.",
-                static (registry, arguments, _) => Task.FromResult<object>(SteamGameTargets.SnapshotResult(registry._repositoryRoot,
-                    RequiredString(arguments, "targetId"), OptionalString(arguments, "cacheRoot") ?? SteamGameTargets.DefaultCacheRoot,
-                    RequiredString(arguments, "targetDirectory")))),
-            Register("game_target_validate", "Verify every approved file and Steam manifest of one declared cached target.",
+            Register("game_target_validate", "Validate cache ownership, game layout and the selected major/minor version.",
                 OperationRisk.Read, false, 180, "Returns the exact validated installation without launching it.",
                 static (registry, arguments, _) => Task.FromResult<object>(SteamGameTargets.Validate(registry._repositoryRoot,
                     SteamGameTargets.LoadCatalog(registry._repositoryRoot).Single(target => target.Id == RequiredString(arguments, "targetId")),
                     OptionalString(arguments, "cacheRoot") ?? SteamGameTargets.DefaultCacheRoot))),
             Register("game_depot_download",
-                "Acquire exact Steam depot content or onboard a branch in a separate external directory using pinned DepotDownloader.",
+                "Download or refresh a major/minor Steam branch in an owned external directory.",
                 OperationRisk.DestructiveLocal, true, 3000,
-                "Retains manifest/process identity only; QR and cached Steam sessions remain outside repository evidence.",
-                static async (registry, arguments, cancellationToken) => await SteamDepotAcquisition.DownloadAsync(
-                    registry._repositoryRoot, RequiredString(arguments, "downloaderPath"), RequiredString(arguments, "targetDirectory"),
-                    RequiredString(arguments, "branch"), OptionalString(arguments, "depotId"), OptionalString(arguments, "manifestId"),
-                    OptionalBoolean(arguments, "interactiveLogin", false), OptionalString(arguments, "accountName"),
-                    OptionalBoolean(arguments, "manifestOnly", false), cancellationToken)),
+                "Retains observed version/process identity; Steam credentials remain outside repository evidence.",
+                static async (registry, arguments, cancellationToken) =>
+                {
+                    RequireOnlyArguments(arguments, "downloaderPath", "targetDirectory", "targetId", "interactiveLogin", "accountName");
+                    var targetId = RequiredString(arguments, "targetId");
+                    var target = SteamGameTargets.LoadCatalog(registry._repositoryRoot).SingleOrDefault(item => item.Id == targetId)
+                        ?? throw new ArgumentException("Unknown major/minor target: " + targetId);
+                    return await SteamDepotAcquisition.DownloadAsync(registry._repositoryRoot,
+                        RequiredString(arguments, "downloaderPath"), RequiredString(arguments, "targetDirectory"), target,
+                        OptionalBoolean(arguments, "interactiveLogin", false), OptionalString(arguments, "accountName"), cancellationToken);
+                }),
             Register(
                 "game_installation_inspect",
                 "Resolve a supported RimWorld installation without loading assemblies or launching the game.",
@@ -478,6 +478,13 @@ public sealed class OperationRegistry
             throw new ArgumentException("Operation arguments must be one JSON object.");
         }
 
+        string[] forbiddenGamePins = ["fullVersion", "runtimeVersion", "rimWorldBuild", "rimWorldRuntimeBuild",
+            "steamBuildId", "managedAssemblySha256", "depotId", "manifestId", "inventorySha256",
+            "expectedGameRuntimeVersion", "gameRevision", "gameBuild", "gameAssemblySha256"];
+        var pins = arguments.EnumerateObject().Select(property => property.Name)
+            .Intersect(forbiddenGamePins, StringComparer.OrdinalIgnoreCase).ToArray();
+        if (pins.Length > 0)
+            throw new ArgumentException("RimWorld game version pins are forbidden; select major/minor only: " + string.Join(", ", pins));
         return await registration.Handler(this, arguments, cancellationToken);
     }
 
@@ -696,6 +703,12 @@ public sealed class OperationRegistry
         {
             foreach (var process in processes) process.Dispose();
         }
+    }
+
+    private static void RequireOnlyArguments(JsonElement arguments, params string[] allowed)
+    {
+        var unknown = arguments.EnumerateObject().Select(property => property.Name).Except(allowed, StringComparer.Ordinal).ToArray();
+        if (unknown.Length != 0) throw new ArgumentException("Unsupported arguments (game version pins are forbidden): " + string.Join(", ", unknown));
     }
 
     private static string RequiredString(JsonElement arguments, string name)

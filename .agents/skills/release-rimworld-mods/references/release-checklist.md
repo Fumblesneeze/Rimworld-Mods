@@ -4,7 +4,7 @@ Use this reference with the repository root instructions and the active OpenSpec
 
 ## Ownership and source boundaries
 
-- Owning infrastructure mod: RimWorld Dev Gateway (`fumblesneeze.rimworlddevgateway`) at `mods/RimWorldDevGateway`.
+- Owning repository tooling: RimWorldModding.Mcp; the Gateway supplies the isolated in-game publisher.
 - Product mods never reference or package the Gateway.
 - Shared source stays version-neutral. RimWorld-version folders and compiled assemblies are generated only in ignored artifacts and the uploaded package.
 - RimWorld binaries and Steam session material remain external, ignored, and undistributed.
@@ -13,7 +13,7 @@ Use this reference with the repository root instructions and the active OpenSpec
 
 | Input | Purpose |
 | --- | --- |
-| `release/rimworld-targets.yaml` | Stable target IDs, exact depot/manifest set, selected compile files, approved hashes |
+| `release/rimworld-targets.json` | Major/minor IDs, rolling Steam branches, owned external cache directories |
 | `mods/<ModName>/Release/release.json` | Package/Workshop identity, supported targets, file allowlists, and presentation policy; never a gameplay-test selector |
 | `release/templates/` | Reusable BBCode and graphic layouts plus licensed pinned fonts where applicable |
 | `mods/<ModName>/Release/workshop/` | Mod-owned copy, sprite mappings, image ordering, and presentation definitions |
@@ -42,12 +42,9 @@ artifacts/Releases/<package-id>/<run-id>/
 
 The exact schema may evolve through the OpenSpec change. All paths above are ignored generated output, not source directories.
 
-## Dependency identities
+## Game version policy
 
-- Compilation cache identity: app ID + depot ID + exact manifest ID + platform/architecture + normalized selected-file-set hash.
-- Full game cache identity: ordered base/DLC depot and exact-manifest set + platform/architecture.
-- Local SHA-256 indexes detect corruption and tie evidence to the files actually used.
-- External RimSort/version catalogs are discovery inputs only. A target becomes releasable only after its IDs, `Version.txt`, accessibility, and managed-file hashes are pinned and reviewed here.
+Only major/minor RimWorld selectors are allowed, such as 1.6 and 1.7. Patch/revision numbers, Steam build IDs, depot manifest IDs and game-file hashes must never gate acquisition, builds, runs or publication. Strict catalog/profile/operation validation rejects those fields. Rolling branch downloads can refresh the same owned external cache. Full observed game details may be retained as evidence only. Tool/dependency versions and immutable mod package/source/image hashes remain separate concerns.
 
 ## Candidate gates
 
@@ -56,7 +53,7 @@ A publishable candidate has all of the following:
 1. Clean committed source revision and validated release/catalog manifests.
 2. Fresh isolated build for every supported target.
 3. Focused, owning, guarded, Release-build, OpenSpec, and package checks.
-4. Native player-workflow acceptance on each claimed exact target with personally inspected screenshots.
+4. Native player-workflow acceptance on each claimed major/minor target with personally inspected screenshots.
 5. Generated, validated, deterministic, and personally reviewed Workshop presentation.
 6. Positive-allowlist package manifest and immutable candidate/presentation digests.
 7. Independent review findings resolved and affected verification repeated.

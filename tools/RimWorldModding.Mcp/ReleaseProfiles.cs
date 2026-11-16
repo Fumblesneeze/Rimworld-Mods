@@ -52,10 +52,6 @@ public sealed record ReleaseProfile(
     string Author,
     string DistributionKind,
     string RimWorldVersion,
-    string RimWorldBuild,
-    string RimWorldRuntimeBuild,
-    string SteamBuildId,
-    string ManagedAssemblySha256,
     int SteamAppId,
     string SteamUserId,
     string? PublishedFileId,
@@ -141,8 +137,8 @@ public static class ReleaseProfileCatalog
     private static readonly HashSet<string> AllowedProperties = new(StringComparer.Ordinal)
     {
         "schema", "project", "packageId", "title", "author", "distributionKind",
-        "rimWorldVersion", "rimWorldBuild", "rimWorldRuntimeBuild", "steamBuildId",
-        "managedAssemblySha256", "steamAppId", "steamUserId", "publishedFileId",
+        "rimWorldVersion",
+        "steamAppId", "steamUserId", "publishedFileId",
         "allowFirstPublication", "visibility", "tags", "requiredWorkshopItems", "requiredDlcAppIds", "hardRuntimeAssemblyReferences",
         "buildOperation", "presentationOperation", "packageSource", "packageInclude",
         "description", "preview", "previousChangeNote", "changeNote", "verificationProfile", "workshopLinks",
@@ -242,21 +238,12 @@ public static class ReleaseProfileCatalog
             if (string.IsNullOrWhiteSpace(publishedFileId) && visibility != "Private")
                 throw new ReleaseProfileException("First publication visibility must be Private.");
 
-            var managedHash = RequiredString(element, "managedAssemblySha256").ToUpperInvariant();
-            if (!Regex.IsMatch(managedHash, "^[A-F0-9]{64}$"))
-                throw new ReleaseProfileException("managedAssemblySha256 must be 64 hexadecimal characters.");
             var rimWorldVersion = RequiredString(element, "rimWorldVersion");
-            var rimWorldBuild = RequiredString(element, "rimWorldBuild");
-            var rimWorldRuntimeBuild = RequiredString(element, "rimWorldRuntimeBuild");
-            var steamBuildId = RequiredString(element, "steamBuildId");
             var steamUserId = RequiredString(element, "steamUserId");
             var steamAppId = RequiredInt32(element, "steamAppId");
             if (!Regex.IsMatch(rimWorldVersion, "^1\\.[0-9]+$") ||
-                !Regex.IsMatch(rimWorldBuild, "^1\\.[0-9]+\\.[0-9]+ rev[0-9]+$") ||
-                !Regex.IsMatch(rimWorldRuntimeBuild, "^1\\.[0-9]+\\.[0-9]+ rev[0-9]+$") ||
-                !Regex.IsMatch(steamBuildId, "^[1-9][0-9]+$") ||
                 !Regex.IsMatch(steamUserId, "^[1-9][0-9]{16,19}$"))
-                throw new ReleaseProfileException("Pinned RimWorld/Steam build or user identity has an invalid shape.");
+                throw new ReleaseProfileException("RimWorld version must be major/minor only; Steam user identity must be valid.");
 
             var tags = RequiredStringArray(element, "tags");
             var dependencies = RequiredStringArray(element, "requiredWorkshopItems", allowEmpty: true);
@@ -277,8 +264,8 @@ public static class ReleaseProfileCatalog
                 targets = SteamGameTargets.SelectMatrix(SteamGameTargets.LoadCatalog(root),
                     RequiredStringArray(element, "supportedTargets"), developmentTarget ?? "");
                 var development = targets.Single(target => target.Id == developmentTarget);
-                if (development.Version != rimWorldVersion || development.FullVersion != rimWorldBuild)
-                    throw new ReleaseProfileException("Legacy development build fields must match the declared development target.");
+                if (development.Version != rimWorldVersion)
+                    throw new ReleaseProfileException("Development version must match the declared major/minor target.");
                 if (tags.Any(tag => Regex.IsMatch(tag, "^1\\.[0-9]+$")))
                     throw new ReleaseProfileException("Matrix version tags are derived from supportedTargets; remove manually duplicated version tags.");
                 tags = tags.Concat(targets.Select(target => target.Version)).ToArray();
@@ -315,10 +302,6 @@ public static class ReleaseProfileCatalog
                 author,
                 distributionKind,
                 rimWorldVersion,
-                rimWorldBuild,
-                rimWorldRuntimeBuild,
-                steamBuildId,
-                managedHash,
                 steamAppId,
                 steamUserId,
                 publishedFileId,

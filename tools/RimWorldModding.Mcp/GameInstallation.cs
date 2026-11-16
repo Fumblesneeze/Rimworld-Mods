@@ -12,7 +12,7 @@ public sealed record GameInstallation(
     {
         var installation = Inspect(Path.GetDirectoryName(Path.GetFullPath(executablePath))!);
         if (!StringComparer.OrdinalIgnoreCase.Equals(Path.GetFullPath(executablePath), installation.ExecutablePath) ||
-            !StringComparer.Ordinal.Equals(liveVersion.Trim(), installation.Version))
+            CompatibilityVersion(liveVersion) != installation.MajorVersion)
             throw new ArgumentException("The live executable/version does not match the selected RimWorld installation.");
         return installation;
     }
@@ -40,9 +40,7 @@ public sealed record GameInstallation(
         if (new FileInfo(versionPath).Length > 256)
             throw new ArgumentException("RimWorld Version.txt exceeds 256 bytes.");
         var version = File.ReadAllText(versionPath).Trim();
-        var match = Regex.Match(version, @"\A(1\.[67])\.[0-9]+(?: rev[0-9]+)?\z", RegexOptions.CultureInvariant);
-        if (!match.Success) throw new ArgumentException($"Unsupported RimWorld version: '{version}'. Expected 1.6 or 1.7.");
-        var major = match.Groups[1].Value;
+        var major = CompatibilityVersion(version);
         var beta = major == "1.7";
         var executable = Path.Combine(root, beta ? "RimWorld.exe" : "RimWorldWin64.exe");
         var managed = beta ? root : Path.Combine(root, "RimWorldWin64_Data", "Managed");
@@ -50,6 +48,13 @@ public sealed record GameInstallation(
         RequireFile(Path.Combine(managed, "Assembly-CSharp.dll"));
         RequireFile(Path.Combine(managed, beta ? "UnityStubs.dll" : "UnityEngine.CoreModule.dll"));
         return new(root, version, major, executable, managed, beta ? "net10.0" : "net480");
+    }
+
+    public static string CompatibilityVersion(string version)
+    {
+        var match = Regex.Match(version.Trim(), @"\A(1\.[67])(?=[.\s]|$)", RegexOptions.CultureInvariant);
+        if (!match.Success) throw new ArgumentException("Unsupported RimWorld major/minor version: " + version);
+        return match.Groups[1].Value;
     }
 
     private static void RequireFile(string path)

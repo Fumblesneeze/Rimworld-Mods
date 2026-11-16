@@ -1,6 +1,6 @@
-## 1. Exact game inputs
+## 1. Major/minor game inputs
 - [ ] 1.1 Implement and test typed pinned DepotDownloader onboarding/acquisition with external-only paths and credential-free evidence.
-- [ ] 1.2 Download both exact targets, pin identities/hashes and validate cache reuse.
+- [ ] 1.2 Download both major/minor branches, validate cache reuse and reject forbidden game pins.
 ## 2. Matrix build
 - [ ] 2.1 Test and implement explicit target declarations, isolated compilation and combined package validation.
 - [ ] 2.2 Generate version metadata and install the combined canonical package.

@@ -5,6 +5,13 @@ namespace RimWorldModding.Mcp.Tests;
 [TestFixture]
 public sealed class GameInstallationTests
 {
+    [Test]
+    public void Any_patch_and_revision_within_the_same_major_minor_is_accepted()
+    {
+        Arrange("1.6.4871 rev590", "RimWorldWin64.exe", "RimWorldWin64_Data/Managed", "UnityEngine.CoreModule.dll");
+        Assert.That(() => GameInstallation.ForExecutable(Path.Combine(root, "RimWorldWin64.exe"), "1.6.9999 rev12345"), Throws.Nothing);
+    }
+
     private string root = null!;
 
     [SetUp]
@@ -33,7 +40,7 @@ public sealed class GameInstallationTests
 
     [TestCase("1.8.1")]
     [TestCase("1.70.1")]
-    [TestCase("1.7.invalid")]
+    [TestCase("invalid")]
     public void RejectsUnsupportedOrMalformedVersions(string version)
     {
         Arrange(version, "RimWorld.exe", ".", "UnityStubs.dll");
@@ -41,12 +48,12 @@ public sealed class GameInstallationTests
     }
 
     [Test]
-    public void SessionCompilationRejectsDifferentBuildOrExecutable()
+    public void SessionCompilationRejectsDifferentMajorMinorOrExecutable()
     {
         Arrange("1.7.4984 rev1242", "RimWorld.exe", ".", "UnityStubs.dll");
         Assert.That(GameInstallation.ForExecutable(Path.Combine(root, "RimWorld.exe"), "1.7.4984 rev1242").Root,
             Is.EqualTo(root));
-        Assert.Throws<ArgumentException>(() => GameInstallation.ForExecutable(Path.Combine(root, "RimWorld.exe"), "1.7.4985 rev1243"));
+        Assert.Throws<ArgumentException>(() => GameInstallation.ForExecutable(Path.Combine(root, "RimWorld.exe"), "1.6.9999 rev123"));
         Assert.Throws<ArgumentException>(() => GameInstallation.ForExecutable(Path.Combine(root, "Other.exe"), "1.7.4984 rev1242"));
     }
 

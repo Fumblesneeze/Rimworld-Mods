@@ -7,33 +7,28 @@ namespace RimWorldModding.Mcp;
 [McpServerToolType]
 public static class McpTools
 {
-    [McpServerTool(Name = "release_target_test"), Description("Run focused native workflows against the frozen combined package on one declared exact cached game target.")]
+    [McpServerTool(Name = "release_target_test"), Description("Run focused native workflows against the frozen combined package on one declared major/minor cached game target.")]
     public static async Task<string> TestReleaseTarget(OperationRegistry registry, string packageId, string targetId,
         string projectPath, string[] testIds, string? cacheRoot, int timeoutSeconds, bool dryRun, CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync("release_target_test", JsonSerializer.SerializeToElement(new
         { packageId, targetId, projectPath, testIds, cacheRoot, timeoutSeconds, dryRun }), cancellationToken));
 
-    [McpServerTool(Name = "release_matrix_build"), Description("Build all declared exact game targets independently, merge and install the combined package without publishing.")]
+    [McpServerTool(Name = "release_matrix_build"), Description("Build all declared major/minor game targets independently, merge and install the combined package without publishing.")]
     public static async Task<string> BuildReleaseMatrix(OperationRegistry registry, string packageId, string? cacheRoot,
         string? modsRoot, string? configuration, CancellationToken cancellationToken) => OperationJson.Serialize(await registry.InvokeAsync("release_matrix_build",
         JsonSerializer.SerializeToElement(new { packageId, cacheRoot, modsRoot, configuration }), cancellationToken));
 
-    [McpServerTool(Name = "game_target_snapshot"), Description("Create an external acquired-game inventory for explicit review and target-catalog pinning.")]
-    public static async Task<string> SnapshotGameTarget(OperationRegistry registry, string targetId, string targetDirectory,
-        string? cacheRoot, CancellationToken cancellationToken) => OperationJson.Serialize(await registry.InvokeAsync("game_target_snapshot",
-        JsonSerializer.SerializeToElement(new { targetId, targetDirectory, cacheRoot }), cancellationToken));
-
-    [McpServerTool(Name = "game_target_validate"), Description("Verify every approved file and Steam manifest in one committed exact game target.")]
+    [McpServerTool(Name = "game_target_validate"), Description("Validate owned cache layout and major/minor compatibility.")]
     public static async Task<string> ValidateGameTarget(OperationRegistry registry, string targetId,
         string? cacheRoot, CancellationToken cancellationToken) => OperationJson.Serialize(await registry.InvokeAsync("game_target_validate",
         JsonSerializer.SerializeToElement(new { targetId, cacheRoot }), cancellationToken));
 
-    [McpServerTool(Name = "game_depot_download"), Description("Acquire a pinned Steam depot or onboard a branch outside the repo. Interactive QR login opens a user-controlled console; no secrets enter repository evidence.")]
+    [McpServerTool(Name = "game_depot_download"), Description("Download or refresh the rolling Steam branch for a major/minor target. Cached login is reused; interactive login opens a user-controlled console.")]
     public static async Task<string> DownloadGameDepot(OperationRegistry registry,
-        string downloaderPath, string targetDirectory, string branch, string? depotId, string? manifestId,
-        bool interactiveLogin, string? accountName, bool manifestOnly, CancellationToken cancellationToken) =>
+        string downloaderPath, string targetDirectory, string targetId,
+        bool interactiveLogin, string? accountName, CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync("game_depot_download", JsonSerializer.SerializeToElement(new
-        { downloaderPath, targetDirectory, branch, depotId, manifestId, interactiveLogin, accountName, manifestOnly }), cancellationToken));
+        { downloaderPath, targetDirectory, targetId, interactiveLogin, accountName }), cancellationToken));
 
     [McpServerTool(Name = "game_installation_inspect"), Description("Inspect a supported 1.6 or 1.7 game layout without loading assemblies or launching RimWorld.")]
     public static async Task<string> InspectGameInstallation(

@@ -6,11 +6,11 @@ The repository needs reproducible multi-version releases without committing RimW
 
 ## What Changes
 
-- Add a per-mod release manifest that declares the authoritative supported RimWorld versions, current development target, required and optional mod relationships, exact game build inputs, package layout, presentation inputs, and Workshop identity.
-- Acquire exact RimWorld managed assemblies from Steam into an ignored content-addressed cache and compile every supported target independently against its own assembly set.
+- Add a per-mod release manifest that declares the authoritative supported RimWorld versions, current development target, required and optional mod relationships, major/minor game inputs, package layout, presentation inputs, and Workshop identity.
+- Acquire declared major/minor RimWorld branches from Steam into an owned external cache and compile every supported target independently against its own assembly set.
 - Generate versioned folders only inside ignored release artifacts; keep repository source and compiled DLLs version-neutral and uncommitted.
 - Keep new feature code on the unguarded current-version path while compiling narrow legacy C# compatibility seams with generated symbols such as `RIMWORLD1_6`; generate target-specific XML projections from canonical XML plus declared legacy overrides when engine data shapes diverge.
-- Allow isolated scenario/E2E runs to select and launch an exact cached RimWorld build for regression testing.
+- Allow isolated scenario/E2E runs to select and launch a cached major/minor RimWorld installation for regression testing.
 - Render the Steam Workshop description separately from the in-game `About/About.xml`, including required/optional mod sections, deterministic text banners, and content/mechanics graphics composed from templates, mod sprites, and authored copy.
 - Require an authored player-facing Steam change note for every incremental publication, and let each mod declare a reviewed ordered set of additional-preview showcases made from real in-game screenshots and short GIFs.
 - Generate required-mod entries in packaged RimWorld metadata and add a typed, authenticated Dev Gateway publication operation that uses RimWorld's initialized Steam integration to upload the reviewed staged package, presentation assets, and exact Steam required-item relationships without depending on the incomplete in-game upload UI.
@@ -27,7 +27,7 @@ The repository needs reproducible multi-version releases without committing RimW
 
 ### New Capabilities
 
-- `dev-gateway-mod-release-automation`: Exact-version dependency acquisition, build/test matrices, generated Workshop presentation, staged release validation, and guarded Steam publication.
+- `dev-gateway-mod-release-automation`: Major/minor dependency acquisition, build/test matrices, generated Workshop presentation, staged release validation, and guarded Steam publication.
 
 ### Modified Capabilities
 
