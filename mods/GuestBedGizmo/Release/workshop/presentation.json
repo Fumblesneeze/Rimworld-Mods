@@ -1,5 +1,9 @@
 {
   "schema": "GuestBedGizmo/WorkshopPresentation/v1",
+  "titleToken": "hospitality-ideology",
+  "includeTitleInCarousel": false,
+  "carouselCards": [],
+  "cards": [],
   "imageGenerationUsed": false,
   "acceptedRun": {
     "runId": "20260824T121936256Z",

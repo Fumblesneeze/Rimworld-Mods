@@ -282,17 +282,16 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
         if (tokens.Any(token => !cardPaths.ContainsKey(token)))
             throw new InvalidOperationException("Workshop carousel references an undeclared card.");
 
-        var inputs = new List<WorkshopPreviewInput>
-        {
-            CreateInput(0, titleToken, titlePath)
-        };
+        var includeTitle = !manifest.TryGetProperty("includeTitleInCarousel", out var includeTitleProperty) || includeTitleProperty.GetBoolean();
+        var inputs = new List<WorkshopPreviewInput>();
+        if (includeTitle) inputs.Add(CreateInput(0, titleToken, titlePath));
         for (var index = 0; index < tokens.Length; index++)
         {
             var token = tokens[index];
             var relative = cardPaths[token].Replace('/', Path.DirectorySeparatorChar);
             if (Path.IsPathRooted(relative) || relative.Split(Path.DirectorySeparatorChar).Contains("..", StringComparer.Ordinal))
                 throw new InvalidOperationException($"Workshop feature-card path is unsafe for '{token}'.");
-            inputs.Add(CreateInput(index + 1, token, RequireContainedFile(root, Path.Combine(root, relative))));
+            inputs.Add(CreateInput(inputs.Count, token, RequireContainedFile(root, Path.Combine(root, relative))));
         }
         return inputs;
     }

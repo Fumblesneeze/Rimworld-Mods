@@ -28,3 +28,4 @@ The mod SHALL update its retained Public Workshop item through separate package-
 #### Scenario: The update is released
 - **WHEN** both native target gates and package checks pass
 - **THEN** one combined package is uploaded with an authored change note, the separate page update advertises 1.6 and 1.7 beta, unchanged content is verified, and publication remains at the main menu with isolated cleanup
+- **AND** the existing menu preview remains the sole primary image, with no additional slideshow or inline images

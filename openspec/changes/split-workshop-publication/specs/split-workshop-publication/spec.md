@@ -69,6 +69,10 @@ The repository tooling `RimWorldModding.Mcp` SHALL expose independent package-up
 - **WHEN** a profile declares a valid description and primary preview but no presentation manifest
 - **THEN** its page update uses an empty additional slideshow
 
+#### Scenario: Primary preview is excluded from the additional slideshow
+- **WHEN** a presentation manifest sets includeTitleInCarousel to false
+- **THEN** only its explicitly ordered carouselCards become additional previews, with contiguous zero-based indexes; an empty list leaves only the primary preview
+
 #### Scenario: Steam sign-in is temporarily unavailable
 - **WHEN** the main-menu publisher reports no signed-in Steam identity
 - **THEN** it waits at most two minutes for the expected owner, while a different nonzero owner fails immediately

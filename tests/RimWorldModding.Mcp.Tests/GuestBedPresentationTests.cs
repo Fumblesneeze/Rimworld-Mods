@@ -7,6 +7,13 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class GuestBedPresentationTests
 {
     [Test]
+    public void WorkshopPagePreservesPrimaryOnlyPreview()
+    {
+        var profile = ReleaseProfileCatalog.Discover(TestRepository.FindRoot())
+            .Single(item => item.PackageId == "fumblesneeze.guestbedgizmo");
+        Assert.That(WorkshopPresentationSynchronizer.ReadPreviewInputs(Path.GetDirectoryName(profile.Preview)!, profile.Preview), Is.Empty);
+    }
+    [Test]
     public void ReleaseProfile_IncludesBothGamePayloadsWithoutExternalAssemblies()
     {
         var profile = ReleaseProfileCatalog.Discover(TestRepository.FindRoot())

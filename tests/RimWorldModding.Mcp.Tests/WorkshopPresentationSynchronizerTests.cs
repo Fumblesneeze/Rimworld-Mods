@@ -9,6 +9,28 @@ namespace RimWorldModding.Mcp.Tests;
 [TestFixture]
 public sealed class WorkshopPresentationSynchronizerTests
 {
+    [TestCase(0)]
+    [TestCase(1)]
+    public void GalleryCanOmitThePrimaryPreview(int cardCount)
+    {
+        var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "optional-title-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var title = Path.Combine(root, "preview.png");
+            File.WriteAllBytes(title, [1, 2, 3]);
+            File.WriteAllBytes(Path.Combine(root, "card.png"), [4, 5, 6]);
+            File.WriteAllText(Path.Combine(root, "presentation.json"), JsonSerializer.Serialize(new
+            {
+                schema = "Example/WorkshopPresentation/v1", titleToken = "title", includeTitleInCarousel = false,
+                carouselCards = Enumerable.Repeat("card", cardCount), cards = new[] { new { token = "card", path = "card.png" } }
+            }));
+            var previews = WorkshopPresentationSynchronizer.ReadPreviewInputs(root, title);
+            Assert.That(previews.Select(item => item.Token), Is.EqualTo(Enumerable.Repeat("card", cardCount)));
+            Assert.That(previews.Select(item => item.Index), Is.EqualTo(Enumerable.Range(0, cardCount)));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
     [Test]
     public void Page_without_a_slideshow_manifest_keeps_only_its_primary_preview()
     {

@@ -76,6 +76,10 @@ remains in `presentation.json` and is independent of inline inventory. `release_
 is retired. Immersive Chefs uses byte-identical hosting copies under `docs/img/ic` to keep immutable
 URLs within Steam's 8,000-byte description budget without shortening the authored wording.
 
+A presentation manifest can set `includeTitleInCarousel:false` to omit the primary preview from
+the additional slideshow. With empty `carouselCards` and `cards` arrays, the page retains only its
+primary preview; existing manifests default to including the title image first.
+
 `mod_build` builds the selected profile and then installs the successful positive-allowlist package
 into the configured local RimWorld `Mods/<package-id>` directory by default. `local_mod_sync` is the
 explicit install-only equivalent. Both stage outside the scanned Mods directory, replace only the
