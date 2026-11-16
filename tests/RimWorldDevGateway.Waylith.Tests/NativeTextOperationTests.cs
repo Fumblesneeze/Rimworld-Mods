@@ -6,6 +6,49 @@ namespace RimWorldDevGateway.Waylith.Tests;
 public sealed class NativeTextOperationTests
 {
     [Test]
+    public void FirstFocusRejectionSnapshotIsRetainedBeforeCleanupChangesTheObservedState()
+    {
+        double observedWidth = 148;
+        int diagnosticReads = 0;
+        var backend = new Backend { CleanupAction = () => observedWidth = 200 };
+        var operation = new GatewayNativeTextOperation(backend, "123", () =>
+        {
+            diagnosticReads++;
+            return new Dictionary<string, object?> { ["sameEditor"] = true, ["sameControl"] = true,
+                ["sameWindow"] = true, ["capturedWidth"] = 200d, ["currentWidth"] = observedWidth };
+        });
+        for (int phase = 0; phase < 6; phase++) { operation.BeforeDispatch(); operation.AfterDispatch(true); }
+        operation.BeforeDispatch(); operation.AfterDispatch(false, "stale_native_text_focus");
+        var result = operation.Advance(false)!;
+        var receipt = Receipt(result);
+        var diagnostic = (IReadOnlyDictionary<string, object?>)receipt["focusFailure"]!;
+        Assert.That(result.Error!.Code, Is.EqualTo("stale_native_text_focus"));
+        Assert.That(receipt["charactersDispatched"], Is.EqualTo(2));
+        Assert.That(diagnostic["currentWidth"], Is.EqualTo(148d));
+        Assert.That(observedWidth, Is.EqualTo(200));
+        Assert.That(receipt["cleanupComplete"], Is.True);
+        operation.BeforeDispatch(); operation.AfterDispatch(false, "different-failure");
+        Assert.That(operation.Advance(false), Is.SameAs(result));
+        Assert.That(diagnosticReads, Is.EqualTo(1));
+        Assert.That(backend.Cleanups, Is.EqualTo(1));
+        Assert.That(System.Text.Encoding.UTF8.GetString(GatewayJsonWriter.Write(result.Result)), Does.Not.Contain("123"));
+    }
+
+    [Test]
+    public void AFailedOptionalDiagnosticCannotReplaceTheInputFailureOrPreventOwnedCleanup()
+    {
+        var backend = new Backend();
+        var operation = new GatewayNativeTextOperation(backend, "12", () => throw new InvalidOperationException("secret diagnostic detail"));
+        operation.BeforeDispatch(); operation.AfterDispatch(false, "stale_native_text_focus");
+        var result = operation.Advance(false)!;
+        Assert.That(result.Error!.Code, Is.EqualTo("stale_native_text_focus"));
+        Assert.That(Receipt(result)["focusFailure"], Is.Null);
+        Assert.That(Receipt(result)["cleanupComplete"], Is.True);
+        Assert.That(backend.Cleanups, Is.EqualTo(1));
+        Assert.That(System.Text.Encoding.UTF8.GetString(GatewayJsonWriter.Write(result.Result)), Does.Not.Contain("secret"));
+    }
+
+    [Test]
     public void FinalReceiptRetainsOriginalRejectionAndEverySanitizedCleanupFailure()
     {
         var keys = new GatewayNativeTextKeys();

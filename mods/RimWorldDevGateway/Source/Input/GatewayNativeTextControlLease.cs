@@ -2,9 +2,10 @@ namespace RimWorldDevGateway;
 
 internal sealed class GatewayNativeTextControlLease
 {
-    // Native QuickSearch reserves its 18-unit icon plus 8-unit spacing only while text is active.
+    // QuickSearch's clear icon/spacing and Options' results scrollbar each reserve 26 units.
+    // The retained native failure measured the same editor changing from width 411 to 359.
     // Keep the original capture as the baseline; accepting a width change never rebinds identity.
-    private const double MaximumWidthChange = 26;
+    private const double MaximumWidthChange = 52;
     private readonly object editor;
     private readonly int control, window;
     private readonly double x, y, width, height;

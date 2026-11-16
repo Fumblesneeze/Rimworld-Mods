@@ -51,7 +51,7 @@ the process because its window state changed.
 
 | Symptom | Likely cause | Correct response |
 | --- | --- | --- |
-| Native QuickSearch typing stops after one character with `stale_native_text_focus` | Its clear button changes the focused field width by26 GUI units when the filter becomes active | Inspect the native input receipt and source geometry before changing product code. The width-aware text lease preserves exact editor/control/window identity and position/height, allowing only26 units from the immutable captured width. Do not bypass query coverage, retry blindly, or relax other identity checks. |
+| Native QuickSearch typing stops after one or two characters with `stale_native_text_focus` | Its clear button and the Options results scrollbar each change the focused field width by26 GUI units | Inspect the receipt's `focusFailure` identity flags and geometry before changing product code. The measured same-editor transition was411→359. The width-aware lease preserves exact editor/control/window identity and position/height, allowing only52 units from the immutable captured width. Do not bypass query coverage, retry blindly, or relax other identity checks. |
 | Startup flickers, pawn briefly moves, or fixtures appear | An implicit/default scenario is running | Launch with `-Quicktest` and omit `-Scenario`; run one explicitly selected scenario/test only |
 | Camera endpoint reports success but view does not move | Stale state, wrong program boundary, or unobserved client | Re-query UI/camera state and capture before/after from the same PID; do not add desktop guesses |
 | `Could not find player faction` | Quicktest reached a map before faction/player-control readiness | Wait for player faction and `Game.PlayerHasControl` before setup/actions |

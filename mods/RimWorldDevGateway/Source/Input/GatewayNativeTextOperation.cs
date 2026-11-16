@@ -16,15 +16,18 @@ internal sealed class GatewayNativeTextOperation : IGatewayDeferredAutomationOpe
     public const int MaximumCharacters = 128;
     private readonly IGatewayNativeTextBackend backend;
     private readonly string text;
+    private readonly Func<IReadOnlyDictionary<string, object?>?>? failureDiagnostic;
     private GatewayDeferredAutomationResult? result;
     private int completed;
     private bool queued, stopped, cleanup, uncertain;
     private string? failure;
-    public GatewayNativeTextOperation(IGatewayNativeTextBackend backend, string text)
+    public GatewayNativeTextOperation(IGatewayNativeTextBackend backend, string text,
+        Func<IReadOnlyDictionary<string, object?>?>? failureDiagnostic = null)
     {
         this.backend = backend ?? throw new ArgumentNullException(nameof(backend));
         if (!ValidText(text)) throw new ArgumentException("Replacement text must be bounded printable BMP text.", nameof(text));
         this.text = text;
+        this.failureDiagnostic = failureDiagnostic;
     }
     public static bool ValidText(string? value) => value != null && value.Length <= MaximumCharacters &&
         !value.Any(character => char.GetUnicodeCategory(character) is System.Globalization.UnicodeCategory.Control or
@@ -66,6 +69,9 @@ internal sealed class GatewayNativeTextOperation : IGatewayDeferredAutomationOpe
         cleanup |= stopped || failure != null || completed == text.Length + 4;
         if (!cleanup) return;
         string? initial = failure;
+        IReadOnlyDictionary<string, object?>? focusFailure = null;
+        try { if (initial != null) focusFailure = failureDiagnostic?.Invoke(); }
+        catch { } // Optional diagnostics cannot change rejection or suppress owned cleanup.
         IReadOnlyList<IReadOnlyDictionary<string, object?>> cleanupFailures = Array.Empty<IReadOnlyDictionary<string, object?>>();
         bool cleanupFailuresTruncated = false;
         try { backend.Cleanup(); }
@@ -96,6 +102,7 @@ internal sealed class GatewayNativeTextOperation : IGatewayDeferredAutomationOpe
             ["charactersDispatched"] = Math.Max(0, completed - 4), ["requestedCharacters"] = text.Length,
             ["cleanupComplete"] = !IsQuarantined, ["stopped"] = stopped,
             ["dispatchUncertain"] = uncertain, ["initialFailure"] = initial,
+            ["focusFailure"] = focusFailure,
             ["cleanupFailures"] = cleanupFailures, ["cleanupFailuresTruncated"] = cleanupFailuresTruncated
         };
         result = failure == null ? GatewayDeferredAutomationResult.Success(receipt) :

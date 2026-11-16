@@ -210,15 +210,22 @@ the game, move the desktop pointer, or call a product setting setter in place of
 - **AND** the initial repository operation limit is128 characters and control/format/unassigned characters, line/paragraph separators and surrogate code units are rejected before input; this is not an engine text-length claim
 
 #### Scenario: A focused field changes during text delivery
-- **WHEN** focus, editor instance, control ID, editor position/height, owning native window or window geometry changes, or editor width leaves the finite positive range within 26 GUI units of its captured width, including during the layout immediately before a key/text event
+- **WHEN** focus, editor instance, control ID, editor position/height, owning native window or window geometry changes, or editor width leaves the finite positive range within 52 GUI units of its captured width, including during the layout immediately before a key/text event
 - **THEN** remaining replacement input is refused before reaching another field or an underlying game command
 - **AND** retained evidence separates already delivered chord/clear/characters from undelivered input and confirmed owned cleanup
 
-#### Scenario: Native QuickSearch exposes its clear button during replacement
-- **WHEN** native replacement clears or first populates the same focused QuickSearch editor and its clear-button affordance changes the field width by 26 GUI units
+#### Scenario: Native QuickSearch exposes its clear button and results scrollbar during replacement
+- **WHEN** native replacement clears or first populates the same focused QuickSearch editor and its clear-button affordance and results scrollbar each change the field width by 26 GUI units
 - **THEN** replacement continues through the existing native input path while the exact editor reference, control ID, owning native window, writable single-line state, position, height and outer window geometry remain unchanged
-- **AND** only finite positive widths within 26 GUI units of the original captured width are admitted; the bound comes from the inspected 18-unit native icon plus 8-unit spacing, and accepted changes never rebind that baseline or permit cumulative drift
+- **AND** only finite positive widths within 52 GUI units of the original captured width are admitted; the bound combines the inspected 18-unit native icon plus 8-unit spacing with the native Options scrollbar's 26-unit reservation, confirmed by the same focused editor changing from width411 to359 in the retained native receipt; accepted changes never rebind that baseline or permit cumulative drift
 - **AND** changed identity, focus, position, height, invalid width or a larger width change still refuses remaining input and retains owned cleanup; no retry, replacement handle or direct editor mutation is used
+
+#### Scenario: Retain the first native text focus rejection for diagnosis
+- **WHEN** a replacement fails its existing focus or geometry guard after admission
+- **THEN** its existing final receipt retains the first rejection snapshot before cleanup, alongside the unchanged failure code and delivered-input counts
+- **AND** the bounded snapshot contains only fixed reason codes, editor/control/window identity-equality flags, numeric native control/window IDs, writable/single-line flags and captured/observed/current editor rectangles; nonfinite coordinates become null
+- **AND** it records the first failed capturability condition when no current field can be admitted, without text contents, editor objects, arbitrary exception details or secrets
+- **AND** a missing diagnostic cannot replace the input failure or suppress owned cleanup; no guard is relaxed, input retried or handle rebound to gather it
 
 #### Scenario: Text replacement is cancelled with owned input pending
 - **WHEN** cancellation or failure interrupts a replacement while a key or character remains owned

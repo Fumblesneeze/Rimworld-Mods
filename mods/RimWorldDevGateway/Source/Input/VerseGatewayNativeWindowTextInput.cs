@@ -43,7 +43,7 @@ internal sealed partial class VerseGatewayNativeWindowInput
         if (backend.Validate() is string rejection) throw Error(rejection);
         context.RunStep("native-text-admission", () => { });
         textContext = context; textBackend = backend;
-        textActive = new GatewayNativeTextOperation(backend, text);
+        textActive = new GatewayNativeTextOperation(backend, text, () => backend.FocusFailure);
         textResult = new GatewayNativeInputResultOperation(textActive, () => failure ?? backend.ScopeFailure);
         return textResult;
 #else
@@ -146,14 +146,20 @@ internal sealed partial class VerseGatewayNativeWindowInput
             info.transpilers.Length + info.innerprefixes.Length + info.innerpostfixes.Length + info.innerfinalizers.Length == 0;
     }
 
-    private FocusedText? CapturableText(Window window)
+    private FocusedText? CapturableText(Window window) => CapturableText(window, out _);
+
+    private FocusedText? CapturableText(Window window, out string? unavailableReason)
     {
         var focus = lastFocusedText;
-        return textContract != null && focus != null && focus.Window == window.ID && focus.Writable && !focus.Editor.multiline &&
-            (bool)textContract.CapturesText.GetValue(null)! &&
-            GUIUtility.keyboardControl == focus.Control && GUI.GetFocusedControlWindowId() == window.ID &&
-            ReferenceEquals(GUIUtility.QueryStateObject(typeof(TextEditor), focus.Control), focus.Editor) &&
-            focus.Editor.controlID == focus.Control && focus.Editor.position == focus.Rect && Find.WindowStack.GetsInput(window) ? focus : null;
+        unavailableReason = textContract == null ? "contract-unavailable" : focus == null ? "no-observed-focused-field" :
+            focus.Window != window.ID ? "observed-window-changed" : !focus.Writable ? "readonly" : focus.Editor.multiline ? "multiline" :
+            !(bool)textContract.CapturesText.GetValue(null)! ? "not-capturing-text" :
+            GUIUtility.keyboardControl != focus.Control ? "keyboard-control-changed" :
+            GUI.GetFocusedControlWindowId() != window.ID ? "focused-window-changed" :
+            !ReferenceEquals(GUIUtility.QueryStateObject(typeof(TextEditor), focus.Control), focus.Editor) ? "editor-state-changed" :
+            focus.Editor.controlID != focus.Control ? "editor-control-changed" : focus.Editor.position != focus.Rect ? "editor-position-changed" :
+            !Find.WindowStack.GetsInput(window) ? "window-not-input-owner" : null;
+        return unavailableReason == null ? focus : null;
     }
 
     private static void BeforeNativeTextField(out FieldObservation? __state)
@@ -294,6 +300,7 @@ internal sealed partial class VerseGatewayNativeWindowInput
         private EventModifiers expectedModifiers;
         public bool InjectionFailed { get; private set; }
         public string? Rejection { get; set; }
+        public IReadOnlyDictionary<string, object?>? FocusFailure { get; private set; }
         public bool AllDelivered => expected.Count != 0 && expected.SetEquals(delivered) && Rejection == null;
         public string? ScopeFailure => pointer?.Reject(DateTimeOffset.UtcNow, ReadPointer());
         private List<char> Characters => (List<char>)service.contract!.TypedCharacters.GetValue(service.dispatchInstance)!;
@@ -314,18 +321,48 @@ internal sealed partial class VerseGatewayNativeWindowInput
         {
             var window = capture.Window;
             var stack = Find.WindowStack;
-            if (!ReferenceEquals(stack, window.Stack) || !stack.Windows.Any(item => ReferenceEquals(item, window.Window))) return "stale_window_instance";
+            if (!ReferenceEquals(stack, window.Stack) || !stack.Windows.Any(item => ReferenceEquals(item, window.Window))) return RejectFocus("stale_window_instance");
             var geometry = window.Descriptor.Geometry; var rect = window.Window.windowRect;
-            if (window.Identity.Validate(window.Window, stack) is string rejection) return rejection;
+            if (window.Identity.Validate(window.Window, stack) is string rejection) return RejectFocus(rejection);
             if (!ReferenceEquals(service.dispatchInstance, window.Dispatcher) || !ReferenceEquals(service.dispatchHost, window.Host) ||
                 rect.x != geometry.X || rect.y != geometry.Y || rect.width != geometry.Width || rect.height != geometry.Height ||
                 Prefs.UIScale != geometry.UiScale || Screen.width != geometry.PixelWidth || Screen.height != geometry.PixelHeight || !service.ValidExtent())
-                return "stale_window_geometry";
-            if (!stack.GetsInput(window.Window)) return "native_window_obscured";
-            var current = service.CapturableText(window.Window);
-            if (current == null) return "stale_native_text_focus";
-            return capture.Identity.Validate(current.Editor, current.Control, current.Window, current.Writable, current.Editor.multiline,
+                return RejectFocus("stale_window_geometry");
+            if (!stack.GetsInput(window.Window)) return RejectFocus("native_window_obscured");
+            var current = service.CapturableText(window.Window, out var unavailableReason);
+            if (current == null) return RejectFocus("stale_native_text_focus", unavailableReason);
+            var failure = capture.Identity.Validate(current.Editor, current.Control, current.Window, current.Writable, current.Editor.multiline,
                 current.Rect.x, current.Rect.y, current.Rect.width, current.Rect.height);
+            return failure == null ? null : RejectFocus(failure);
+        }
+        private string RejectFocus(string failure, string? unavailableReason = null)
+        {
+            if (FocusFailure != null) return failure;
+            try
+            {
+                var current = service.lastFocusedText;
+                var captured = capture.Focus;
+                object? Number(float value) => float.IsNaN(value) || float.IsInfinity(value) ? null : (double)value;
+                IReadOnlyDictionary<string, object?> Rectangle(Rect value) => new Dictionary<string, object?>
+                { ["x"] = Number(value.x), ["y"] = Number(value.y), ["width"] = Number(value.width), ["height"] = Number(value.height) };
+                FocusFailure = new Dictionary<string, object?>
+                {
+                    ["rejection"] = failure, ["capturableNullReason"] = unavailableReason,
+                    ["sameEditor"] = current != null && ReferenceEquals(captured.Editor, current.Editor),
+                    ["sameControl"] = current != null && captured.Control == current.Control,
+                    ["sameWindow"] = current != null && captured.Window == current.Window,
+                    ["capturedControl"] = captured.Control, ["observedControl"] = current?.Control,
+                    ["keyboardControl"] = GUIUtility.keyboardControl, ["editorControl"] = current?.Editor.controlID,
+                    ["capturedWindow"] = captured.Window, ["observedWindow"] = current?.Window,
+                    ["focusedWindow"] = GUI.GetFocusedControlWindowId(),
+                    ["capturedRect"] = Rectangle(captured.Rect),
+                    ["observedRect"] = current == null ? null : Rectangle(current.Rect),
+                    ["currentRect"] = current == null ? null : Rectangle(current.Editor.position),
+                    ["writable"] = current?.Writable, ["multiline"] = current?.Editor.multiline
+                };
+            }
+            catch { FocusFailure = new Dictionary<string, object?> { ["diagnosticUnavailable"] = true }; }
+            return failure;
         }
         private string? ValidateInput()
         {
