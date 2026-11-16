@@ -89,7 +89,7 @@ internal static class GuestBedOwnerAssignmentPatch
             return;
         }
 
-        var bedsToAffect = (List<Building_Bed>)BedsToAffectField.GetValue(closure);
+        var bedsToAffect = (List<Building_Bed>)BedsToAffectField.GetValue(closure)!;
         Building_Bed[] selectedBeds = Find.Selector.SelectedObjects
             .OfType<Building_Bed>()
             .Distinct()
@@ -115,7 +115,7 @@ internal static class GuestBedOwnerAssignmentPatch
             return true;
         }
 
-        var bedsToAffect = (List<Building_Bed>)BedsToAffectField.GetValue(__instance);
+        var bedsToAffect = (List<Building_Bed>)BedsToAffectField.GetValue(__instance)!;
         bool[] included = Enumerable.Repeat(true, bedsToAffect.Count).ToArray();
         if (GuestBedConversionTransaction.TryConvert(
                 bedsToAffect,

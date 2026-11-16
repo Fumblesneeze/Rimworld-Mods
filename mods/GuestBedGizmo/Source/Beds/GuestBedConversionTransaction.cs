@@ -135,8 +135,8 @@ internal static class GuestBedConversionTransaction
         foreach (object selected in selectedObjects)
         {
             object replacement = selected is Building_Bed bed &&
-                                 replacements.TryGetValue(bed, out Building_Bed converted)
-                ? converted
+                                 replacements.TryGetValue(bed, out Building_Bed? converted)
+                ? converted!
                 : selected;
             if (replacement is Thing thing && thing.Destroyed)
             {
