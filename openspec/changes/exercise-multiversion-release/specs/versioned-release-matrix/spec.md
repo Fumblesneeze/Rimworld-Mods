@@ -22,6 +22,10 @@ The release profile SHALL name supported compile targets and a development targe
 - **WHEN** a profile declares 1.6 and 1.7 and each independent build succeeds
 - **THEN** the combined allowlisted package contains both version folders and metadata lists exactly those versions
 
+#### Scenario: Runtime framework facades differ
+- **WHEN** the 1.6 Mono game directory contains framework facades with different type-forwarding identities
+- **THEN** opted-in builds use the .NET Framework reference pack for system types and the exact game directory for game APIs, avoiding mixed framework references
+
 #### Scenario: Invalid matrix
 - **WHEN** a target is missing, repeated, unsupported, or collides with another compatibility folder
 - **THEN** validation fails before download, compilation, installation or publication

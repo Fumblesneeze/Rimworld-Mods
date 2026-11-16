@@ -7,6 +7,11 @@
     <Error Condition="!Exists('$(RimWorldManagedPath)/Assembly-CSharp.dll')" Text="Missing Assembly-CSharp.dll in $(RimWorldManagedPath)." />
     <Error Condition="'$(RimWorldVersion)' == '1.7' and !Exists('$(RimWorldManagedPath)/UnityStubs.dll')" Text="RimWorld 1.7 requires UnityStubs.dll." />
   </Target>
+    <ItemGroup Condition="'$(RimWorldVersion)' == '1.6'">
+      <!-- Mono's runtime facades can forward framework types to different assemblies
+           than the .NET Framework reference pack (for example Queue<T>). -->
+      <Reference Remove="$(RimWorldManagedPath)\System*.dll;$(RimWorldManagedPath)\mscorlib.dll;$(RimWorldManagedPath)\netstandard.dll" />
+    </ItemGroup>
     <ItemGroup Condition="'$(RimWorldVersion)' == '1.7'">
       <!-- The SDK's root glob includes the entire self-contained CLR. Framework
            reference assemblies must come from the SDK, never the game's runtime. -->
