@@ -81,8 +81,9 @@ A publishable candidate has all of the following:
   Steam ID/owner/app/title query first, and an admitted-but-indeterminate submit is query-reconciled
   before any further mutation.
 - Check every SteamUGC setter, submit result, legal-agreement flag, and remote identity.
-- Verify remote metadata/previews after propagation and require the exact item's nonzero
-  `time_updated` to be strictly newer than the immutable pre-submit baseline.
+- Verify remote metadata/previews after propagation. Package uploads require nonzero `time_updated`
+  newer than the immutable baseline; page updates may retain it after the exact changed page fields
+  and preserved content identity/size are verified. A regressed or zero timestamp always fails.
 - Assume applicable tests and native player-workflow acceptance completed before the release trigger.
   Do not subscribe, reacquire, move the local package, or run a mod-specific smoke in publication.
 - Preserve a secret-free receipt and exact cleanup outcome.

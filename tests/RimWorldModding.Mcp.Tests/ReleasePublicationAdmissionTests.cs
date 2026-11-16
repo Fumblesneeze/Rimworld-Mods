@@ -34,6 +34,22 @@ public sealed class ReleasePublicationAdmissionTests
     }
 
     [Test]
+    public void PageModificationCanRetainTheContentTimestampButCannotRegress()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(ReleasePublisher.IsModifiedTimeValid("page", 100, 100), Is.True);
+            Assert.That(ReleasePublisher.IsModifiedTimeValid("page", 100, 101), Is.True);
+            Assert.That(ReleasePublisher.IsModifiedTimeValid("page", 100, 99), Is.False);
+            Assert.That(ReleasePublisher.IsModifiedTimeValid("page", null, 100), Is.False);
+            Assert.That(ReleasePublisher.IsModifiedTimeValid("page", 0, 0), Is.False);
+            Assert.That(ReleasePublisher.IsModifiedTimeValid("package", 100, 100), Is.False);
+            Assert.That(ReleasePublisher.IsModifiedTimeValid("package", 100, 101), Is.True);
+            Assert.That(ReleasePublisher.IsModifiedTimeValid("combined", 100, 100), Is.False);
+        });
+    }
+
+    [Test]
     public void Generic_release_operation_exposes_no_subscribe_smoke_or_personal_review_stage()
     {
         var root = FindRepositoryRoot();
@@ -56,7 +72,7 @@ public sealed class ReleasePublicationAdmissionTests
             Assert.That(presentationSync, Does.Not.Contain("fumblesneeze.guestbedgizmo"));
             Assert.That(steamAdapter, Does.Not.Match(@"SteamUGC\.SubscribeItem\("));
             Assert.That(operations.Single(operation => operation.Name == "release_publish").Description,
-                Does.Contain("newer modified time"));
+                Does.Contain("verifies the action and preserved fields"));
         });
     }
 
@@ -534,14 +550,33 @@ public sealed class ReleasePublicationAdmissionTests
         }
     }
 
-    [Test]
-    public void Status_RecoversAnAdmittedPublicationAfterExpiry_WhenSteamModifiedTimeWasVerified()
+    [TestCase("package", 101u, true, "package")]
+    [TestCase("page", 100u, true, "page")]
+    [TestCase("page", 101u, true, "page")]
+    [TestCase("page", 99u, false, "page")]
+    [TestCase("package", 100u, false, "package")]
+    [TestCase("page", 100u, false, "package")]
+    [TestCase("page", 100u, false, "combined")]
+    public void Status_RecoversAnAdmittedPublicationAfterExpiry_WhenSteamModifiedTimeWasVerified(
+        string action, uint updated, bool expectedVerified, string planAction)
     {
         var root = TestRoot();
         try
         {
             var nonce = new string('D', 64);
             var planPath = WritePlan(root, DateTimeOffset.UtcNow.AddMinutes(-1), nonce, "dll");
+            var fixturePlan = JsonSerializer.Deserialize<ReleasePublicationPlan>(File.ReadAllText(planPath))!;
+            fixturePlan = fixturePlan with
+            {
+                Schema = planAction == "combined" ? "RimWorldModReleasePlan/v3" : "RimWorldModReleasePlan/v4",
+                PublicationAction = planAction,
+                PublishedFileId = "1234567890",
+                AllowFirstPublication = false,
+                PackagePath = planAction == "page" ? "" : fixturePlan.PackagePath,
+                Files = planAction == "page" ? [] : fixturePlan.Files,
+                CandidateDigest = planAction == "page" ? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData([])) : fixturePlan.CandidateDigest
+            };
+            File.WriteAllText(planPath, JsonSerializer.Serialize(fixturePlan));
             var hash = ReleaseCandidateBuilder.Hash(planPath);
             var stateRoot = Path.Combine(root, "artifacts", "Releases", "fumblesneeze.example");
             Directory.CreateDirectory(stateRoot);
@@ -553,13 +588,14 @@ public sealed class ReleasePublicationAdmissionTests
             File.WriteAllText(receipt, JsonSerializer.Serialize(new
             {
                 schema = "RimWorldModReleaseReceipt/v1",
+                publicationAction = action,
                 packageId = "fumblesneeze.example",
                 title = "Example",
                 publicationPlanSha256 = hash,
                 candidateDigest = ReleasePlanAdmission.Status(root, planPath, hash, nonce).CandidateDigest,
                 publishedFileId = "1234567890",
-                remote = new { PublishedFileId = 1234567890UL, RemoteUpdatedUnixSeconds = 101u },
-                steamModifiedTime = new { BeforeUnixSeconds = 100u, AfterUnixSeconds = 101u, Advanced = true }
+                remote = new { PublishedFileId = 1234567890UL, RemoteUpdatedUnixSeconds = updated },
+                steamModifiedTime = new { BeforeUnixSeconds = 100u, AfterUnixSeconds = updated, Advanced = updated > 100u }
             }));
             var workerRoot = Path.Combine(stateRoot, "workers", hash);
             Directory.CreateDirectory(workerRoot);
@@ -567,17 +603,29 @@ public sealed class ReleasePublicationAdmissionTests
                 "published-complete-steam-verified",
                 "fumblesneeze.example", "Example", "1234567890", "https://example.invalid", hash,
                 ReleasePlanAdmission.Status(root, planPath, hash, nonce).CandidateDigest,
-                receipt, ReleaseCandidateBuilder.Hash(receipt), "commit", 100u, 101u, true);
+                receipt, ReleaseCandidateBuilder.Hash(receipt), "commit", 100u, updated, true);
             File.WriteAllText(Path.Combine(workerRoot, "worker-result.json"),
                 JsonSerializer.Serialize(workerResult, McpJsonContext.Default.ReleasePublishResult));
 
             var status = ReleasePlanAdmission.Status(root, planPath, hash, nonce);
             Assert.Multiple(() =>
             {
-                Assert.That(status.SteamVerified, Is.True);
+                Assert.That(status.SteamVerified, Is.EqualTo(expectedVerified));
                 Assert.That(status.DurablePublishedFileId, Is.EqualTo("1234567890"));
-                Assert.That(status.ReleaseWorkerState, Is.EqualTo("completed"));
+                Assert.That(status.ReleaseWorkerState, Is.EqualTo(expectedVerified ? "completed" : "invalid-result"));
             });
+            if (expectedVerified && planAction == "page")
+            {
+                File.WriteAllText(Path.Combine(workerRoot, "worker-request.json"), JsonSerializer.Serialize(new
+                {
+                    PlanPath = planPath, ConfirmationNonce = nonce
+                }));
+                Assert.That(() => ReleasePublisher.PreservePreviousPackageHistory(root,
+                    fixturePlan.FrozenProfile with { PublishedFileId = "1234567890" }), Throws.Nothing,
+                    "A subsequent page update must work without local package history.");
+                Assert.That(File.Exists(Path.Combine(stateRoot, "package-publication-state.txt")), Is.False,
+                    "A page receipt must never become package history.");
+            }
         }
         finally
         {

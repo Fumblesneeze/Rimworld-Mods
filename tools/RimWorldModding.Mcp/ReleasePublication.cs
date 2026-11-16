@@ -21,7 +21,8 @@ public sealed record ReleasePlanStatusResult(
     string? DurablePublishedFileId,
     string ReleaseWorkerState,
     int? ReleaseWorkerProcessId,
-    bool SteamVerified);
+    bool SteamVerified,
+    string PublicationAction);
 
 public static class ReleasePlanAdmission
 {
@@ -77,7 +78,7 @@ public static class ReleasePlanAdmission
         var durableId = stateParts.Length == 3 && ulong.TryParse(stateParts[2], out var parsedId) && parsedId != 0
             ? parsedId.ToString()
             : null;
-        var worker = new ReleaseWorkerCoordinator(root).Status(plan.PackageId, expectedPlanSha256);
+        var worker = new ReleaseWorkerCoordinator(root).Status(plan.PackageId, expectedPlanSha256, plan.PublicationAction);
         var verified = stateParts.Length == 3 && stateParts[0] == "complete-steam-verified" &&
                        worker.State == "completed";
         return new ReleasePlanStatusResult(
@@ -93,7 +94,8 @@ public static class ReleasePlanAdmission
             durableId,
             worker.State,
             worker.ProcessId,
-            verified);
+            verified,
+            plan.PublicationAction);
     }
 
     public static ReleaseAdmission ValidateLocal(

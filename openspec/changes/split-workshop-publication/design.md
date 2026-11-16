@@ -10,6 +10,7 @@ Owner: repository tooling `RimWorldModding.Mcp`. Reuse the existing immutable pr
 - Inline media have a separate `description-images.json` inventory mapping repository paths to `https://raw.githubusercontent.com/<owner>/<repo>/<40-hex-commit>/<path>` URLs. Page preparation verifies committed bytes and downloads the exact remote bytes with bounded HTTPS requests and no redirects. Description image tags must match that inventory exactly. Missing, stale, unpushed, mismatched, or undeclared images fail before Steam mutation.
 - Slideshow order remains in `presentation.json`; its card inventory can include cards absent from the slideshow. Changing slideshow slots never changes inline URLs.
 - Use the existing package lease and durable submit recovery for both actions. Verify only the changed action's desired fields plus preservation of the other action's fields. Do not retry an uncertain submission under a new plan.
+- Steam can retain the content-update timestamp after a page-only submission. Require a nonzero, non-regressed timestamp for page actions alongside exact plan metadata and all changed/preserved fields. Package actions retain the strict timestamp-advance rule. Receipts record the actual `Advanced` boolean rather than manufacturing an advance.
 - Verification on Immersive Chefs updates existing item `3782589902`, retaining published visibility and existing artwork. No new showcase is authorized; human-deferred media stay excluded.
 
 ## Build and publisher runtime separation

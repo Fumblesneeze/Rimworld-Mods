@@ -163,7 +163,7 @@ Release profiles live at `mods/<Mod>/Release/release.json`. Build and verify the
 
 Use `release_page_update` to update description, metadata, primary preview and slideshow together without building or uploading content. Inline images are independent of slideshow previews: the agent commits and pushes the images, waits for the GitHub mirror, and puts immutable `raw.githubusercontent.com` URLs in the description and `description-images.json`. Page updates verify those exact bytes before changing Steam. The release tools never commit or push image changes.
 
-For a separately reviewable dry-run, use `release_prepare` with `action` set to `package` or `page`, then `release_publish` with its returned plan identity. `release_status` supports exact-plan recovery. Both actions launch the isolated Gateway at the main menu without creating a map, retain exact-process evidence, and complete only after remote verification and a newer modified timestamp. They never subscribe or run gameplay tests; a package publication asserts its exact build has already passed those tests.
+For a separately reviewable dry-run, use `release_prepare` with `action` set to `package` or `page`, then `release_publish` with its returned plan identity. `release_status` supports exact-plan recovery. Both actions launch the isolated Gateway at the main menu without creating a map, retain exact-process evidence, and complete only after remote verification. Package uploads require a newer content timestamp; page updates may retain it while proving the exact page changes and unchanged content. They never subscribe or run gameplay tests; a package publication asserts its exact build has already passed those tests.
 
 ## Repository boundaries and output
 

@@ -436,7 +436,7 @@ public sealed class OperationRegistry
                     RequiredString(arguments, "confirmationNonce")))),
             Register(
                 "release_publish",
-                "Publish one exact admitted plan through Steamworks and complete when the exact remote item converges with a newer modified time.",
+                "Publish one exact admitted plan through Steamworks and complete when the exact remote item verifies the action and preserved fields.",
                 OperationRisk.ExternalWrite,
                 longRunning: true,
                 timeoutSeconds: 3600,

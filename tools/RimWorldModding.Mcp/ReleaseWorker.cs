@@ -79,14 +79,15 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         }
     }
 
-    public ReleaseWorkerStatus Status(string packageId, string planSha256)
+    public ReleaseWorkerStatus Status(string packageId, string planSha256, string? expectedAction = null)
     {
         var paths = Paths(packageId, planSha256);
         if (File.Exists(paths.Result))
         {
             try
             {
-                _ = ReadValidatedResult(_repositoryRoot, paths.Result, packageId, planSha256, null, null);
+                _ = ReadValidatedResult(_repositoryRoot, paths.Result, packageId, planSha256, null, null,
+                    expectedAction: expectedAction);
                 return new ReleaseWorkerStatus("completed", paths.Lease, null, null, paths.Result, null);
             }
             catch
@@ -296,7 +297,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         result = null;
         if (!File.Exists(paths.Result)) return false;
         var parsed = ReadValidatedResult(_repositoryRoot, paths.Result, planStatus.PackageId, planStatus.PlanSha256,
-            planStatus.Title, planStatus.CandidateDigest);
+            planStatus.Title, planStatus.CandidateDigest, expectedAction: planStatus.PublicationAction);
         result = parsed;
         return true;
     }
@@ -309,7 +310,8 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         string? expectedTitle,
         string? expectedCandidateDigest,
         bool allowLegacySubscriberResult = false,
-        bool usePackageHistory = false)
+        bool usePackageHistory = false,
+        string? expectedAction = null)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         var result = RepositoryRoot.ContainedPath(root, resultPath);
@@ -331,9 +333,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
              !string.Equals(parsed.CandidateDigest, expectedCandidateDigest, StringComparison.Ordinal)) ||
             !parsed.SteamVerified ||
             !ulong.TryParse(parsed.PublishedFileId, out var publishedId) || publishedId == 0 ||
-            (currentResult && (parsed.SteamModifiedAfterUnixSeconds == 0 ||
-                               parsed.SteamModifiedBeforeUnixSeconds is uint resultBaseline &&
-                               parsed.SteamModifiedAfterUnixSeconds <= resultBaseline)))
+            (currentResult && parsed.SteamModifiedAfterUnixSeconds == 0))
             throw new InvalidOperationException("Release worker result does not match the exact admitted plan and completed guarantees.");
         var releaseRoot = Path.Combine(root, "artifacts", "Releases", packageId);
         var statePath = Path.Combine(releaseRoot, usePackageHistory ? "package-publication-state.txt" : "publication-state.txt");
@@ -361,10 +361,18 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
             throw new InvalidOperationException("Release worker receipt does not match the exact published plan.");
         if (currentResult)
         {
+            var action = GatewayWorkshopClient.String(response, "publicationAction");
+            if (string.IsNullOrEmpty(action)) action = "combined"; // Historical combined receipts omit the action.
+            if (expectedAction is not null && action != expectedAction)
+                throw new InvalidOperationException("Receipt action does not match the hash-verified publication plan.");
+            var actuallyAdvanced = parsed.SteamModifiedBeforeUnixSeconds is null ||
+                                   parsed.SteamModifiedAfterUnixSeconds > parsed.SteamModifiedBeforeUnixSeconds.Value;
             if (!GatewayWorkshopClient.TryProperty(response, "steamModifiedTime", out var modified) ||
                 modified.ValueKind != JsonValueKind.Object ||
                 !GatewayWorkshopClient.TryProperty(modified, "Advanced", out var advanced) ||
-                advanced.ValueKind != JsonValueKind.True ||
+                advanced.ValueKind != (actuallyAdvanced ? JsonValueKind.True : JsonValueKind.False) ||
+                // Relaxed page clocks require the action from the hash-verified plan, never the receipt alone.
+                !ReleasePublisher.IsModifiedTimeValid(expectedAction ?? "combined", parsed.SteamModifiedBeforeUnixSeconds, parsed.SteamModifiedAfterUnixSeconds) ||
                 GatewayWorkshopClient.UInt64(modified, "AfterUnixSeconds") != parsed.SteamModifiedAfterUnixSeconds ||
                 !SteamModifiedBeforeMatches(modified, parsed.SteamModifiedBeforeUnixSeconds) ||
                 !GatewayWorkshopClient.TryProperty(response, "remote", out var remote) ||
@@ -375,7 +383,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
                 GatewayWorkshopClient.TryProperty(response, "subscriberEvidenceStatus", out _) ||
                 GatewayWorkshopClient.TryProperty(response, "installedPackagePath", out _) ||
                 GatewayWorkshopClient.TryProperty(response, "localInstall", out _))
-                throw new InvalidOperationException("Release worker receipt does not prove Steam's newer modified time or still contains removed subscriber workflow evidence.");
+                throw new InvalidOperationException("Release worker receipt does not prove the action's modified-time contract or still contains removed subscriber workflow evidence.");
         }
         else if (GatewayWorkshopClient.String(response, "subscriberEvidenceStatus") != "awaiting-personal-review")
         {

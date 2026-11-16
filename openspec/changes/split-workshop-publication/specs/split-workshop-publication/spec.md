@@ -39,6 +39,19 @@ The repository tooling `RimWorldModding.Mcp` SHALL expose independent package-up
 - **WHEN** a page update is requested for a retained ID
 - **THEN** the action submits description, primary preview, slideshow and metadata together, reconciles required relationships, preserves package content, and does not consume the package change note
 
+#### Scenario: Page-only changes retain the content timestamp
+- **WHEN** Steam applies the page plan but keeps its existing content-update timestamp
+- **THEN** verification accepts an equal nonzero timestamp only for the page action, after exact plan metadata, description, previews, relationships and unchanged content identity/size match
+- **AND** package uploads still require a newer timestamp, and a regressed or zero timestamp never completes verification
+
+#### Scenario: Receipt action differs from its plan
+- **WHEN** a receipt declares a page action for a hash-verified package or combined plan
+- **THEN** status rejects that receipt instead of relaxing the plan's timestamp requirement
+
+#### Scenario: Consecutive page updates without local package history
+- **WHEN** a valid completed page receipt retains the content timestamp and no local package-publication history exists
+- **THEN** the next page update validates the previous action against its retained plan and continues without treating the page receipt as package history
+
 #### Scenario: Private package follows a page update
 - **WHEN** a Private package receipt is followed by a completed page update
 - **THEN** the next package retains its verified preceding package change note independently from page completion state

@@ -396,7 +396,7 @@ public static class McpTools
             JsonSerializer.SerializeToElement(new { planPath, planSha256, confirmationNonce }),
             cancellationToken));
 
-    [McpServerTool(Name = "release_publish"), Description("Publish one exact admitted plan and complete only after Steam reports the expected item with a newer modified time. This mutates Steam; gameplay testing is a pre-release responsibility.")]
+    [McpServerTool(Name = "release_publish"), Description("Publish one exact admitted plan and complete only after Steam verifies its changed and preserved fields. This mutates Steam; gameplay testing is a pre-release responsibility.")]
     public static async Task<string> PublishRelease(
         OperationRegistry registry,
         [Description("Exact retained prepared publication-plan path matching the user's publication order.")] string planPath,

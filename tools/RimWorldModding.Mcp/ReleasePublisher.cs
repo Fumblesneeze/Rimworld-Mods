@@ -49,9 +49,21 @@ public sealed class ReleasePublisher(string repositoryRoot)
         var state = File.ReadAllText(statePath).Trim().Split('|');
         if (state.Length != 3 || state[0] is not ("complete-steam-verified" or "complete-reviewed") ||
             state[2] != profile.PublishedFileId) return;
+        var workerRoot = Path.Combine(releaseRoot, "workers", state[1]);
+        var requestPath = Path.Combine(workerRoot, "worker-request.json");
+        string? expectedAction = null;
+        if (state[0] == "complete-steam-verified" && File.Exists(requestPath))
+        {
+            var request = JsonSerializer.Deserialize<ReleaseWorkerRequest>(File.ReadAllText(requestPath)) ??
+                          throw new InvalidOperationException("Previous publication request is empty.");
+            var previous = ReleasePlanAdmission.Status(root, request.PlanPath, state[1], request.ConfirmationNonce);
+            if (previous.PackageId != profile.PackageId || previous.DurablePublishedFileId != profile.PublishedFileId)
+                throw new InvalidOperationException("Previous publication plan does not match this package and item.");
+            expectedAction = previous.PublicationAction;
+        }
         var result = ReleaseWorkerCoordinator.ReadValidatedResult(root,
-            Path.Combine(releaseRoot, "workers", state[1], "worker-result.json"), profile.PackageId, state[1], null, null,
-            allowLegacySubscriberResult: state[0] == "complete-reviewed");
+            Path.Combine(workerRoot, "worker-result.json"), profile.PackageId, state[1], null, null,
+            allowLegacySubscriberResult: state[0] == "complete-reviewed", expectedAction: expectedAction);
         using var document = JsonDocument.Parse(File.ReadAllText(result.ReceiptPath));
         if (GatewayWorkshopClient.String(document.RootElement, "publicationAction") == "page") return;
         if (!GatewayWorkshopClient.TryProperty(document.RootElement, "changeNoteVerification", out var verification) ||
@@ -371,8 +383,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
         if (admission.Plan.PublicationAction != "page") VerifyExactPublishedCandidate(admission, publishedId);
         var modifiedBefore = admission.Plan.RemoteBaseline?.UpdatedUnixSeconds;
         var modifiedAfter = checked((uint)GatewayWorkshopClient.UInt64(remote, "RemoteUpdatedUnixSeconds"));
-        if (!RemoteModifiedTimeAdvanced(remote, admission.Plan.RemoteBaseline))
-            throw new InvalidOperationException("Steam did not expose a newer modified time for the exact published item.");
+        if (!IsModifiedTimeValid(admission.Plan.PublicationAction, modifiedBefore, modifiedAfter))
+            throw new InvalidOperationException("Steam's modified time does not satisfy the publication action.");
         DurableFile.WriteAllText(statePath, $"steam-verified|{admission.PlanSha256}|{publishedId}");
 
         _ = await manager.CancelAsync(gatewayRunId, cancellationToken);
@@ -490,7 +502,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
         }
         var tags = GatewayWorkshopClient.String(remote, "RemoteTags").Split(',')
             .Select(value => value.Trim()).Where(value => value.Length > 0).OrderBy(value => value, StringComparer.Ordinal);
-        return RemoteModifiedTimeAdvanced(remote, admission.Plan.RemoteBaseline) &&
+        return IsModifiedTimeValid(admission.Plan.PublicationAction, admission.Plan.RemoteBaseline?.UpdatedUnixSeconds,
+                   GatewayWorkshopClient.UInt64(remote, "RemoteUpdatedUnixSeconds")) &&
                GatewayWorkshopClient.String(remote, "RemoteTitle") == admission.Plan.Title &&
                GatewayWorkshopClient.String(remote, "RemoteDescriptionSha256") == admission.Plan.DescriptionSha256 &&
                GatewayWorkshopClient.String(remote, "RemoteMetadata") == admission.PlanSha256 &&
@@ -643,6 +656,14 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 throw new InvalidOperationException($"Slideshow bytes differ from the admitted page plan at slot {index}.");
         }
     }
+
+    internal static bool IsModifiedTimeValid(string action, uint? before, ulong after) =>
+        after is > 0 and <= uint.MaxValue && (action switch
+        {
+            "page" => before is not null && after >= before.Value,
+            "package" or "combined" => before is null || after > before.Value,
+            _ => false
+        });
 
     internal static bool RemoteModifiedTimeAdvanced(
         JsonElement remote,
