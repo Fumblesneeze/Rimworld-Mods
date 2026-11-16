@@ -22,13 +22,13 @@ namespace Megamod.EndToEndTests.SettingsSearch;
 // Real Options query/result clicks drive production discovery and reveal. The PUAH option and XML
 // provider pages are genuine installed pages. Appended test-owned checkboxes and native multirow
 // tabs exercise duplicate/conditional/tab resolution; they are not upstream PUAH functionality.
-// Expanded budget: 127 native input/capture/close/log/scope operations * 15s + 20 screenshots * 30s
-// + 31 waits * 15s + 300s shared iterator/assertion reserve = 3270s (219 steps). The reserve is a
+// Expanded budget: 127 native input/capture/close/log/scope operations * 15s + 21 screenshots * 30s
+// + 31 waits * 15s + 300s shared iterator/assertion reserve = 3300s (220 steps). The reserve is a
 // scenario bound, not a per-callback guarantee. Paused UI has no assumed frame-rate cap.
 [RimWorldEndToEndTest("megamod.settings-search.native-search", "fumblesneeze.megamod",
     "brrainz.harmony", "ludeon.rimworld", "imranfish.xmlextensions", "Dreadarm.PickUpAndHaul",
     "fumblesneeze.megamod", "fumblesneeze.megamodsettingscatalogfixture",
-    MaxFrames = int.MaxValue, MaxGameTicks = 1200, MaxWallClockSeconds = 3270)]
+    MaxFrames = int.MaxValue, MaxGameTicks = 1200, MaxWallClockSeconds = 3300)]
 public sealed class NativeSettingsSearchTests : IRimWorldEndToEndTest
 {
     private const string Owner = "fumblesneeze.megamod.e2e.settings-search";
@@ -177,6 +177,7 @@ public sealed class NativeSettingsSearchTests : IRimWorldEndToEndTest
         yield return ClickControl("Refresh", "refresh all real pages through the production control");
         yield return Wait("production discovery completes", () => !Search.Discovering && Search.Pages.Count != 0);
         yield return new CheckpointStep("all pages remain eligible and XML coverage gaps remain explicit", _ => Coverage());
+        yield return Shot("native chooser after discovery before the first typed query");
         foreach (var step in Query("\"Catalog amber option\"")) yield return step;
         yield return new AssertionStep("unread provider options are not invented as search results", _ =>
             EndToEndAssert.Equal(0, Search.DrawnRows.Count(row => row.Entry != null)));

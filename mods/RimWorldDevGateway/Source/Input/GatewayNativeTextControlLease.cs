@@ -2,6 +2,9 @@ namespace RimWorldDevGateway;
 
 internal sealed class GatewayNativeTextControlLease
 {
+    // Native QuickSearch reserves its 18-unit icon plus 8-unit spacing only while text is active.
+    // Keep the original capture as the baseline; accepting a width change never rebinds identity.
+    private const double MaximumWidthChange = 26;
     private readonly object editor;
     private readonly int control, window;
     private readonly double x, y, width, height;
@@ -12,7 +15,8 @@ internal sealed class GatewayNativeTextControlLease
     {
         if (!writable || multiline) return "native_text_field_unavailable";
         return control != 0 && window >= 0 && ReferenceEquals(editor, currentEditor) && currentControl == control &&
-            currentWindow == window && currentX == x && currentY == y && currentWidth == width && currentHeight == height &&
+            currentWindow == window && currentX == x && currentY == y && currentHeight == height &&
+            Finite(currentWidth) && currentWidth > 0 && System.Math.Abs(currentWidth - width) <= MaximumWidthChange &&
             Finite(x) && Finite(y) && Finite(width) && Finite(height) && width > 0 && height > 0
             ? null : "stale_native_text_focus";
     }

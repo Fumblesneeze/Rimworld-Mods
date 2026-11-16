@@ -210,9 +210,15 @@ the game, move the desktop pointer, or call a product setting setter in place of
 - **AND** the initial repository operation limit is128 characters and control/format/unassigned characters, line/paragraph separators and surrogate code units are rejected before input; this is not an engine text-length claim
 
 #### Scenario: A focused field changes during text delivery
-- **WHEN** focus, editor instance/rectangle, owning native window or geometry changes, including during the layout immediately before a key/text event
+- **WHEN** focus, editor instance, control ID, editor position/height, owning native window or window geometry changes, or editor width leaves the finite positive range within 26 GUI units of its captured width, including during the layout immediately before a key/text event
 - **THEN** remaining replacement input is refused before reaching another field or an underlying game command
 - **AND** retained evidence separates already delivered chord/clear/characters from undelivered input and confirmed owned cleanup
+
+#### Scenario: Native QuickSearch exposes its clear button during replacement
+- **WHEN** native replacement clears or first populates the same focused QuickSearch editor and its clear-button affordance changes the field width by 26 GUI units
+- **THEN** replacement continues through the existing native input path while the exact editor reference, control ID, owning native window, writable single-line state, position, height and outer window geometry remain unchanged
+- **AND** only finite positive widths within 26 GUI units of the original captured width are admitted; the bound comes from the inspected 18-unit native icon plus 8-unit spacing, and accepted changes never rebind that baseline or permit cumulative drift
+- **AND** changed identity, focus, position, height, invalid width or a larger width change still refuses remaining input and retains owned cleanup; no retry, replacement handle or direct editor mutation is used
 
 #### Scenario: Text replacement is cancelled with owned input pending
 - **WHEN** cancellation or failure interrupts a replacement while a key or character remains owned

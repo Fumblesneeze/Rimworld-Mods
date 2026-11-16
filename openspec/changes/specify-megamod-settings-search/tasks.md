@@ -9,6 +9,11 @@ The reviewed workflow still needs its actual native run and personal observation
 hidden reads and the previously recorded broader coverage/lifecycle gaps remain explicit. No
 gameplay checkbox closes from this implementation checkpoint. Historical component records follow.
 
+The first integrated run reached13 successful native steps before Gateway text replacement
+refused the native search field's clear-button width change after one character. The tool-owned
+width lease fix passes75 focused host checks and review; the revised220-step workflow includes a
+baseline chooser screenshot. The same English batch must pass on the reviewed fix before acceptance.
+
 S141's detached query checkpoint is followed by the verified ordinary-draw recorder in plan
 revision29. Automatic discovery/reveal and full feature acceptance remain open. Drafting or host
 checks alone accept no gameplay checkbox.
