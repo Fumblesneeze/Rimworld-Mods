@@ -398,6 +398,13 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
                 .ToArray() ?? Array.Empty<FloatMenu>();
             switch (gizmo)
             {
+                case Command_SetBedOwnerType ownerType when gizmo.GetType() == typeof(Command_SetBedOwnerType):
+                    // The inspected native 1.6/1.7 method ignores its event and opens the owner menu.
+                    ownerType.ProcessInput(null!);
+                    FloatMenuAutomationLease.CaptureNewlyOpened(
+                        existingMenus,
+                        Find.WindowStack?.Windows.OfType<FloatMenu>() ?? Enumerable.Empty<FloatMenu>());
+                    return;
                 case Command_Action action when action.action is not null:
                     action.action();
                     FloatMenuAutomationLease.CaptureNewlyOpened(
@@ -730,6 +737,11 @@ public sealed class VerseGatewayGizmoSource : IGatewayGizmoSource
 
         private static GatewayGizmoInteractionKind KindOf(Gizmo value)
         {
+            if (value.GetType() == typeof(Command_SetBedOwnerType))
+            {
+                return GatewayGizmoInteractionKind.Immediate;
+            }
+
             if (value is Command_Action action && action.action is not null)
             {
                 return GatewayGizmoInteractionKind.Immediate;

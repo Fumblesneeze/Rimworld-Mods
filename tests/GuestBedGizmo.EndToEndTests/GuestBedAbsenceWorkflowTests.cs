@@ -65,7 +65,7 @@ public abstract class GuestBedAbsenceWorkflow : IRimWorldEndToEndTest
         if (ModsConfig.IdeologyActive)
         {
             var command = commands.Single(option => option.RuntimeType == "Verse.Command_SetBedOwnerType");
-            EndToEndAssert.Equal(EndToEndGizmoInteraction.Invoke, command.Interaction!.Value, "Vanilla ownership uses the native action command.");
+            EndToEndAssert.Equal<EndToEndGizmoInteraction?>(EndToEndGizmoInteraction.Invoke, command.Interaction, "Vanilla ownership must expose the native action capability.");
             yield return new GizmoActionStep("open vanilla's owner menu without Hospitality", new[] { bed.ThingID },
                 command.RuntimeType, EndToEndGizmoInteraction.Invoke, stableGizmoId: command.StableId);
             yield return new AssertionStep("vanilla still exposes its three owner choices", _ =>
@@ -86,7 +86,7 @@ public abstract class GuestBedAbsenceWorkflow : IRimWorldEndToEndTest
         {
             var command = commands.Single(option => option.RuntimeType == "Verse.Command_Toggle" &&
                 option.Label == "CommandBedSetAsGuestLabel".Translate().ToString());
-            EndToEndAssert.Equal(EndToEndGizmoInteraction.Toggle, command.Interaction!.Value, "Hospitality keeps its native toggle capability.");
+            EndToEndAssert.Equal<EndToEndGizmoInteraction?>(EndToEndGizmoInteraction.Toggle, command.Interaction, "Hospitality keeps its native toggle capability.");
             yield return new GizmoActionStep("use Hospitality's unchanged standalone guest toggle", new[] { bed.ThingID },
                 command.RuntimeType, EndToEndGizmoInteraction.Toggle, stableGizmoId: command.StableId);
             yield return new AssertionStep("Hospitality's native swap still works without Ideology", _ =>
