@@ -16,5 +16,7 @@ Package and page publication, remote verification and personal visual inspection
 Local ignored verification ledger: `artifacts/Releases/fumblesneeze.immersivechefs/acceptance/20261116-split-matrix/evidence.md`.
 
 ## 4. GuestBed release recovery
-- [ ] 4.1 Test and review bounded Steam identity readiness, uncached query-only recovery and cleanup.
-- [ ] 4.2 Verify GuestBed package and page transactions from the main menu and retain cleanup evidence.
+- [x] 4.1 Test and review bounded Steam identity readiness, uncached query-only recovery and cleanup.
+- [x] 4.2 Verify GuestBed package and page transactions from the main menu and retain cleanup evidence.
+
+GuestBed recovery/presentation fixes `4fceb06` and `6cea50c` passed independent review, focused RED/GREEN (40 recovery/admission tests and 13 presentation tests), zero-warning builds and strict OpenSpec. Package recovery verified the original applied upload without resubmission. Page update preserved all 140357 content bytes and the content timestamp while updating both version tags and description, with only the existing primary preview. Public page/change history and main-menu screenshots were personally inspected. All GuestBed publisher processes, configuration hashes and credential cleanup verified; local evidence is `artifacts/Releases/fumblesneeze.guestbedgizmo/acceptance/20261116-matrix/evidence.md`. The earlier IC cleanup exception above remains separate and unchanged.
