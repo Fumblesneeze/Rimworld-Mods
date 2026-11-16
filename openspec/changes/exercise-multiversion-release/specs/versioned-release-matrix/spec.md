@@ -24,7 +24,7 @@ The release profile SHALL name supported compile targets and a development targe
 
 #### Scenario: Runtime framework facades differ
 - **WHEN** the 1.6 Mono game directory contains framework facades with different type-forwarding identities
-- **THEN** opted-in builds use the .NET Framework reference pack for system types and the exact game directory for game APIs, avoiding mixed framework references
+- **THEN** the Gateway explicitly opts into the .NET Framework reference pack for system types and the exact game directory for game APIs; product builds retain their existing Mono API contract, including runtime-provided Index/HashCode APIs that the reference pack lacks
 
 #### Scenario: Invalid matrix
 - **WHEN** a target is missing, repeated, unsupported, or collides with another compatibility folder
