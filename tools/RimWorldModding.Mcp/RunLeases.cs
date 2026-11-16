@@ -100,7 +100,8 @@ public sealed class RunLeaseManager
         string? reservedRunId = null,
         bool enableAudio = false,
         string? prelaunchConfigDirectory = null,
-        bool userPlaytest = false)
+        bool userPlaytest = false,
+        bool startAtMainMenu = false)
     {
         RefuseRunningRimWorld();
         var runId = reservedRunId ?? ReserveRunId();
@@ -117,7 +118,8 @@ public sealed class RunLeaseManager
             holdSeconds,
             enableAudio,
             prelaunchConfigDirectory,
-            userPlaytest);
+            userPlaytest,
+            startAtMainMenu);
         var stdoutPath = Path.Combine(runRoot, "launcher.stdout.log");
         var stderrPath = Path.Combine(runRoot, "launcher.stderr.log");
         var info = new ProcessStartInfo
@@ -143,7 +145,7 @@ public sealed class RunLeaseManager
             var record = new RunLeaseRecord(
                 "RimWorldModdingMcp/RunLease/v1",
                 runId,
-                userPlaytest ? "user-playtest" : "gateway",
+                userPlaytest ? "user-playtest" : startAtMainMenu ? "gateway-main-menu" : "gateway",
                 process.Id,
                 start,
                 runRoot,

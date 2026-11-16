@@ -14,7 +14,9 @@ Owner: repository tooling `RimWorldModding.Mcp`. Reuse the existing immutable pr
 
 ## Build and publisher runtime separation
 
-Publication stages the already built canonical positive-allowlist package; `mod_build` remains the explicit build/install action. A publication trigger continues to assert that this exact product build has been tested. Package validation inspects the package itself rather than requiring the currently installed game to match the product target. Both publication actions can use any supported isolated Gateway runtime with the exact owning Steam account; they do not load or retarget the product. Immersive Chefs' retained DLL matches the accepted 1.6 build `0937C7721341DDA4B925A75B3107A0FD1AC0ECF404F9FF48E1CB408BB240E147`; no 1.7 compatibility claim is made.
+Publication stages the already built canonical positive-allowlist package; `mod_build` remains the explicit build/install action. A publication trigger continues to assert that this exact product build has been tested. Package validation inspects the package itself rather than requiring the currently installed game to match the product target. Both publication actions can use any supported isolated Gateway runtime with the exact owning Steam account; they do not load or retarget the product. Immersive Chefs ships separately compiled 1.6 and 1.7 payloads in one combined package, with native player workflows verified on each target.
+
+Publication preflight, submission and recovery launch at the main menu. Steam and the Gateway need no map. The typed `game_run_start` option `startAtMainMenu:true` omits Quicktest while preserving minimized execution, isolated configuration, bounded hold and exact-process cleanup. Ordinary game runs retain Quicktest; the map-based `userPlaytest` mode cannot be combined with main-menu startup.
 
 ## Verification
 

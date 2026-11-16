@@ -151,7 +151,7 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
         try
         {
             gatewayRunId = RunLeaseManager.ReserveRunId();
-            var start = manager.StartGateway([], [], 1800, gatewayRunId);
+            var start = manager.StartGateway([], [], 1800, gatewayRunId, startAtMainMenu: true);
             var ready = await WaitReadyAsync(manager, start.RunId, DateTimeOffset.UtcNow.AddMinutes(8), cancellationToken);
             var client = new GatewayWorkshopClient(_repositoryRoot, ready.GatewayManifestPath!, ready.GameProcessId!.Value);
             await client.RegisterAsync(cancellationToken);

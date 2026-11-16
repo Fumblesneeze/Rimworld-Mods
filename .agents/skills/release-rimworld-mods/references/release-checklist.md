@@ -73,6 +73,10 @@ A publishable candidate has all of the following:
 - Mutation-free dry-run bound to exact hashes and an explicit publication order; no redundant post-prepare confirmation.
 - A non-initial update has one specific player-facing change note bound to the plan, submitted through Steam's change-note parameter, retained in the receipt, and checked on the remote change history. Blank, generic, synthesized, or recycled notes are rejected.
 - One update operation at a time; no blind retry after submission uncertainty.
+- A NotLoggedOn callback can arrive after Steam applied an upload. Reconcile the exact retained
+  plan against remote content, preserved page state, change note and modified timestamp before
+  attempting another publication. Legacy submit-failed-definite records can use this same query
+  recovery; never convert a callback label alone into permission to re-upload.
 - A first-publication ID is durable across candidates, every existing-item update passes an exact
   Steam ID/owner/app/title query first, and an admitted-but-indeterminate submit is query-reconciled
   before any further mutation.

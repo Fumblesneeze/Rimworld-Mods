@@ -172,6 +172,30 @@ public sealed class RepositoryOperationTests
     }
 
     [Test]
+    public void GatewayRunPlan_MainMenuSkipsMapCreationAndRetainsOwnedLifecycle()
+    {
+        var runRoot = Path.Combine(_root, "artifacts", "McpRuns", "main-menu");
+        var plan = RepositoryOperationPlanner.GatewayRun(
+            _root, runRoot, [], [], 900, startAtMainMenu: true);
+        var ordinary = RepositoryOperationPlanner.GatewayRun(
+            _root, runRoot, [], [], 900);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(plan.Arguments, Does.Not.Contain("-Quicktest"));
+            Assert.That(ordinary.Arguments, Does.Contain("-Quicktest"));
+            Assert.That(plan.Arguments, Does.Contain("-InteractiveCompletionFile"));
+            Assert.That(plan.Arguments, Does.Contain("-ProcessLeaseFile"));
+            Assert.That(plan.Arguments, Does.Not.Contain("-VisibleWindow"));
+            Assert.That(typeof(McpTools).GetMethod(nameof(McpTools.StartGame))!.GetParameters(),
+                Has.Exactly(1).Matches<System.Reflection.ParameterInfo>(parameter =>
+                    parameter.Name == "startAtMainMenu" && parameter.ParameterType == typeof(bool?)));
+            Assert.Throws<ArgumentException>(() => RepositoryOperationPlanner.GatewayRun(
+                _root, runRoot, [], [], 900, userPlaytest: true, startAtMainMenu: true));
+        });
+    }
+
+    [Test]
     public void GatewayRunPlan_UsesOwnedArtifactsCompletionAndLeasePaths()
     {
         var runRoot = Path.Combine(_root, "artifacts", "McpRuns", "run-1");

@@ -247,13 +247,16 @@ public static class RepositoryOperationPlanner
         int holdSeconds,
         bool enableAudio = false,
         string? prelaunchConfigDirectory = null,
-        bool userPlaytest = false)
+        bool userPlaytest = false,
+        bool startAtMainMenu = false)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         var artifacts = RepositoryRoot.ContainedPath(root, runRoot);
         if (!artifacts.StartsWith(Path.Combine(root, "artifacts") + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("runRoot must be beneath repository artifacts.");
         if (holdSeconds is < 60 or > 7200) throw new ArgumentException("holdSeconds must be between 60 and 7200.");
+        if (userPlaytest && startAtMainMenu)
+            throw new ArgumentException("userPlaytest requires a Quicktest map and cannot startAtMainMenu.");
         Directory.CreateDirectory(artifacts);
         foreach (var packageId in packageIds) RequireLiteral(packageId, "packageId");
         var projects = projectPaths.Select(path =>
@@ -266,7 +269,6 @@ public static class RepositoryOperationPlanner
         var arguments = new List<string>
         {
             "-NoProfile", "-File", Path.Combine(root, "scripts", "Invoke-GatewaySmoke.ps1"),
-            "-Quicktest",
             "-ArtifactsPath", artifacts,
             "-InteractiveHoldSeconds", holdSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "-InteractiveCompletionFile", Path.Combine(artifacts, "complete.signal"),
@@ -274,6 +276,7 @@ public static class RepositoryOperationPlanner
             "-TimeoutSeconds", "300",
             "-Output", "json"
         };
+        if (!startAtMainMenu) arguments.Add("-Quicktest");
         if (packageIds.Count > 0)
         {
             var packageIdsPath = Path.Combine(artifacts, "additional-mod-ids.txt");

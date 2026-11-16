@@ -50,7 +50,7 @@ public sealed class WorkshopSubscriptionCleaner(string repositoryRoot)
         uint afterState = 0;
         try
         {
-            var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 900, runId);
+            var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 900, runId, startAtMainMenu: true);
             var ready = await WaitReadyAsync(manager, start.RunId, DateTimeOffset.UtcNow.AddMinutes(8), cancellationToken);
             var client = new GatewayWorkshopClient(
                 _repositoryRoot,

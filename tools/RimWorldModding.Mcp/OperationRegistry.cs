@@ -184,7 +184,8 @@ public sealed class OperationRegistry
                     OptionalInt32(arguments, "holdSeconds", 1800),
                     enableAudio: OptionalBoolean(arguments, "enableAudio", false),
                     prelaunchConfigDirectory: OptionalString(arguments, "prelaunchConfigDirectory"),
-                    userPlaytest: OptionalBoolean(arguments, "userPlaytest", false)))),
+                    userPlaytest: OptionalBoolean(arguments, "userPlaytest", false),
+                    startAtMainMenu: OptionalBoolean(arguments, "startAtMainMenu", false)))),
             Register(
                 "run_status",
                 "Inspect one exact leased run without touching any process.",

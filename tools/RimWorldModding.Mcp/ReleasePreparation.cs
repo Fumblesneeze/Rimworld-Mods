@@ -559,7 +559,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
         bool requireProductRuntime = true)
     {
         var manager = new RunLeaseManager(_repositoryRoot);
-        var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 900);
+        var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 900, startAtMainMenu: true);
         try
         {
             RunStatusResult ready;
@@ -609,7 +609,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
         CancellationToken cancellationToken)
     {
         var manager = new RunLeaseManager(_repositoryRoot);
-        var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 900);
+        var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 900, startAtMainMenu: true);
         try
         {
             RunStatusResult ready;

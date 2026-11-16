@@ -30,6 +30,11 @@ The repository tooling `RimWorldModding.Mcp` SHALL expose independent package-up
 - **WHEN** an explicitly opted-in first package upload has no prior identity and authenticated owner/title preflight finds no matching item
 - **THEN** it creates one Private draft, uploads content with the returned ID, backfills the same profile/About identity, and enables subsequent page updates against that ID
 
+#### Scenario: Publishing requires no gameplay map
+- **WHEN** publication preflight, package upload, page update, or recovery starts its isolated Gateway process
+- **THEN** the process stays at the main menu without Quicktest or map creation, initializes Steam, and retains the same exact-process cleanup and configuration protection
+- **AND** the typed game launch operation exposes this main-menu mode while ordinary gameplay launches retain Quicktest
+
 #### Scenario: Page is updated once
 - **WHEN** a page update is requested for a retained ID
 - **THEN** the action submits description, primary preview, slideshow and metadata together, reconciles required relationships, preserves package content, and does not consume the package change note
@@ -41,6 +46,11 @@ The repository tooling `RimWorldModding.Mcp` SHALL expose independent package-up
 #### Scenario: Recovery follows source edits
 - **WHEN** source image inventories change after page submission
 - **THEN** recovery verifies retained frozen image inputs without requiring the mutable working files
+
+#### Scenario: Steam disconnects during submission
+- **WHEN** Steam returns NotLoggedOn after submission, including a retained legacy submit-failed-definite result
+- **THEN** the exact retained plan can query and reconcile the existing item without dispatching another upload or change note
+- **AND** a new plan cannot bypass that unresolved result; completion still requires the matching content, preserved page, change note and advanced timestamp
 
 #### Scenario: Page has no slideshow manifest
 - **WHEN** a profile declares a valid description and primary preview but no presentation manifest

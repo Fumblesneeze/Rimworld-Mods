@@ -106,10 +106,11 @@ public static class McpTools
         [Description("True enables RimWorld master audio for sound-focused work; omitted or false keeps the isolated run muted.")] bool? enableAudio,
         [Description("Optional artifacts-contained isolated mod-settings XML fixture.")] string? prelaunchConfigDirectory,
         [Description("Only for an explicitly user-requested playtest: retain the game until the user exits or explicitly cancels; no automatic hold timeout.")] bool? userPlaytest,
+        [Description("True starts at the main menu without creating a map; suitable for Steam publishing and menu diagnostics. Cannot be combined with userPlaytest.")] bool? startAtMainMenu,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "game_run_start",
-            JsonSerializer.SerializeToElement(new { packageIds, projectPaths, holdSeconds, enableAudio, prelaunchConfigDirectory, userPlaytest }),
+            JsonSerializer.SerializeToElement(new { packageIds, projectPaths, holdSeconds, enableAudio, prelaunchConfigDirectory, userPlaytest, startAtMainMenu }),
             cancellationToken));
 
     [McpServerTool(Name = "run_status"), Description("Inspect one exact leased run, process identities, Gateway manifest, and bounded log tails.")]

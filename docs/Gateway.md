@@ -88,6 +88,10 @@ The Gateway warning and any integration/E2E status boxes are intentionally absen
 
 ## Scene time for repeatable lighting
 
+For Steam publishing or menu diagnostics, `game_run_start` accepts `startAtMainMenu:true`.
+It starts without Quicktest or map creation and retains the normal minimized, muted, isolated
+and bounded lifecycle. Publication preflight, submission and recovery use this mode.
+
 For an explicitly user-requested building/playtest session, `game_run_start` accepts
 `prelaunchConfigDirectory` with the same isolated XML fixture policy and `userPlaytest: true`.
 This is a user-owned game, not a disposable acceptance run: its interactive hold has no automatic

@@ -183,8 +183,9 @@ public sealed class ReleasePublicationAdmissionTests
         }
     }
 
-    [Test]
-    public void RecoveryAdmission_AllowsExpiredExactPlanOnlyAfterDurableSameItemAdmission()
+    [TestCase("submitted")]
+    [TestCase("submit-failed-definite")]
+    public void RecoveryAdmission_AllowsExpiredExactPlanOnlyAfterDurableSameItemAdmission(string stage)
     {
         var root = TestRoot();
         try
@@ -194,7 +195,7 @@ public sealed class ReleasePublicationAdmissionTests
             var hash = ReleaseCandidateBuilder.Hash(planPath);
             var releaseRoot = Path.Combine(root, "artifacts", "Releases", "fumblesneeze.example");
             Directory.CreateDirectory(releaseRoot);
-            File.WriteAllText(Path.Combine(releaseRoot, "publication-state.txt"), $"submitted|{hash}|1234567890");
+            File.WriteAllText(Path.Combine(releaseRoot, "publication-state.txt"), $"{stage}|{hash}|1234567890");
             var candidateIdentity = Path.Combine(root, "candidate", "About", "PublishedFileId.txt");
             Directory.CreateDirectory(Path.GetDirectoryName(candidateIdentity)!);
             File.WriteAllText(candidateIdentity, "1234567890");
@@ -203,7 +204,7 @@ public sealed class ReleasePublicationAdmissionTests
 
             Assert.That(recovered.PlanSha256, Is.EqualTo(hash));
             Assert.That(recovered.Plan.ExpiresUtc, Is.LessThan(DateTimeOffset.UtcNow));
-            File.WriteAllText(Path.Combine(releaseRoot, "publication-state.txt"), $"submit-failed-definite|{hash}|1234567890");
+            File.WriteAllText(Path.Combine(releaseRoot, "publication-state.txt"), $"create-failed-definite|{hash}|0");
             Assert.Throws<InvalidOperationException>(() =>
                 ReleasePlanAdmission.ValidateRecovery(root, planPath, hash, nonce));
         }
@@ -211,6 +212,28 @@ public sealed class ReleasePublicationAdmissionTests
         {
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    [Test]
+    public void FailedSubmissionRequiresExactPlanReconciliationBeforeAnotherPublish()
+    {
+        var root = TestRoot();
+        try
+        {
+            var statePath = Path.Combine(root, "publication-state.txt");
+            var prior = new string('A', 64);
+            var fresh = new string('B', 64);
+            File.WriteAllText(statePath, $"submit-failed-definite|{prior}|123");
+            Assert.Multiple(() =>
+            {
+                Assert.That(ReleasePlanAdmission.IsRecoverableDurableState(File.ReadAllText(statePath), prior, out var item), Is.True);
+                Assert.That(item, Is.EqualTo("123"));
+                Assert.That(ReleasePlanAdmission.IsRecoverableDurableState(File.ReadAllText(statePath), fresh, out _), Is.False);
+                Assert.That(() => ReleasePublisher.RefuseIndeterminateDuplicate(statePath, fresh, "123"), Throws.InvalidOperationException);
+                Assert.That(() => ReleasePublisher.RefuseIndeterminateDuplicate(statePath, prior, "123"), Throws.InvalidOperationException);
+            });
+        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Test]
@@ -485,7 +508,7 @@ public sealed class ReleasePublicationAdmissionTests
     }
 
     [Test]
-    public void NewPlan_RefusesAnUnresolvedPriorUpdateButAllowsCompletedOrDefiniteFailure()
+    public void NewPlan_RefusesAnUnreconciledPriorSubmissionButAllowsCompletedHistory()
     {
         var path = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"publication-state-{Guid.NewGuid():N}.txt");
         try
@@ -502,7 +525,7 @@ public sealed class ReleasePublicationAdmissionTests
             Assert.DoesNotThrow(() => ReleasePublisher.RefuseIndeterminateDuplicate(
                 path, new string('B', 64), "123"));
             File.WriteAllText(path, "submit-failed-definite|" + new string('A', 64) + "|123");
-            Assert.DoesNotThrow(() => ReleasePublisher.RefuseIndeterminateDuplicate(
+            Assert.Throws<InvalidOperationException>(() => ReleasePublisher.RefuseIndeterminateDuplicate(
                 path, new string('B', 64), "123"));
         }
         finally

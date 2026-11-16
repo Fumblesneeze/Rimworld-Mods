@@ -28,6 +28,7 @@ public static class ReleasePlanAdmission
     private static readonly HashSet<string> RecoverableStages = new(StringComparer.Ordinal)
     {
         "create-admitted", "created", "submit-admitted", "submit-indeterminate", "submitted",
+        "submit-failed-definite", // Legacy disconnect callbacks can report failure after Steam applied the content.
         "dependency-indeterminate", "steam-item-persisted", "steam-verified",
         "complete-steam-verified"
     };

@@ -21,20 +21,8 @@ public static class PublisherSafety
     public static string EffectiveVisibility(bool firstPublication, string declaredVisibility) =>
         firstPublication ? "Private" : declaredVisibility;
 
-    public static string DurableFailureStage(string stage, bool ioFailure)
-    {
-        if (string.IsNullOrWhiteSpace(stage)) throw new ArgumentException("A failure stage is required.", nameof(stage));
-        var family = stage.StartsWith("create", StringComparison.Ordinal)
-            ? "create"
-            : stage.StartsWith("preview-", StringComparison.Ordinal)
-                ? "preview-submit"
-            : stage.StartsWith("app-dependency-", StringComparison.Ordinal)
-                ? "dependency"
-            : stage.StartsWith("dependency-", StringComparison.Ordinal)
-                ? "dependency"
-                : "submit";
-        return family + (ioFailure ? "-indeterminate" : "-failed-definite");
-    }
+    public static string DurableFailureStage(string stage, bool ioFailure, string result) =>
+        WorkshopPublicationState.FailureStage(stage, ioFailure, result);
 
     public static bool CallbackIdsMatch(ulong expectedParent, ulong expectedChild, ulong actualParent, ulong actualChild) =>
         expectedParent != 0 && expectedChild != 0 && expectedParent == actualParent && expectedChild == actualChild;
@@ -936,7 +924,7 @@ internal static class Publisher
     private static void FailMutation(string stage, EResult result, bool ioFailure)
     {
         var request = RequiredRequest();
-        var durableStage = PublisherSafety.DurableFailureStage(stage, ioFailure);
+        var durableStage = PublisherSafety.DurableFailureStage(stage, ioFailure, result.ToString());
         WriteStateAtomically(
             request.StatePath,
             durableStage + "|" + request.PlanSha256 + "|" + snapshot.PublishedFileId);

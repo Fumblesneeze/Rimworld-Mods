@@ -266,7 +266,7 @@ public static class TestSnippet
                     Is.EqualTo("submit"),
                     "Ordinary content publication must retain its existing state family.");
                 Assert.That(
-                    Regex.Matches(publisherSource, @"SteamUGC\.SubmitItemUpdate\(handle, request\.ChangeNote\)").Count,
+                    Regex.Matches(publisherSource, @"SteamUGC\.SubmitItemUpdate\(handle, request\.PublicationAction == ""page"" \? null : request\.ChangeNote\)").Count,
                     Is.EqualTo(1),
                     "Only the final content publication may consume the authored player-facing change note.");
                 Assert.That(
@@ -289,12 +289,13 @@ public static class TestSnippet
 
             Assert.Multiple(() =>
             {
-                Assert.That(failure.Invoke(null, new object[] { "create", true }), Is.EqualTo("create-indeterminate"));
-                Assert.That(failure.Invoke(null, new object[] { "create", false }), Is.EqualTo("create-failed-definite"));
-                Assert.That(failure.Invoke(null, new object[] { "submit", true }), Is.EqualTo("submit-indeterminate"));
-                Assert.That(failure.Invoke(null, new object[] { "preview-submit", true }), Is.EqualTo("preview-submit-indeterminate"));
-                Assert.That(failure.Invoke(null, new object[] { "dependency-remove", false }), Is.EqualTo("dependency-failed-definite"));
-                Assert.That(failure.Invoke(null, new object[] { "app-dependency-add", true }), Is.EqualTo("dependency-indeterminate"));
+                Assert.That(failure.Invoke(null, new object[] { "create", true, "" }), Is.EqualTo("create-indeterminate"));
+                Assert.That(failure.Invoke(null, new object[] { "create", false, "" }), Is.EqualTo("create-failed-definite"));
+                Assert.That(failure.Invoke(null, new object[] { "submit", true, "" }), Is.EqualTo("submit-indeterminate"));
+                Assert.That(failure.Invoke(null, new object[] { "submit", false, "k_EResultNotLoggedOn" }), Is.EqualTo("submit-indeterminate"));
+                Assert.That(failure.Invoke(null, new object[] { "preview-submit", true, "" }), Is.EqualTo("preview-submit-indeterminate"));
+                Assert.That(failure.Invoke(null, new object[] { "dependency-remove", false, "" }), Is.EqualTo("dependency-failed-definite"));
+                Assert.That(failure.Invoke(null, new object[] { "app-dependency-add", true, "" }), Is.EqualTo("dependency-indeterminate"));
                 Assert.That(correlation.Invoke(null, new object[] { 17UL, 23UL, 17UL, 23UL }), Is.True);
                 Assert.That(correlation.Invoke(null, new object[] { 17UL, 23UL, 17UL, 99UL }), Is.False);
                 Assert.That(invalid.Invoke(null, new object[] { 0UL }), Is.True);

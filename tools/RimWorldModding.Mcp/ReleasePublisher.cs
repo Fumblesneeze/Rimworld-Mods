@@ -113,7 +113,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             var manager = new RunLeaseManager(_repositoryRoot);
             gatewayRunId = RunLeaseManager.ReserveRunId();
             DurableFile.WriteAllText(gatewayAssociationPath, $"{admission.PlanSha256}|{gatewayRunId}");
-            var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 3600, gatewayRunId);
+            var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 3600, gatewayRunId, startAtMainMenu: true);
             gatewayRunId = start.RunId;
             var ready = await WaitReadyAsync(manager, start.RunId, DateTimeOffset.UtcNow.AddMinutes(8), cancellationToken);
             var client = new GatewayWorkshopClient(
@@ -287,7 +287,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             }
             gatewayRunId = RunLeaseManager.ReserveRunId();
             DurableFile.WriteAllText(associationPath, $"{admission.PlanSha256}|{gatewayRunId}");
-            var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 3600, gatewayRunId);
+            var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 3600, gatewayRunId, startAtMainMenu: true);
             gatewayRunId = start.RunId;
             gatewayStopped = false;
             var ready = await WaitReadyAsync(manager, start.RunId, DateTimeOffset.UtcNow.AddMinutes(8), cancellationToken);
@@ -947,7 +947,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         if (parts[1].Equals(planSha256, StringComparison.OrdinalIgnoreCase) &&
             ReleasePlanAdmission.IsRecoverableDurableState(string.Join('|', parts), planSha256, out _))
             throw new InvalidOperationException("This exact plan is already admitted; use durable recovery instead of redispatch.");
-        if (parts[0] is "complete-reviewed" or "complete-steam-verified" or "create-failed-definite" or "submit-failed-definite" or "dependency-failed-definite")
+        if (parts[0] is "complete-reviewed" or "complete-steam-verified" or "create-failed-definite" or "dependency-failed-definite")
             return;
         if (HasCompletedLegacyReceipt(statePath, planSha256, publishedFileId)) return;
         var operation = publishedFileId is null ? "creation" : "update";
