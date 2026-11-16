@@ -48,6 +48,8 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
     {
         var status = ReleasePlanAdmission.Status(_repositoryRoot, planPath, planSha256, confirmationNonce);
         var paths = Paths(status.PackageId, status.PlanSha256);
+        var initialAttempt = File.Exists(paths.Request) ? ReadRequest(paths.Request, status.PlanSha256).Attempt : 0;
+        var maximumAttempt = checked(initialAttempt + MaximumAttempts);
         var mutexName = "Local\\RimWorldModdingMcp.ReleaseWorker." +
                         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(status.PackageId)))[..24];
         while (true)
@@ -60,7 +62,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
                     try
                     {
                         if (TryReadValidResult(paths, status, out completed)) return completed!;
-                        EnsureWorkerStarted(paths, status, planPath, confirmationNonce);
+                        EnsureWorkerStarted(paths, status, planPath, confirmationNonce, maximumAttempt);
                     }
                     finally
                     {
@@ -117,7 +119,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
                       throw new InvalidOperationException("Release worker request is empty.");
             if (request.Schema != "RimWorldModdingMcp/ReleaseWorkerRequest/v1")
                 throw new InvalidOperationException("Release worker request schema is unsupported.");
-            if (request.Attempt is < 1 or > MaximumAttempts)
+            if (request.Attempt < 1)
                 throw new InvalidOperationException("Release worker attempt is outside the bounded range.");
             var root = RepositoryRoot.Resolve(request.RepositoryRoot);
             var workerRoot = Path.Combine(root, "artifacts", "Releases",
@@ -197,7 +199,8 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         WorkerPaths paths,
         ReleasePlanStatusResult planStatus,
         string planPath,
-        string confirmationNonce)
+        string confirmationNonce,
+        int maximumAttempt)
     {
         var running = false;
         if (File.Exists(paths.Lease))
@@ -240,12 +243,13 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
                 DateTimeOffset.UtcNow, requireCleanRevision: true);
         }
 
-        var attempt = priorAttempt + 1;
-        if (attempt > MaximumAttempts)
+        var attempt = checked(priorAttempt + 1);
+        if (attempt > maximumAttempt)
             throw new InvalidOperationException(
                 $"The durable release worker exhausted {MaximumAttempts} bounded attempts; exact state is retained for diagnosis and no duplicate Steam create was issued.");
 
         Directory.CreateDirectory(paths.Root);
+        ArchiveError(paths.Error, priorAttempt);
         DeleteIfExists(paths.Lease);
         DeleteIfExists(paths.Error);
         var request = new ReleaseWorkerRequest(
@@ -271,6 +275,15 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
             if (!File.Exists(paths.Lease)) DeleteIfExists(paths.Request);
             throw;
         }
+    }
+
+    internal static void ArchiveError(string errorPath, int attempt)
+    {
+        if (!File.Exists(errorPath)) return;
+        var text = File.ReadAllText(errorPath);
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
+        var archive = Path.Combine(Path.GetDirectoryName(errorPath)!, $"attempt-{attempt}-{hash}-error.txt");
+        if (!File.Exists(archive)) DurableFile.WriteAllText(archive, text);
     }
 
     internal static string NormalizeStartingDurableState(
@@ -428,7 +441,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
                       throw new InvalidOperationException("Release worker request is empty.");
         if (request.Schema != "RimWorldModdingMcp/ReleaseWorkerRequest/v1" ||
             !string.Equals(request.PlanSha256, planSha256, StringComparison.OrdinalIgnoreCase) ||
-            request.Attempt is < 1 or > MaximumAttempts)
+            request.Attempt < 1)
             throw new InvalidOperationException("Release worker request does not match the exact publication plan.");
         return request;
     }

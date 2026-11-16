@@ -121,10 +121,8 @@ internal static class Publisher
         {
             if (request.Operation == "status")
             {
-                if (SteamManager.Initialized && SteamUser.BLoggedOn())
-                {
-                    snapshot.CurrentUserSteamId = SteamUser.GetSteamID().m_SteamID;
-                }
+                snapshot.CurrentUserSteamId = SteamManager.Initialized && SteamUser.BLoggedOn()
+                    ? SteamUser.GetSteamID().m_SteamID : 0UL;
                 snapshot.RimWorldVersion = VersionControl.CurrentVersionStringWithRev;
                 return snapshot.ToJson();
             }
@@ -183,7 +181,8 @@ internal static class Publisher
                     activeRequest = null;
                     return snapshot.ToJson();
                 }
-                if (!SteamUGC.SetReturnLongDescription(queryHandle, true) ||
+                if (!SteamUGC.SetAllowCachedResponse(queryHandle, 0u) ||
+                    !SteamUGC.SetReturnLongDescription(queryHandle, true) ||
                     !SteamUGC.SetReturnMetadata(queryHandle, true) ||
                     !SteamUGC.SetReturnChildren(queryHandle, true) ||
                     !SteamUGC.SetReturnKeyValueTags(queryHandle, true) ||

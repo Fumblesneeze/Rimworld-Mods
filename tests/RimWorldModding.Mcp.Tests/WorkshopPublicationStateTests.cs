@@ -7,6 +7,7 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class WorkshopPublicationStateTests
 {
     [TestCase("submit", false, "k_EResultNotLoggedOn", "submit-indeterminate")]
+    [TestCase("submit", false, "k_EResultTimeout", "submit-indeterminate")]
     [TestCase("submit", true, "k_EResultFail", "submit-indeterminate")]
     [TestCase("create", false, "k_EResultAccessDenied", "create-failed-definite")]
     [TestCase("dependency-add", false, "k_EResultAccessDenied", "dependency-failed-definite")]

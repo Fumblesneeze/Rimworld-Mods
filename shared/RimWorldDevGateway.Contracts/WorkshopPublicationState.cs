@@ -14,7 +14,7 @@ public static class WorkshopPublicationState
                 : stage.StartsWith("app-dependency-", StringComparison.Ordinal) || stage.StartsWith("dependency-", StringComparison.Ordinal)
                     ? "dependency"
                     : "submit";
-        // Steam can finish the upload before reporting a lost login to the submitting client.
-        return family + (ioFailure || result == "k_EResultNotLoggedOn" ? "-indeterminate" : "-failed-definite");
+        // Steam can finish the upload before reporting a lost login or timeout to the submitting client.
+        return family + (ioFailure || result is "k_EResultNotLoggedOn" or "k_EResultTimeout" ? "-indeterminate" : "-failed-definite");
     }
 }

@@ -577,8 +577,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
 
             var client = new GatewayWorkshopClient(_repositoryRoot, ready.GatewayManifestPath!, ready.GameProcessId!.Value);
             await client.RegisterAsync(cancellationToken);
-            var status = await client.InvokeAsync(new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-            WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile, requireProductRuntime);
+            _ = await client.WaitForSteamIdentityAsync(profile, requireProductRuntime, cancellationToken);
             var correlation = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
             _ = await client.InvokeAsync(new Dictionary<string, object?>
             {
@@ -627,8 +626,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
 
             var client = new GatewayWorkshopClient(_repositoryRoot, ready.GatewayManifestPath!, ready.GameProcessId!.Value);
             await client.RegisterAsync(cancellationToken);
-            var status = await client.InvokeAsync(new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-            WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile, requireProductRuntime: false);
+            _ = await client.WaitForSteamIdentityAsync(profile, requireProductRuntime: false, cancellationToken);
             var correlation = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
             _ = await client.InvokeAsync(new Dictionary<string, object?>
             {

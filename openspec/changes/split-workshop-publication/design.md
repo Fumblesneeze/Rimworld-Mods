@@ -21,4 +21,6 @@ Publication preflight, submission and recovery launch at the main menu. Steam an
 
 ## Verification
 
+GuestBed release recovery exposed transient Steam sign-in, stale queries and an exhausted worker budget. Wait up to two minutes for a nonzero Steam identity; clear stale identity on logout and reject a different signed-in owner immediately. Disable Steam query caching. Each explicit `release_publish` invocation has at most nine worker attempts, retaining distinct prior failure evidence. Recovery remains query-only and never resubmits. Timeout callbacks are indeterminate because the upload can already be applied; legacy definite-failure states remain recoverable. Fresh query-only recovery processes have no submission callback to preserve and must clean up even after failure. Keep the frozen product bytes and gameplay acceptance; tooling fixes need no product rebuild.
+
 Focused host RED/GREEN covers action dispatch, disjoint Steam setter requests, first-draft rules, independent image inventories, hash/URL rejection, and admission/recovery. After independent code review, upload the current Immersive Chefs package and update its page through fresh isolated Gateway processes, inspect the actual Workshop page and retain before/after remote evidence and process cleanup.

@@ -133,8 +133,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 ready.GatewayManifestPath!,
                 ready.GameProcessId!.Value);
             await client.RegisterAsync(cancellationToken);
-            var status = await client.InvokeAsync(new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-            WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile, requireProductRuntime: admission.Plan.PublicationAction == "combined");
+            _ = await client.WaitForSteamIdentityAsync(profile, admission.Plan.PublicationAction == "combined", cancellationToken);
 
             ulong publishedId = admission.Plan.PublishedFileId is null
                 ? 0UL
@@ -260,22 +259,27 @@ public sealed class ReleasePublisher(string repositoryRoot)
         var manager = new RunLeaseManager(_repositoryRoot);
         string? gatewayRunId = null;
         var gatewayStopped = false;
+        var activeSubmission = false;
         try
         {
             var attached = TryAttachGateway(manager, associationPath, admission.PlanSha256, out gatewayRunId);
             if (attached is not null)
             {
-                var live = await attached.InvokeAsync(
-                    new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-                WorkshopRemoteBaseline.AssertRuntimeIdentity(live, profile, requireProductRuntime: admission.Plan.PublicationAction == "combined");
+                activeSubmission = true; // Preserve an attached callback until its live state is known.
+                var live = await attached.WaitForSteamIdentityAsync(profile, admission.Plan.PublicationAction == "combined", cancellationToken);
+                activeSubmission = false;
                 if (string.Equals(GatewayWorkshopClient.String(live, "PlanSha256"), admission.PlanSha256,
                         StringComparison.OrdinalIgnoreCase))
                 {
                     var liveStatus = GatewayWorkshopClient.String(live, "Status");
-                    if (liveStatus != "succeeded" && liveStatus is not ("failed" or "legal-agreement-required"))
+                    if (liveStatus == "pending" && GatewayWorkshopClient.String(live, "Stage") is "creating" or "submitting")
+                    {
+                        activeSubmission = true;
                         live = await attached.WaitTerminalAsync(admission.PlanSha256,
                             new HashSet<string>(["succeeded", "failed", "legal-agreement-required"], StringComparer.Ordinal),
                             DateTimeOffset.UtcNow.AddMinutes(15), CancellationToken.None);
+                        activeSubmission = false;
+                    }
                     if (GatewayWorkshopClient.String(live, "Status") == "succeeded")
                     {
                         publishedId = GatewayWorkshopClient.UInt64(live, "PublishedFileId");
@@ -305,8 +309,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             var ready = await WaitReadyAsync(manager, start.RunId, DateTimeOffset.UtcNow.AddMinutes(8), cancellationToken);
             var client = new GatewayWorkshopClient(_repositoryRoot, ready.GatewayManifestPath!, ready.GameProcessId!.Value);
             await client.RegisterAsync(cancellationToken);
-            var runtime = await client.InvokeAsync(new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-            WorkshopRemoteBaseline.AssertRuntimeIdentity(runtime, profile, requireProductRuntime: admission.Plan.PublicationAction == "combined");
+            _ = await client.WaitForSteamIdentityAsync(profile, admission.Plan.PublicationAction == "combined", cancellationToken);
             var deadline = DateTimeOffset.UtcNow.AddMinutes(15);
             var remote = await QueryAsync(client, admission, publishedId, deadline, cancellationToken);
             RequireRecoveryItemIdentity(remote, admission, publishedId);
@@ -321,7 +324,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         }
         finally
         {
-            if (gatewayRunId is not null && !gatewayStopped && !ShouldPreserveGatewayForRecovery(statePath, admission.PlanSha256))
+            if (gatewayRunId is not null && !gatewayStopped && !activeSubmission)
             {
                 try { _ = await manager.CancelAsync(gatewayRunId, CancellationToken.None); }
                 catch { /* exact run lease retains cleanup evidence */ }

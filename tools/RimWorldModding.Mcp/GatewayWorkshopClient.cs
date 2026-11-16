@@ -10,6 +10,39 @@ public sealed class GatewayWorkshopClient(
     string manifestPath,
     int processId)
 {
+    internal static async Task<JsonElement> PollUntilSteamReadyAsync(string expectedOwner, DateTimeOffset deadline,
+        Func<CancellationToken, Task<JsonElement>> statusCall, Func<TimeSpan, CancellationToken, Task> delay,
+        Func<DateTimeOffset> utcNow, CancellationToken cancellationToken)
+    {
+        while (utcNow() < deadline)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            using var bounded = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            bounded.CancelAfter(deadline - utcNow());
+            var status = await statusCall(bounded.Token);
+            var owner = UInt64(status, "CurrentUserSteamId");
+            if (owner != 0)
+            {
+                if (owner.ToString() != expectedOwner)
+                    throw new InvalidOperationException("The live RimWorld Steam user does not match the release profile.");
+                return status;
+            }
+            var remaining = deadline - utcNow();
+            if (remaining <= TimeSpan.Zero) break;
+            await delay(remaining < TimeSpan.FromSeconds(1) ? remaining : TimeSpan.FromSeconds(1), cancellationToken);
+        }
+        throw new TimeoutException("Steam did not sign in as the release owner before the bounded readiness deadline.");
+    }
+
+    public async Task<JsonElement> WaitForSteamIdentityAsync(ReleaseProfile profile, bool requireProductRuntime,
+        CancellationToken cancellationToken)
+    {
+        var status = await PollUntilSteamReadyAsync(profile.SteamUserId, DateTimeOffset.UtcNow.AddMinutes(2),
+            token => InvokeAsync(new Dictionary<string, object?> { ["operation"] = "status" }, token),
+            Task.Delay, () => DateTimeOffset.UtcNow, cancellationToken);
+        WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile, requireProductRuntime);
+        return status;
+    }
     private readonly string _repositoryRoot = RepositoryRoot.Resolve(repositoryRoot);
     private readonly string _manifestPath = RepositoryRoot.ContainedPath(repositoryRoot, manifestPath);
     private readonly int _processId = processId > 0 ? processId : throw new ArgumentException("processId must be positive.");

@@ -69,6 +69,15 @@ The repository tooling `RimWorldModding.Mcp` SHALL expose independent package-up
 - **WHEN** a profile declares a valid description and primary preview but no presentation manifest
 - **THEN** its page update uses an empty additional slideshow
 
+#### Scenario: Steam sign-in is temporarily unavailable
+- **WHEN** the main-menu publisher reports no signed-in Steam identity
+- **THEN** it waits at most two minutes for the expected owner, while a different nonzero owner fails immediately
+
+#### Scenario: Timeout follows an applied upload
+- **WHEN** Steam reports Timeout although the item was updated
+- **THEN** durable state is indeterminate and uncached queries reconcile the exact item without another submission
+- **AND** each explicit recovery invocation has at most nine worker attempts, distinct previous errors remain retained, and fresh query-only processes clean up on failure
+
 ### Requirement: Inline images are independent committed GitHub content
 Inline image inventory SHALL be separate from Steam slideshow inventory. The agent SHALL commit and push images before page publication and verify the GitHub mirror. Release tools SHALL NOT commit or push images. Immutable direct GitHub content URLs and exact byte hashes SHALL be validated before any Steam page mutation.
 

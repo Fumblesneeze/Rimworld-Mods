@@ -14,3 +14,7 @@
 Package and page publication, remote verification and personal visual inspection are complete for Workshop item `3782589902`. Final recovery stayed at the main menu and cleaned up normally. Task 3.3 remains open only because automatic approval review blocked credential-file cleanup for the earlier interrupted, stopped page run (`20261116T170313326Z-23ae659f8b5b448587d908ce42f57d95`, reason: `blocked by policy`). First-draft behavior has host coverage; this release updated the existing item.
 
 Local ignored verification ledger: `artifacts/Releases/fumblesneeze.immersivechefs/acceptance/20261116-split-matrix/evidence.md`.
+
+## 4. GuestBed release recovery
+- [ ] 4.1 Test and review bounded Steam identity readiness, uncached query-only recovery and cleanup.
+- [ ] 4.2 Verify GuestBed package and page transactions from the main menu and retain cleanup evidence.
