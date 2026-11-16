@@ -21,6 +21,17 @@ Read [references/release-checklist.md](references/release-checklist.md) before c
 
 ## Resolve exact game targets
 
+The implemented typed path is `game_depot_download` → reviewed `game_target_snapshot` catalog entry
+→ `game_target_validate` → `release_matrix_build` (also used by matrix-aware `mod_build`) →
+`release_target_test` for each target. The latter preserves the frozen product bundle while building
+verification infrastructure. Use the matching CLI registry if a connected MCP process predates the
+new operations. Read `docs/Development.md` for concrete arguments and cached-login behavior.
+
+Prepared verification must bind the E2E project owner and selected active groups to the requested
+product, and compile against its frozen target assembly. Skipping a deployment loop is insufficient
+when a test project's ProjectReference can rebuild the product during discovery. Exact caches also
+require equality of the immutable file inventory, not only hashes of files already listed.
+
 1. Accept only target IDs declared by both the mod manifest and the committed target catalog.
 2. Acquire the catalog's exact Steam depot manifests. Use the pinned selective downloader for compilation inputs and the full-install path for regression; never substitute the normal installation or a nearby version.
 3. Put proprietary files and downloader session state in the configured external ignored cache. Verify the immutable cache identity and every approved file hash before use.
@@ -54,7 +65,14 @@ Read [references/release-checklist.md](references/release-checklist.md) before c
 5. Write for players browsing a mod page, not developers reviewing a patch. Lead with the fantasy and visible behavior; use concrete verbs such as cooks gather, diners fetch, dishes return dirty, and waiters clear. Keep terms such as adapter, package-gated, absent-safe, ownership, provenance, seam, reflection, and state machine in technical docs. Compatibility entries must say what the player will notice and any exact load-chain requirement in plain language.
 6. Use wide visual headers/feature cards to break up dense inventories. For the proven Immersive Chefs layout, author 1164×655 cards and keep every Steam additional preview below 1 MiB. Use a checked-in card manifest, reusable template, repository-local licensed font, and actual shipped sprites; review one contact sheet plus every important full-resolution card. Avoid unexplained status affordances such as checkmarks, warning badges, toggles, or progress marks: feature art should showcase behavior, not look like a task tracker. Verify alpha on the actual Workshop page; Steam may matte transparent rounded corners white, so use an explicitly measured page-background matte (Immersive Chefs currently pins `#1b2838`) and test the final corner pixels.
 7. Do not assume Steam's primary preview also occupies gallery slot zero. When the mod identity must open the gallery, upload the reviewed title image again as additional preview zero, bind both roles to the same local hash, and keep that title URL out of BBCode unless the user explicitly requests an inline repeat. Decode and validate the title's real dimensions separately from feature-card dimensions.
-8. Treat image hosting as a reviewed identity problem. Synchronize ordered additional previews first, query the resulting Steam URLs/original names, resolve only the intended inline URLs into the final BBCode, then publish metadata/content. Use the typed `release_presentation_sync` operation for an existing item whenever the card bytes/order change, any gallery slot is missing, or any retained CDN URL is stale; commit its resolved description/provenance before `release_prepare`. The operation must not consume the authored update note. Bind every local hash, remote index, and URL in evidence, including gallery-only images. `release_prepare` must download and hash every resolved image again so a dead/replaced URL blocks the final mutation. Never put unresolved tokens on the live page or silently use an anonymous/ad-supported image host.
+8. Keep inline image hosting independent of the Steam slideshow. Declare inline files in
+   `description-images.json` with repository paths, full-commit `raw.githubusercontent.com` URLs
+   and SHA-256 hashes. The agent must commit and push images, verify the GitHub mirror, and commit
+   the resolved description before page publication. Release tools must never commit or push image
+   changes. `release_page_update` verifies committed and remote bytes, then submits page metadata,
+   primary preview and slideshow together; no preliminary Steam image upload is needed. The
+   slideshow inventory may differ from the inline inventory. Keep human-deferred media excluded.
+
 9. Query public Workshop change history with bounded ordinary browser request headers. Steam may throttle an obvious custom verifier user agent while serving the same page to a normal browser-shaped request. Keep the request read-only, unauthenticated, capped in bytes/time, and retain the explicit-429-only retry ceiling; never skip or fabricate pre/post change-note verification because one client fingerprint was throttled.
 8. End distributable-mod copy with the user-reviewed `Author's Note` when requested. It may disclose AI-supervised development, frameworks, testing, playtesting limits, and feedback expectations in the author's voice; nothing follows it. State whether the shipped mod performs live AI generation.
 9. When a mod distinguishes especially valuable optional integrations, put a concise `Recommended Mods` section immediately before the full optional catalog. Link exact Workshop pages when the description budget permits, state any framework chain in player language, and remove those entries from the optional list instead of repeating them.
@@ -73,6 +91,15 @@ Human-produced media can enter a later release only after the user explicitly li
 normal review/provenance gates are satisfied. Immersive Chefs is currently human-deferred.
 
 ## Publish deliberately
+
+Use `release_package_upload` for the exact already-built and tested canonical package, and
+`release_page_update` for the page. The latter requires an existing Workshop ID, never uploads
+content, and never consumes the package change note. A first package upload creates a Private
+draft and backfills the ID; promotion is a separate page update. Both actions retain immutable
+plans and shared recovery protection. For an explicit dry-run, `release_prepare` accepts
+`action: package|page`, followed by `release_publish`. Publishing does not rebuild the package.
+The isolated Gateway publisher runtime can differ from the target of an already accepted package;
+this does not claim that the product supports that publisher runtime.
 
 Keep local installation and Workshop publication semantically distinct. An instruction to install,
 deploy, or copy a mod means synchronizing the reviewed package to RimWorld's canonical local

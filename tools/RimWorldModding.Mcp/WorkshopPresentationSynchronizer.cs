@@ -256,6 +256,7 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
     {
         var root = Path.GetFullPath(workshopRoot).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         titlePath = RequireContainedFile(root, titlePath);
+        if (!File.Exists(Path.Combine(root, "presentation.json"))) return [];
         var manifestPath = RequireContainedFile(root, Path.Combine(root, "presentation.json"));
         using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var manifest = document.RootElement;
@@ -278,8 +279,8 @@ public sealed class WorkshopPresentationSynchronizer(string repositoryRoot)
             card => card.GetProperty("token").GetString() ?? "",
             card => card.GetProperty("path").GetString() ?? "",
             StringComparer.Ordinal);
-        if (cardPaths.Count != tokens.Length || !cardPaths.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(tokens))
-            throw new InvalidOperationException("Workshop feature-card inventory does not match its carousel order.");
+        if (tokens.Any(token => !cardPaths.ContainsKey(token)))
+            throw new InvalidOperationException("Workshop carousel references an undeclared card.");
 
         var inputs = new List<WorkshopPreviewInput>
         {

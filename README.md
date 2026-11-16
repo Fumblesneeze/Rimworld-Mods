@@ -1,6 +1,6 @@
 # Fumblesneeze RimWorld mods
 
-This repository is the Windows development monorepo for Fumblesneeze's RimWorld mods. Established product mods target 1.6; megamod development targets 1.7 beta. The developer-only Gateway and explicitly opted-in verification bundles also support the inspected 1.7 beta runtime. The repository owns mod sources, host and in-game tests, OpenSpec contracts, release profiles, and typed MCP/CLI automation for building, verifying, installing, and publishing them.
+This repository is the Windows development monorepo for Fumblesneeze's RimWorld mods. Immersive Chefs ships separate 1.6 and 1.7 beta payloads in one package. Other established product mods target 1.6; megamod development targets 1.7 beta. The developer-only Gateway and explicitly opted-in verification bundles also support the inspected 1.7 beta runtime. The repository owns mod sources, host and in-game tests, OpenSpec contracts, release profiles, and typed MCP/CLI automation for building, verifying, installing, and publishing them.
 
 ## Mods
 
@@ -149,9 +149,17 @@ Use semantic Gateway operations for repeatable actions and observations. Raw C# 
 
 ## Release operations
 
-Release-capable mods with a `mods/<Mod>/Release/release.json` profile bind the project, package inventory, exact RimWorld/Steam build, Workshop metadata, dependencies, preview, and change note. Use the typed `release_profile_validate`, `release_prepare`, `release_publish`, and `release_status` operations; do not call product-specific Workshop publishing scripts directly.
+Immersive Chefs declares an exact 1.6/1.7 release matrix. `mod_build` builds and installs both
+version folders together; `release_matrix_build` also exposes explicit cache/configuration overrides.
+Use `release_target_test` for each declared target to exercise the frozen combined package through
+native workflows. Publication requires a clean Release build receipt matching the source revision,
+profile, target catalog and package digest.
 
-Preparation builds and stages repository artifacts and creates an immutable candidate/plan, but does not mutate Steam. Triggering publication asserts that testing and native player-workflow acceptance already happened. Publication consumes the admitted plan, persists durable recovery state, and completes only after the exact Steam item has the expected remote graph and a strictly newer nonzero modified timestamp. It never subscribes to the item or launches a product-specific smoke workflow.
+Release profiles live at `mods/<Mod>/Release/release.json`. Build and verify the product first, then use `release_package_upload` to upload only the already-built allowlisted package. A first upload creates a Private draft and backfills its Workshop ID; existing uploads preserve the page.
+
+Use `release_page_update` to update description, metadata, primary preview and slideshow together without building or uploading content. Inline images are independent of slideshow previews: the agent commits and pushes the images, waits for the GitHub mirror, and puts immutable `raw.githubusercontent.com` URLs in the description and `description-images.json`. Page updates verify those exact bytes before changing Steam. The release tools never commit or push image changes.
+
+For a separately reviewable dry-run, use `release_prepare` with `action` set to `package` or `page`, then `release_publish` with its returned plan identity. `release_status` supports exact-plan recovery. Both actions retain isolated Gateway evidence and complete only after remote verification and a newer modified timestamp. They never subscribe or run gameplay tests; a package publication asserts its exact build has already passed those tests.
 
 ## Repository boundaries and output
 

@@ -27,6 +27,7 @@ public sealed record WorkshopRemoteBaseline(
     string StateDigest)
 {
     public IReadOnlyList<WorkshopLink> Links { get; init; } = [];
+    public ulong ContentHandle { get; init; }
     private const int MaximumCommunityPageBytes = 2 * 1024 * 1024;
     private const int MaximumPreviewBytes = 1024 * 1024;
     private const string BrowserUserAgent =
@@ -35,10 +36,11 @@ public sealed record WorkshopRemoteBaseline(
 
     public static async Task<WorkshopRemoteBaseline> CaptureAsync(
         JsonElement remote,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool downloadImages = true)
     {
         var previewUrl = GatewayWorkshopClient.String(remote, "RemotePreviewUrl");
-        if (string.IsNullOrWhiteSpace(previewUrl))
+        if (downloadImages && string.IsNullOrWhiteSpace(previewUrl))
             throw new InvalidOperationException("Steam query did not return a primary preview URL.");
         using var http = new HttpClient(new SocketsHttpHandler
         {
@@ -46,7 +48,7 @@ public sealed record WorkshopRemoteBaseline(
             AllowAutoRedirect = false
         });
         http.DefaultRequestHeaders.UserAgent.ParseAdd("RimWorldModding.Mcp/0.1");
-        var previewBytes = await DownloadBoundedAsync(
+        var previewBytes = !downloadImages ? [] : await DownloadBoundedAsync(
             http,
             previewUrl,
             MaximumPreviewBytes,
@@ -59,7 +61,7 @@ public sealed record WorkshopRemoteBaseline(
         var appDependencies = ReadUlongArray(remote, "RemoteAppDependencies");
         var links = ReadWorkshopLinks(remote);
         var publishedFileId = GatewayWorkshopClient.UInt64(remote, "PublishedFileId").ToString();
-        var additional = await ReadAdditionalPreviewsAsync(
+        var additional = !downloadImages ? ReadPreviewIdentities(remote) : await ReadAdditionalPreviewsAsync(
             remote,
             http,
             publishedFileId,
@@ -82,14 +84,15 @@ public sealed record WorkshopRemoteBaseline(
             appDependencies,
             additional.Identities,
             additional.Urls,
-            links);
+            links,
+            GatewayWorkshopClient.UInt64(remote, "RemoteContentHandle"));
     }
 
-    public static void AssertRuntimeIdentity(JsonElement status, ReleaseProfile profile)
+    public static void AssertRuntimeIdentity(JsonElement status, ReleaseProfile profile, bool requireProductRuntime = true)
     {
         if (GatewayWorkshopClient.UInt64(status, "CurrentUserSteamId").ToString() != profile.SteamUserId)
             throw new InvalidOperationException("The live RimWorld Steam user does not match the release profile.");
-        if (!string.Equals(GatewayWorkshopClient.String(status, "RimWorldVersion"), profile.RimWorldRuntimeBuild, StringComparison.Ordinal))
+        if (requireProductRuntime && !string.Equals(GatewayWorkshopClient.String(status, "RimWorldVersion"), profile.RimWorldRuntimeBuild, StringComparison.Ordinal))
             throw new InvalidOperationException("The live RimWorld runtime build does not match the release profile.");
     }
 
@@ -97,7 +100,7 @@ public sealed record WorkshopRemoteBaseline(
     {
         var rebuilt = Create(PublishedFileId, Title, DescriptionSha256, DescriptionUtf8Bytes, Tags, Metadata,
             Visibility, PreviewUrl, PreviewSha256, OwnerSteamId, ConsumerAppId, ContentBytes,
-            UpdatedUnixSeconds, Dependencies, AppDependencies, AdditionalPreviews, AdditionalPreviewUrls, Links);
+            UpdatedUnixSeconds, Dependencies, AppDependencies, AdditionalPreviews, AdditionalPreviewUrls, Links, ContentHandle);
         if (!string.Equals(rebuilt.StateDigest, StateDigest, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Publication plan remote baseline digest is invalid.");
     }
@@ -159,7 +162,8 @@ public sealed record WorkshopRemoteBaseline(
         IReadOnlyList<string> appDependencies,
         IReadOnlyList<string> additionalPreviews,
         IReadOnlyList<string>? additionalPreviewUrls = null,
-        IReadOnlyList<WorkshopLink>? links = null)
+        IReadOnlyList<WorkshopLink>? links = null,
+        ulong contentHandle = 0)
     {
         var sortedTags = tags.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         var sortedDependencies = dependencies.OrderBy(value => value, StringComparer.Ordinal).ToArray();
@@ -179,13 +183,15 @@ public sealed record WorkshopRemoteBaseline(
             string.Join("|", orderedAdditional), string.Join("|", orderedAdditionalUrls),
             JsonSerializer.Serialize(orderedLinks)
         }) + "\n";
+        if (contentHandle != 0) canonical += "content-handle:" + contentHandle + "\n";
         var digest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
         return new WorkshopRemoteBaseline(publishedFileId, title, descriptionSha256, descriptionUtf8Bytes,
             sortedTags, metadata, visibility, previewUrl, previewSha256, ownerSteamId, consumerAppId,
             contentBytes, updatedUnixSeconds, sortedDependencies, sortedAppDependencies,
             orderedAdditional, orderedAdditionalUrls, digest)
         {
-            Links = orderedLinks
+            Links = orderedLinks,
+            ContentHandle = contentHandle
         };
     }
 
@@ -197,6 +203,17 @@ public sealed record WorkshopRemoteBaseline(
     }
 
     private sealed record AdditionalPreviewInventory(string[] Identities, string[] Urls);
+
+    private static AdditionalPreviewInventory ReadPreviewIdentities(JsonElement remote)
+    {
+        if (!GatewayWorkshopClient.TryProperty(remote, "RemoteAdditionalPreviews", out var previews) || previews.ValueKind != JsonValueKind.Array)
+            return new AdditionalPreviewInventory([], []);
+        var items = previews.EnumerateArray().ToArray();
+        return new AdditionalPreviewInventory(items.Select(item => string.Join("|", new[]
+        {
+            ReadProperty(item, "Index"), ReadProperty(item, "OriginalFileName"), ReadProperty(item, "Type"), ReadProperty(item, "Url")
+        })).ToArray(), items.Select(item => ReadProperty(item, "Url")).ToArray());
+    }
 
     private static async Task<AdditionalPreviewInventory> ReadAdditionalPreviewsAsync(
         JsonElement root,

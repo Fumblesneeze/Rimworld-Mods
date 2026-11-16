@@ -22,6 +22,47 @@ public sealed class OperationRegistry
     {
         var registrations = new[]
         {
+            Register("release_target_test", "Verify the frozen combined package through native workflows on one exact cached game target.",
+                OperationRisk.DestructiveLocal, true, 3900, "Retains matrix identity and native action/screenshots/config/cleanup evidence without rebuilding the product.",
+                static async (registry, arguments, cancellationToken) =>
+                {
+                    RefuseRunningRimWorld();
+                    return await ReleaseMatrixBuild.TestTargetAsync(registry._repositoryRoot,
+                        registry.RequiredProfile(RequiredString(arguments, "packageId")), RequiredString(arguments, "targetId"),
+                        OptionalString(arguments, "cacheRoot") ?? SteamGameTargets.DefaultCacheRoot,
+                        RequiredString(arguments, "projectPath"), OptionalStringArray(arguments, "testIds"),
+                        OptionalInt32(arguments, "timeoutSeconds", 900), OptionalBoolean(arguments, "dryRun", false), cancellationToken);
+                }),
+            Register("release_matrix_build", "Build each declared exact target independently, merge and install the combined product package.",
+                OperationRisk.DestructiveLocal, true, 1800, "Retains exact cache, source, compiler and per-target package hashes; never publishes.",
+                static async (registry, arguments, cancellationToken) =>
+                {
+                    RefuseRunningRimWorld();
+                    return await ReleaseMatrixBuild.BuildAsync(registry._repositoryRoot,
+                        registry.RequiredProfile(RequiredString(arguments, "packageId")),
+                        OptionalString(arguments, "cacheRoot") ?? SteamGameTargets.DefaultCacheRoot,
+                        OptionalString(arguments, "modsRoot") ?? @"F:\Steam\steamapps\common\RimWorld\Mods",
+                        OptionalString(arguments, "configuration") ?? "Release", cancellationToken);
+                }),
+            Register("game_target_snapshot", "Inventory an acquired external game target for review and catalog pinning.",
+                OperationRisk.WorkspaceWrite, false, 180, "Writes external file hashes only; no catalog approval or Steam mutation.",
+                static (registry, arguments, _) => Task.FromResult<object>(SteamGameTargets.SnapshotResult(registry._repositoryRoot,
+                    RequiredString(arguments, "targetId"), OptionalString(arguments, "cacheRoot") ?? SteamGameTargets.DefaultCacheRoot,
+                    RequiredString(arguments, "targetDirectory")))),
+            Register("game_target_validate", "Verify every approved file and Steam manifest of one declared cached target.",
+                OperationRisk.Read, false, 180, "Returns the exact validated installation without launching it.",
+                static (registry, arguments, _) => Task.FromResult<object>(SteamGameTargets.Validate(registry._repositoryRoot,
+                    SteamGameTargets.LoadCatalog(registry._repositoryRoot).Single(target => target.Id == RequiredString(arguments, "targetId")),
+                    OptionalString(arguments, "cacheRoot") ?? SteamGameTargets.DefaultCacheRoot))),
+            Register("game_depot_download",
+                "Acquire exact Steam depot content or onboard a branch in a separate external directory using pinned DepotDownloader.",
+                OperationRisk.DestructiveLocal, true, 3000,
+                "Retains manifest/process identity only; QR and cached Steam sessions remain outside repository evidence.",
+                static async (registry, arguments, cancellationToken) => await SteamDepotAcquisition.DownloadAsync(
+                    registry._repositoryRoot, RequiredString(arguments, "downloaderPath"), RequiredString(arguments, "targetDirectory"),
+                    RequiredString(arguments, "branch"), OptionalString(arguments, "depotId"), OptionalString(arguments, "manifestId"),
+                    OptionalBoolean(arguments, "interactiveLogin", false), OptionalString(arguments, "accountName"),
+                    OptionalBoolean(arguments, "manifestOnly", false), cancellationToken)),
             Register(
                 "game_installation_inspect",
                 "Resolve a supported RimWorld installation without loading assemblies or launching the game.",
@@ -67,6 +108,9 @@ public sealed class OperationRegistry
                     var profile = registry.RequiredProfile(RequiredString(arguments, "packageId"));
                     var modsRoot = OptionalString(arguments, "modsRoot") ??
                                    Path.Combine(@"F:\Steam\steamapps\common\RimWorld", "Mods");
+                    if (profile.Targets.Count > 0)
+                        return await ReleaseMatrixBuild.BuildAsync(registry._repositoryRoot, profile,
+                            SteamGameTargets.DefaultCacheRoot, modsRoot, OptionalString(arguments, "configuration") ?? "Release", cancellationToken);
                     return await RepositoryOperations.BuildAndInstallAsync(
                         RepositoryOperationPlanner.ModBuild(
                             registry._repositoryRoot,
@@ -90,7 +134,8 @@ public sealed class OperationRegistry
                         registry._repositoryRoot,
                         RequiredString(arguments, "suite"),
                         OptionalString(arguments, "filter"),
-                        OptionalString(arguments, "configuration") ?? "Release"),
+                        OptionalString(arguments, "configuration") ?? "Release",
+                        OptionalString(arguments, "gameRoot")),
                     cancellationToken)),
             Register(
                 "package_validate",
@@ -102,7 +147,6 @@ public sealed class OperationRegistry
                 static (registry, arguments, _) =>
                 {
                     var profile = registry.RequiredProfile(RequiredString(arguments, "packageId"));
-                    ReleaseEnvironmentValidator.Validate(profile);
                     var candidate = ReleaseCandidateBuilder.Inspect(profile.PackageSource, profile.PackageInclude);
                     return Task.FromResult<object>(ReleasePackageValidator.Validate(profile, candidate));
                 }),
@@ -344,8 +388,22 @@ public sealed class OperationRegistry
                         registry.RequiredProfile(RequiredString(arguments, "packageId"))),
                     cancellationToken)),
             Register(
+                "release_package_upload",
+                "Upload package content only; first upload creates a Private draft and backfills its Workshop identity.",
+                OperationRisk.ExternalWrite, longRunning: true, timeoutSeconds: 4500,
+                "Retains an action-bound plan, Steam callback, remote preservation checks and exact process cleanup.",
+                static async (registry, arguments, cancellationToken) =>
+                    await registry.PublishActionAsync(RequiredString(arguments, "packageId"), "package", cancellationToken)),
+            Register(
+                "release_page_update",
+                "Update an existing Steam page and slideshow in one action using committed GitHub inline images; never uploads package content.",
+                OperationRisk.ExternalWrite, longRunning: true, timeoutSeconds: 4500,
+                "Validates mirrored image bytes before mutation and retains the page plan and remote verification.",
+                static async (registry, arguments, cancellationToken) =>
+                    await registry.PublishActionAsync(RequiredString(arguments, "packageId"), "page", cancellationToken)),
+            Register(
                 "release_prepare",
-                "Build, validate, stage, hash, and remotely preflight one universal release profile without mutating Steam.",
+                "Stage the already built package or freeze page inputs and perform a mutation-free Steam preflight.",
                 OperationRisk.WorkspaceWrite,
                 longRunning: false,
                 timeoutSeconds: 900,
@@ -353,18 +411,16 @@ public sealed class OperationRegistry
                 static async (registry, arguments, cancellationToken) =>
                     await new ReleasePreparer(registry._repositoryRoot).PrepareAsync(
                         RequiredString(arguments, "packageId"),
-                        cancellationToken)),
+                        cancellationToken, OptionalString(arguments, "action") ?? "package")),
             Register(
                 "release_presentation_sync",
-                "Synchronize an existing Workshop item's reviewed additional previews and resolve its description against the current Steam image identities.",
+                "Retired; use release_page_update. Fails without mutation.",
                 OperationRisk.ExternalWrite,
                 longRunning: true,
                 timeoutSeconds: 1800,
                 "Retains the exact ordered remote preview inventory and resolves the checked-in description/provenance without consuming a player-facing change note.",
-                static async (registry, arguments, cancellationToken) =>
-                    await new WorkshopPresentationSynchronizer(registry._repositoryRoot).SynchronizeAsync(
-                        RequiredString(arguments, "packageId"),
-                        cancellationToken)),
+                static (_, _, _) => throw new InvalidOperationException(
+                    "Separate preview synchronization is retired. Commit and push inline images, then use release_page_update.")),
             Register(
                 "release_status",
                 "Revalidate one exact release plan/digest/nonce and inspect its durable publication state without mutating Steam.",
@@ -401,6 +457,13 @@ public sealed class OperationRegistry
                     .CleanAsync(RequiredString(arguments, "packageId"), cancellationToken)),
         };
         return new OperationRegistry(repositoryRoot, registrations);
+    }
+
+    private async Task<ReleasePublishResult> PublishActionAsync(string packageId, string action, CancellationToken cancellationToken)
+    {
+        var prepared = await new ReleasePreparer(_repositoryRoot).PrepareAsync(packageId, cancellationToken, action);
+        return await new ReleaseWorkerCoordinator(_repositoryRoot).PublishAsync(
+            prepared.PlanPath, prepared.PlanSha256, prepared.ConfirmationNonce, cancellationToken);
     }
 
     public async Task<object> InvokeAsync(string name, JsonElement arguments, CancellationToken cancellationToken)
@@ -514,7 +577,8 @@ public sealed class OperationRegistry
             throw new ArgumentException($"No universal release profile exists for packageId '{packageId}'.");
         var modsRoot = OptionalString(arguments, "modsRoot") ??
                        Path.Combine(@"F:\Steam\steamapps\common\RimWorld", "Mods");
-        return LocalModInstaller.Sync(profile.PackageSource, modsRoot, profile.PackageId, profile.PackageInclude);
+        var source = profile.Targets.Count == 0 ? profile.PackageSource : ReleaseMatrixBuild.ReadLatest(_repositoryRoot, profile).Candidate.PackagePath;
+        return LocalModInstaller.Sync(source, modsRoot, profile.PackageId, profile.PackageInclude);
     }
 
     private ReleaseProfile RequiredProfile(string packageId) => ReleaseProfileCatalog.Discover(_repositoryRoot)

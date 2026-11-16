@@ -39,6 +39,26 @@ public static class WorkshopRelationshipReconciler
 
 public sealed class ReleasePublisher(string repositoryRoot)
 {
+    internal static void PreservePreviousPackageHistory(string repositoryRoot, ReleaseProfile profile)
+    {
+        var root = RepositoryRoot.Resolve(repositoryRoot);
+        var releaseRoot = Path.Combine(root, "artifacts", "Releases", profile.PackageId);
+        var historyPath = Path.Combine(releaseRoot, "package-publication-state.txt");
+        var statePath = Path.Combine(releaseRoot, "publication-state.txt");
+        if (File.Exists(historyPath) || !File.Exists(statePath)) return;
+        var state = File.ReadAllText(statePath).Trim().Split('|');
+        if (state.Length != 3 || state[0] is not ("complete-steam-verified" or "complete-reviewed") ||
+            state[2] != profile.PublishedFileId) return;
+        var result = ReleaseWorkerCoordinator.ReadValidatedResult(root,
+            Path.Combine(releaseRoot, "workers", state[1], "worker-result.json"), profile.PackageId, state[1], null, null,
+            allowLegacySubscriberResult: state[0] == "complete-reviewed");
+        using var document = JsonDocument.Parse(File.ReadAllText(result.ReceiptPath));
+        if (GatewayWorkshopClient.String(document.RootElement, "publicationAction") == "page") return;
+        if (!GatewayWorkshopClient.TryProperty(document.RootElement, "changeNoteVerification", out var verification) ||
+            verification.ValueKind != JsonValueKind.Object) return;
+        DurableFile.WriteAllText(historyPath, string.Join('|', state));
+    }
+
     private readonly string _repositoryRoot = RepositoryRoot.Resolve(repositoryRoot);
 
     public async Task<ReleasePublishResult> PublishAsync(
@@ -57,16 +77,19 @@ public sealed class ReleasePublisher(string repositoryRoot)
         var artifactsPrefix = Path.Combine(_repositoryRoot, "artifacts", "Releases") + Path.DirectorySeparatorChar;
         if (!admission.PlanPath.StartsWith(artifactsPrefix, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Publication plan must be a retained release artifact.");
-        var profile = ReleaseProfileCatalog.Discover(_repositoryRoot)
+        var profile = ReleaseProfileCatalog.Discover(_repositoryRoot, validatePresentation: false)
             .Single(item => string.Equals(item.PackageId, admission.Plan.PackageId, StringComparison.OrdinalIgnoreCase));
         if (!string.Equals(profile.Path, admission.Plan.ReleaseProfilePath, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Publication plan does not select the canonical universal release profile.");
-        _ = WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport(admission.Plan.WorkshopLinks);
-        ReleaseEnvironmentValidator.Validate(profile);
-        ReleaseChangeNotePolicy.Validate(profile);
-        ReleasePackageValidator.Validate(profile, admission.Candidate);
-        var previousReleaseEvidence = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
-            _repositoryRoot, profile, cancellationToken);
+        if (admission.Plan.PublicationAction != "package") _ = WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport(admission.Plan.WorkshopLinks);
+        if (admission.Plan.PublicationAction == "combined") ReleaseEnvironmentValidator.Validate(profile);
+        if (admission.Plan.PublicationAction != "page")
+        {
+            ReleaseChangeNotePolicy.Validate(profile);
+            ReleasePackageValidator.Validate(profile, admission.Candidate);
+        }
+        var previousReleaseEvidence = admission.Plan.PublicationAction != "page"
+            ? await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(_repositoryRoot, HistoryProfile(profile, admission.Plan), cancellationToken) : null;
         AssertPreviousReleaseEvidence(admission.Plan, previousReleaseEvidence);
 
         var mutexName = "Local\\RimWorldModdingMcp.Release." +
@@ -85,6 +108,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             var statePath = Path.Combine(stateRoot, "publication-state.txt");
             var gatewayAssociationPath = Path.Combine(stateRoot, "publisher-gateway-run.txt");
             RefuseIndeterminateDuplicate(statePath, admission.PlanSha256, admission.Plan.PublishedFileId);
+            if (admission.Plan.PublicationAction == "page") PreservePreviousPackageHistory(_repositoryRoot, profile);
 
             var manager = new RunLeaseManager(_repositoryRoot);
             gatewayRunId = RunLeaseManager.ReserveRunId();
@@ -98,7 +122,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 ready.GameProcessId!.Value);
             await client.RegisterAsync(cancellationToken);
             var status = await client.InvokeAsync(new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-            WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile);
+            WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile, requireProductRuntime: admission.Plan.PublicationAction == "combined");
 
             ulong publishedId = admission.Plan.PublishedFileId is null
                 ? 0UL
@@ -123,7 +147,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
             else
             {
                 var queried = await QueryAsync(client, admission, publishedId, deadline, cancellationToken);
-                var current = await WorkshopRemoteBaseline.CaptureAsync(queried, cancellationToken);
+                var current = await WorkshopRemoteBaseline.CaptureAsync(queried, cancellationToken,
+                    downloadImages: admission.Plan.PublicationAction == "combined");
                 current.AssertItemIdentity(profile);
                 admission.Plan.RemoteBaseline!.AssertMatches(current);
             }
@@ -136,43 +161,32 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 DateTimeOffset.UtcNow,
                 requireCleanRevision: true);
             profile = admission.Plan.FrozenProfile;
-            ReleaseEnvironmentValidator.Validate(profile);
-            ReleaseChangeNotePolicy.Validate(profile);
-            ReleasePackageValidator.Validate(profile, admission.Candidate);
-            previousReleaseEvidence = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
-                _repositoryRoot, profile, cancellationToken);
+            if (admission.Plan.PublicationAction == "combined") ReleaseEnvironmentValidator.Validate(profile);
+            if (admission.Plan.PublicationAction != "page")
+            {
+                ReleaseChangeNotePolicy.Validate(profile);
+                ReleasePackageValidator.Validate(profile, admission.Candidate);
+            }
+            previousReleaseEvidence = admission.Plan.PublicationAction != "page"
+                ? await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(_repositoryRoot, HistoryProfile(profile, admission.Plan), cancellationToken) : null;
             AssertPreviousReleaseEvidence(admission.Plan, previousReleaseEvidence);
+            if (admission.Plan.PublicationAction == "page")
+            {
+                using var http = new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false });
+                await WorkshopInlineImages.ValidateAsync(_repositoryRoot, admission.Plan.DescriptionPath,
+                    admission.Plan.InlineImageManifestPath, http, cancellationToken, admission.Plan.InlineImageRootPath);
+            }
             cancellationToken.ThrowIfCancellationRequested();
             var durableToken = CancellationToken.None;
             deadline = DateTimeOffset.UtcNow.AddMinutes(15);
             var repositoryIdentityPath = Path.Combine(Path.GetDirectoryName(profile.Project)!, "About", "PublishedFileId.txt");
-            var packageIdentityPath = Path.Combine(admission.Plan.PackagePath, "About", "PublishedFileId.txt");
+            var packageIdentityPath = admission.Plan.PublicationAction == "page" ? repositoryIdentityPath
+                : Path.Combine(admission.Plan.PackagePath, "About", "PublishedFileId.txt");
             if (publishedId != 0)
                 EnsureExistingPublicationIdentity(
                     identityPath, repositoryIdentityPath, packageIdentityPath, publishedId);
-            var admissionProof = ReleasePlanAdmission.AdmissionText(admission);
-            var publishArguments = new Dictionary<string, object?>
-            {
-                ["operation"] = "publish",
-                ["planSha256"] = admission.PlanSha256,
-                ["confirmationNonce"] = admission.Plan.ConfirmationNonce,
-                ["confirmation"] = admissionProof,
-                ["publishedFileId"] = publishedId == 0 ? "" : publishedId.ToString(),
-                ["allowFirstPublication"] = publishedId == 0 && admission.Plan.AllowFirstPublication,
-                ["identityPath"] = identityPath,
-                ["repositoryIdentityPath"] = repositoryIdentityPath,
-                ["packageIdentityPath"] = packageIdentityPath,
-                ["statePath"] = statePath,
-                ["title"] = admission.Plan.Title,
-                ["packagePath"] = admission.Plan.PackagePath,
-                ["descriptionPath"] = admission.Plan.DescriptionPath,
-                ["previewPath"] = admission.Plan.PreviewPath,
-                ["changeNote"] = admission.Plan.ChangeNote,
-                ["tags"] = admission.Plan.Tags,
-                ["visibility"] = admission.Plan.Visibility
-            };
-            foreach (var pair in WorkshopLinkGatewayArguments(admission.Plan.WorkshopLinks))
-                publishArguments.Add(pair.Key, pair.Value);
+            var publishArguments = BuildPublishArguments(admission, publishedId, identityPath,
+                repositoryIdentityPath, packageIdentityPath, statePath);
             _ = await client.InvokeAsync(publishArguments, durableToken);
             var publish = await client.WaitTerminalAsync(
                 admission.PlanSha256,
@@ -211,7 +225,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         var admission = ReleasePlanAdmission.ValidateRecovery(
             _repositoryRoot, planPath, planSha256, confirmationNonce);
         var profile = admission.Plan.FrozenProfile;
-        ReleaseEnvironmentValidator.Validate(profile);
+        if (admission.Plan.PublicationAction == "combined") ReleaseEnvironmentValidator.Validate(profile);
         var mutexName = "Local\\RimWorldModdingMcp.Release." +
                         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(profile.PackageId)))[..24];
         using var mutex = new Semaphore(1, 1, mutexName);
@@ -241,7 +255,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             {
                 var live = await attached.InvokeAsync(
                     new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-                WorkshopRemoteBaseline.AssertRuntimeIdentity(live, profile);
+                WorkshopRemoteBaseline.AssertRuntimeIdentity(live, profile, requireProductRuntime: admission.Plan.PublicationAction == "combined");
                 if (string.Equals(GatewayWorkshopClient.String(live, "PlanSha256"), admission.PlanSha256,
                         StringComparison.OrdinalIgnoreCase))
                 {
@@ -280,7 +294,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             var client = new GatewayWorkshopClient(_repositoryRoot, ready.GatewayManifestPath!, ready.GameProcessId!.Value);
             await client.RegisterAsync(cancellationToken);
             var runtime = await client.InvokeAsync(new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-            WorkshopRemoteBaseline.AssertRuntimeIdentity(runtime, profile);
+            WorkshopRemoteBaseline.AssertRuntimeIdentity(runtime, profile, requireProductRuntime: admission.Plan.PublicationAction == "combined");
             var deadline = DateTimeOffset.UtcNow.AddMinutes(15);
             var remote = await QueryAsync(client, admission, publishedId, deadline, cancellationToken);
             RequireRecoveryItemIdentity(remote, admission, publishedId);
@@ -319,7 +333,8 @@ public sealed class ReleasePublisher(string repositoryRoot)
         if (publishedId == 0) throw new InvalidOperationException("Steam completion requires a durable item ID.");
         var identityPath = Path.Combine(stateRoot, "PublishedFileId.txt");
         var repositoryIdentityPath = Path.Combine(Path.GetDirectoryName(profile.Project)!, "About", "PublishedFileId.txt");
-        var packageIdentityPath = Path.Combine(admission.Plan.PackagePath, "About", "PublishedFileId.txt");
+        var packageIdentityPath = admission.Plan.PublicationAction == "page" ? repositoryIdentityPath
+            : Path.Combine(admission.Plan.PackagePath, "About", "PublishedFileId.txt");
         AssertIdentity(identityPath, publishedId);
         AssertIdentity(repositoryIdentityPath, publishedId);
         AssertIdentity(packageIdentityPath, publishedId);
@@ -342,14 +357,18 @@ public sealed class ReleasePublisher(string repositoryRoot)
         var deadline = DateTimeOffset.UtcNow.AddMinutes(15);
         var remote = await WaitRemoteBaseAsync(client, admission, publishedId, deadline,
             allowUnsupportedWorkshopLinkRecovery, cancellationToken);
-        remote = await ReconcileRelationshipsAsync(client, admission, publishedId, remote, statePath, deadline, cancellationToken);
+        if (admission.Plan.PublicationAction != "package")
+            remote = await ReconcileRelationshipsAsync(client, admission, publishedId, remote, statePath, deadline, cancellationToken);
         remote = await WaitRemoteBaseAsync(client, admission, publishedId, deadline,
             allowUnsupportedWorkshopLinkRecovery, cancellationToken, requireRelationships: true);
-        await VerifyRemotePreviewAsync(remote, admission.Plan.PreviewSha256, cancellationToken);
-        var changeNoteVerification = await WorkshopChangeHistoryVerifier.VerifyPublishedAsync(
-            profile, publishedId.ToString(), cancellationToken);
+        if (admission.Plan.PublicationAction != "package")
+            await VerifyRemotePreviewAsync(remote, admission.Plan.PreviewSha256, cancellationToken);
+        object? changeNoteVerification = admission.Plan.PublicationAction != "page"
+            ? await WorkshopChangeHistoryVerifier.VerifyPublishedAsync(HistoryProfile(profile, admission.Plan), publishedId.ToString(), cancellationToken) : null;
 
-        VerifyExactPublishedCandidate(admission, publishedId);
+        await VerifyActionResultAsync(remote, admission, cancellationToken);
+
+        if (admission.Plan.PublicationAction != "page") VerifyExactPublishedCandidate(admission, publishedId);
         var modifiedBefore = admission.Plan.RemoteBaseline?.UpdatedUnixSeconds;
         var modifiedAfter = checked((uint)GatewayWorkshopClient.UInt64(remote, "RemoteUpdatedUnixSeconds"));
         if (!RemoteModifiedTimeAdvanced(remote, admission.Plan.RemoteBaseline))
@@ -369,6 +388,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
             ["schema"] = "RimWorldModReleaseReceipt/v1",
             ["publishedUtc"] = DateTimeOffset.UtcNow,
             ["packageId"] = profile.PackageId,
+            ["publicationAction"] = admission.Plan.PublicationAction,
             ["title"] = profile.Title,
             ["publishedFileId"] = publishedId.ToString(),
             ["workshopUrl"] = $"https://steamcommunity.com/sharedfiles/filedetails/?id={publishedId}",
@@ -381,7 +401,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
                 AfterUnixSeconds = modifiedAfter,
                 Advanced = modifiedBefore.HasValue ? modifiedAfter > modifiedBefore.Value : modifiedAfter > 0
             },
-            ["changeNote"] = admission.Plan.ChangeNote,
+            ["changeNote"] = admission.Plan.PublicationAction == "page" ? "" : admission.Plan.ChangeNote,
             ["changeNoteVerification"] = changeNoteVerification,
             ["identityCommit"] = commit,
             ["unsupportedWorkshopLinks"] = unsupportedWorkshopLinks.Select(link => new
@@ -399,6 +419,9 @@ public sealed class ReleasePublisher(string repositoryRoot)
         DurableFile.WriteAllText(receiptPath,
             JsonSerializer.Serialize(receipt, new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine);
         var receiptSha256 = ReleaseCandidateBuilder.Hash(receiptPath);
+        if (admission.Plan.PublicationAction != "page")
+            DurableFile.WriteAllText(Path.Combine(stateRoot, "package-publication-state.txt"),
+                $"complete-steam-verified|{admission.PlanSha256}|{publishedId}");
         DurableFile.WriteAllText(statePath, $"complete-steam-verified|{admission.PlanSha256}|{publishedId}");
         return new ReleasePublishResult(
             "published-complete-steam-verified",
@@ -453,6 +476,18 @@ public sealed class ReleasePublisher(string repositoryRoot)
         ReleaseAdmission admission,
         bool allowUnsupportedWorkshopLinkRecovery = false)
     {
+        if (admission.Plan.PublicationAction == "package")
+        {
+            var baseline = admission.Plan.RemoteBaseline;
+            return RemoteModifiedTimeAdvanced(remote, baseline) &&
+                   GatewayWorkshopClient.String(remote, "RemoteMetadata") == admission.PlanSha256 &&
+                   GatewayWorkshopClient.String(remote, "RemoteTitle") == (baseline?.Title ?? admission.Plan.Title) &&
+                   GatewayWorkshopClient.String(remote, "RemoteDescriptionSha256") ==
+                       (baseline?.DescriptionSha256 ?? Convert.ToHexString(SHA256.HashData([]))) &&
+                   GatewayWorkshopClient.String(remote, "RemoteVisibility").EndsWith(baseline?.Visibility ?? "Private", StringComparison.Ordinal) &&
+                   GatewayWorkshopClient.String(remote, "RemoteTags").Split(',').Select(value => value.Trim()).Where(value => value.Length > 0)
+                       .OrderBy(value => value, StringComparer.Ordinal).SequenceEqual(baseline?.Tags ?? [], StringComparer.Ordinal);
+        }
         var tags = GatewayWorkshopClient.String(remote, "RemoteTags").Split(',')
             .Select(value => value.Trim()).Where(value => value.Length > 0).OrderBy(value => value, StringComparer.Ordinal);
         return RemoteModifiedTimeAdvanced(remote, admission.Plan.RemoteBaseline) &&
@@ -469,6 +504,41 @@ public sealed class ReleasePublisher(string repositoryRoot)
     private static bool ShouldPreserveGatewayForRecovery(string statePath, string planSha256) =>
         File.Exists(statePath) &&
         ReleasePlanAdmission.IsRecoverableDurableState(File.ReadAllText(statePath), planSha256, out _);
+
+    internal static Dictionary<string, object?> BuildPublishArguments(
+        ReleaseAdmission admission, ulong publishedId, string identityPath, string repositoryIdentityPath,
+        string packageIdentityPath, string statePath)
+    {
+        var plan = admission.Plan;
+        var request = new Dictionary<string, object?>
+        {
+            ["operation"] = "publish",
+            ["publicationAction"] = plan.PublicationAction,
+            ["planSha256"] = admission.PlanSha256,
+            ["confirmationNonce"] = plan.ConfirmationNonce,
+            ["confirmation"] = ReleasePlanAdmission.AdmissionText(admission),
+            ["publishedFileId"] = publishedId == 0 ? "" : publishedId.ToString(),
+            ["allowFirstPublication"] = publishedId == 0 && plan.AllowFirstPublication,
+            ["identityPath"] = identityPath,
+            ["repositoryIdentityPath"] = repositoryIdentityPath,
+            ["packageIdentityPath"] = packageIdentityPath,
+            ["statePath"] = statePath,
+            ["title"] = plan.Title,
+            ["changeNote"] = plan.PublicationAction == "page" ? "" : plan.ChangeNote
+        };
+        if (plan.PublicationAction != "page") request["packagePath"] = plan.PackagePath;
+        if (plan.PublicationAction != "package")
+        {
+            request["descriptionPath"] = plan.DescriptionPath;
+            request["previewPath"] = plan.PreviewPath;
+            request["tags"] = plan.Tags;
+            request["visibility"] = plan.Visibility;
+            foreach (var pair in WorkshopLinkGatewayArguments(plan.WorkshopLinks)) request.Add(pair.Key, pair.Value);
+            if (plan.PublicationAction == "page")
+                request["additionalPreviewPaths"] = plan.AdditionalPreviews.Select(file => file.Path).ToArray();
+        }
+        return request;
+    }
 
     internal static Dictionary<string, object?> WorkshopLinkGatewayArguments(IReadOnlyList<WorkshopLink> links)
     {
@@ -532,27 +602,46 @@ public sealed class ReleasePublisher(string repositoryRoot)
         while (DateTimeOffset.UtcNow < deadline)
         {
             remote = await QueryAsync(client, admission, publishedId, deadline, cancellationToken);
-            var remoteTags = GatewayWorkshopClient.String(remote, "RemoteTags").Split(',')
-                .Select(value => value.Trim()).Where(value => value.Length > 0).OrderBy(value => value, StringComparer.Ordinal).ToArray();
-            if (GatewayWorkshopClient.String(remote, "RemoteTitle") == admission.Plan.Title &&
-                RemoteModifiedTimeAdvanced(remote, admission.Plan.RemoteBaseline) &&
-                GatewayWorkshopClient.String(remote, "RemoteDescriptionSha256") == admission.Plan.DescriptionSha256 &&
-                GatewayWorkshopClient.String(remote, "RemoteMetadata") == admission.PlanSha256 &&
+            if (RemoteMatchesPlan(remote, admission, allowUnsupportedWorkshopLinkRecovery) &&
                 GatewayWorkshopClient.UInt64(remote, "RemoteOwnerSteamId").ToString() == admission.Plan.SteamUserId &&
                 GatewayWorkshopClient.UInt64(remote, "RemoteConsumerAppId") == (ulong)admission.Plan.SteamAppId &&
-                GatewayWorkshopClient.String(remote, "RemoteVisibility").EndsWith(admission.Plan.Visibility, StringComparison.Ordinal) &&
-                !string.IsNullOrWhiteSpace(GatewayWorkshopClient.String(remote, "RemotePreviewUrl")) &&
-                (allowUnsupportedWorkshopLinkRecovery
-                    ? RemoteLinksMatchRecovery(remote, admission.Plan.WorkshopLinks)
-                    : RemoteLinksMatchPlan(remote, admission.Plan.WorkshopLinks)) &&
-                (!requireRelationships ||
+                (!requireRelationships || admission.Plan.PublicationAction == "package" ||
                  Dependencies(remote).SetEquals(admission.Plan.RequiredWorkshopItems.Select(ulong.Parse)) &&
-                 AppDependencies(remote).SetEquals((admission.Plan.RequiredDlcAppIds ?? []).Select(ulong.Parse))) &&
-                remoteTags.SequenceEqual(admission.Plan.Tags.OrderBy(value => value, StringComparer.Ordinal), StringComparer.Ordinal))
+                 AppDependencies(remote).SetEquals((admission.Plan.RequiredDlcAppIds ?? []).Select(ulong.Parse))))
                 return remote;
             await Task.Delay(1500, cancellationToken);
         }
         throw new TimeoutException("Remote Workshop metadata did not converge to the admitted plan.");
+    }
+
+    private static async Task VerifyActionResultAsync(JsonElement remote, ReleaseAdmission admission, CancellationToken cancellationToken)
+    {
+        var plan = admission.Plan;
+        if (plan.PublicationAction == "combined") return;
+        var actual = await WorkshopRemoteBaseline.CaptureAsync(remote, cancellationToken,
+            downloadImages: plan.PublicationAction == "page");
+        var baseline = plan.RemoteBaseline;
+        if (plan.PublicationAction == "package")
+        {
+            if (baseline is not null &&
+                (actual.Title != baseline.Title || actual.DescriptionSha256 != baseline.DescriptionSha256 ||
+                 actual.Visibility != baseline.Visibility || actual.PreviewUrl != baseline.PreviewUrl ||
+                 !actual.Tags.SequenceEqual(baseline.Tags) || !actual.Links.SequenceEqual(baseline.Links) ||
+                 !actual.Dependencies.SequenceEqual(baseline.Dependencies) || !actual.AppDependencies.SequenceEqual(baseline.AppDependencies) ||
+                 !actual.AdditionalPreviews.SequenceEqual(baseline.AdditionalPreviews)))
+                throw new InvalidOperationException("Package upload changed page presentation or relationships.");
+            return;
+        }
+        if (baseline is null || actual.ContentBytes != baseline.ContentBytes || actual.ContentHandle != baseline.ContentHandle)
+            throw new InvalidOperationException("Page update changed package content identity or size.");
+        if (actual.AdditionalPreviews.Count != plan.AdditionalPreviews.Count)
+            throw new InvalidOperationException("Slideshow count differs from the admitted page plan.");
+        for (var index = 0; index < plan.AdditionalPreviews.Count; index++)
+        {
+            var parts = actual.AdditionalPreviews[index].Split('|');
+            if (parts.Length != 4 || parts[0] != index.ToString() || parts[3] != plan.AdditionalPreviews[index].Sha256)
+                throw new InvalidOperationException($"Slideshow bytes differ from the admitted page plan at slot {index}.");
+        }
     }
 
     internal static bool RemoteModifiedTimeAdvanced(
@@ -651,6 +740,7 @@ public sealed class ReleasePublisher(string repositoryRoot)
         ReleasePublicationPlan plan,
         RetainedPrivateReleaseEvidence? actual)
     {
+        if (plan.PublicationAction == "page") return;
         var expected = plan.PreviousPrivateReleaseEvidence;
         if (expected is null)
         {
@@ -662,6 +752,11 @@ public sealed class ReleasePublisher(string repositoryRoot)
             throw new InvalidOperationException("The exact preceding Private release evidence is no longer available.");
         WorkshopChangeHistoryVerifier.AssertMatches(expected, actual);
     }
+
+    private static ReleaseProfile HistoryProfile(ReleaseProfile profile, ReleasePublicationPlan plan) => profile with
+    {
+        Visibility = WorkshopChangeHistoryVerifier.EffectiveVisibility(plan.PublicationAction, profile.Visibility, plan.RemoteBaseline?.Visibility)
+    };
 
     private static HashSet<ulong> AppDependencies(JsonElement remote)
     {
@@ -854,9 +949,43 @@ public sealed class ReleasePublisher(string repositoryRoot)
             throw new InvalidOperationException("This exact plan is already admitted; use durable recovery instead of redispatch.");
         if (parts[0] is "complete-reviewed" or "complete-steam-verified" or "create-failed-definite" or "submit-failed-definite" or "dependency-failed-definite")
             return;
+        if (HasCompletedLegacyReceipt(statePath, planSha256, publishedFileId)) return;
         var operation = publishedFileId is null ? "creation" : "update";
         throw new InvalidOperationException(
             $"A previous Workshop {operation} is incomplete or indeterminate; refusing another mutation until its durable state is resolved.");
+    }
+
+    internal static bool HasCompletedLegacyReceipt(string statePath, string newPlanSha256, string? publishedFileId)
+    {
+        if (!File.Exists(statePath)) return false;
+        var parts = File.ReadAllText(statePath).Trim().Split('|');
+        if (parts.Length != 3 || parts[0] != "succeeded" || parts[1].Length != 64 || !parts[1].All(Uri.IsHexDigit) ||
+            parts[1].Equals(newPlanSha256, StringComparison.OrdinalIgnoreCase) || parts[2] != publishedFileId) return false;
+        var publicationRoot = Path.Combine(Path.GetDirectoryName(statePath)!, "publication");
+        if (!Directory.Exists(publicationRoot)) return false;
+        var directories = Directory.GetDirectories(publicationRoot).Take(1025).ToArray();
+        if (directories.Length > 1024) throw new InvalidOperationException("Legacy receipt inventory exceeds the migration bound.");
+        foreach (var directory in directories)
+        {
+            var receiptPath = Path.Combine(directory, "publication-receipt.json");
+            if (!File.Exists(receiptPath) || new FileInfo(receiptPath).Length > 1024 * 1024) continue;
+            try
+            {
+                using var document = JsonDocument.Parse(File.ReadAllText(receiptPath));
+                var receipt = document.RootElement;
+                if (receipt.GetProperty("schema").GetString() != "ImmersiveChefs/WorkshopPublicationReceipt/v1" ||
+                    receipt.GetProperty("publicationPlanSha256").GetString() != parts[1] ||
+                    receipt.GetProperty("publishedFileId").GetString() != publishedFileId ||
+                    receipt.GetProperty("tokenRetained").GetBoolean()) continue;
+                var remote = receipt.GetProperty("remote");
+                var smoke = receipt.GetProperty("subscribedSmoke");
+                if (GatewayWorkshopClient.UInt64(remote, "PublishedFileId").ToString() == publishedFileId &&
+                    GatewayWorkshopClient.String(remote, "RemoteMetadata") == parts[1] &&
+                    smoke.GetProperty("status").GetString() == "passed" && smoke.GetProperty("localProductRestored").GetBoolean()) return true;
+            }
+            catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException) { }
+        }
+        return false;
     }
 
     private static void AssertIdentity(string path, ulong expected)

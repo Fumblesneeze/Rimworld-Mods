@@ -10,19 +10,34 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class WorkshopPresentationSynchronizerTests
 {
     [Test]
-    public void Description_resolver_is_declared_and_hash_bound_by_the_mod_presentation_manifest()
+    public void Page_without_a_slideshow_manifest_keeps_only_its_primary_preview()
+    {
+        var root = Path.Combine(TestContext.CurrentContext.WorkDirectory, "no-gallery-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var preview = Path.Combine(root, "preview.png");
+            File.WriteAllBytes(preview, [1, 2, 3]);
+            Assert.That(WorkshopPresentationSynchronizer.ReadPreviewInputs(root, preview), Is.Empty);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Test]
+    public void Inline_image_inventory_is_independent_of_Steam_gallery_and_legacy_resolver()
     {
         var root = TestRepository.FindRoot();
         var profile = ReleaseProfileCatalog.Discover(root)
             .Single(item => item.PackageId == "fumblesneeze.immersivechefs");
 
-        var resolver = new WorkshopPresentationSynchronizer(root)
-            .ReadDescriptionResolver(Path.GetDirectoryName(profile.Preview)!);
+        using var presentation = JsonDocument.Parse(File.ReadAllText(Path.Combine(Path.GetDirectoryName(profile.Preview)!, "presentation.json")));
+        using var inline = JsonDocument.Parse(File.ReadAllText(Path.Combine(Path.GetDirectoryName(profile.Description)!, "description-images.json")));
 
         Assert.Multiple(() =>
         {
-            Assert.That(resolver.Path, Does.EndWith("Resolve-ImmersiveChefsWorkshopDescription.ps1"));
-            Assert.That(resolver.Sha256, Is.EqualTo(ReleaseCandidateBuilder.Hash(resolver.Path)));
+            Assert.That(presentation.RootElement.TryGetProperty("descriptionResolver", out _), Is.False);
+            Assert.That(inline.RootElement.GetProperty("images").GetArrayLength(), Is.EqualTo(6));
+            Assert.That(File.ReadAllText(profile.Description), Does.Contain("https://raw.githubusercontent.com/").And.Not.Contain("images.steamusercontent.com"));
         });
     }
 

@@ -66,7 +66,7 @@ public static class PublisherSafety
 
     public static string[] PreviewOperations(uint existingCount, int desiredCount)
     {
-        if (desiredCount < 1 || desiredCount > 10) throw new ArgumentOutOfRangeException(nameof(desiredCount));
+        if (desiredCount < 0 || desiredCount > 10) throw new ArgumentOutOfRangeException(nameof(desiredCount));
         var operations = new List<string>();
         for (var index = (int)existingCount - 1; index >= 0; index--) operations.Add("remove:" + index);
         for (var index = 0; index < desiredCount; index++) operations.Add("add:" + index);
@@ -422,17 +422,23 @@ internal static class Publisher
     {
         var request = RequiredRequest();
         var handle = SteamUGC.StartItemUpdate(new AppId_t(294100), new PublishedFileId_t(publishedFileId));
-        if (!AcceptSetter(SteamUGC.SetItemUpdateLanguage(handle, "english"), "SetItemUpdateLanguage") ||
+        if (request.PublicationAction != "page" &&
+            !AcceptSetter(SteamUGC.SetItemContent(handle, request.PackagePath), "SetItemContent")) return;
+        if (request.PublicationAction == "package" && request.AllowFirstPublication &&
+            (!AcceptSetter(SteamUGC.SetItemTitle(handle, request.Title), "SetItemTitle") ||
+             !AcceptSetter(SteamUGC.SetItemVisibility(handle, ERemoteStoragePublishedFileVisibility.k_ERemoteStoragePublishedFileVisibilityPrivate), "SetItemVisibility"))) return;
+        if (request.PublicationAction != "package" &&
+            (!AcceptSetter(SteamUGC.SetItemUpdateLanguage(handle, "english"), "SetItemUpdateLanguage") ||
             !AcceptSetter(SteamUGC.SetItemTitle(handle, request.Title), "SetItemTitle") ||
             !AcceptSetter(SteamUGC.SetItemDescription(handle, File.ReadAllText(request.DescriptionPath, Encoding.UTF8)), "SetItemDescription") ||
             !AcceptSetter(SteamUGC.SetItemVisibility(handle, request.Visibility), "SetItemVisibility") ||
             !AcceptSetter(SteamUGC.SetItemTags(handle, request.Tags), "SetItemTags") ||
-            !AcceptSetter(SteamUGC.SetItemContent(handle, request.PackagePath), "SetItemContent") ||
-            !AcceptSetter(SteamUGC.SetItemPreview(handle, request.PreviewPath), "SetItemPreview") ||
-            !AcceptSetter(SteamUGC.SetItemMetadata(handle, request.PlanSha256), "SetItemMetadata"))
+            !AcceptSetter(SteamUGC.SetItemPreview(handle, request.PreviewPath), "SetItemPreview")))
         {
             return;
         }
+        if (!AcceptSetter(SteamUGC.SetItemMetadata(handle, request.PlanSha256), "SetItemMetadata")) return;
+        if (request.PublicationAction == "page" && !ApplyPreviews(handle, request)) return;
         foreach (var link in request.WorkshopLinks)
         {
             if (!AcceptSetter(SteamUGC.RemoveItemKeyValueTags(handle, link.Key), "RemoveItemKeyValueTags-" + link.Key) ||
@@ -442,7 +448,7 @@ internal static class Publisher
         snapshot = Snapshot.Pending("submitting", request.PlanSha256, publishedFileId);
         WriteStateAtomically(request.StatePath, "submit-admitted|" + request.PlanSha256 + "|" + publishedFileId);
         submitResult = CallResult<SubmitItemUpdateResult_t>.Create(OnSubmitted);
-        var call = SteamUGC.SubmitItemUpdate(handle, request.ChangeNote);
+        var call = SteamUGC.SubmitItemUpdate(handle, request.PublicationAction == "page" ? null : request.ChangeNote);
         if (IsInvalid(call))
         {
             submitResult = null;
@@ -456,17 +462,7 @@ internal static class Publisher
     {
         var request = RequiredRequest();
         var handle = SteamUGC.StartItemUpdate(new AppId_t(294100), new PublishedFileId_t(publishedFileId));
-        foreach (var operation in PublisherSafety.PreviewOperations(lastQueriedAdditionalPreviewCount, request.AdditionalPreviewPaths.Count))
-        {
-            var parts = operation.Split(':');
-            var index = uint.Parse(parts[1]);
-            var accepted = parts[0] == "update"
-                ? SteamUGC.UpdateItemPreviewFile(handle, index, request.AdditionalPreviewPaths[(int)index])
-                : parts[0] == "add"
-                    ? SteamUGC.AddItemPreviewFile(handle, request.AdditionalPreviewPaths[(int)index], EItemPreviewType.k_EItemPreviewType_Image)
-                    : SteamUGC.RemoveItemPreview(handle, index);
-            if (!AcceptSetter(accepted, "Preview-" + operation)) return;
-        }
+        if (!ApplyPreviews(handle, request)) return;
 
         snapshot = Snapshot.Pending("preview-submitting", request.PlanSha256, publishedFileId);
         WriteStateAtomically(request.StatePath, "preview-submit-admitted|" + request.PlanSha256 + "|" + publishedFileId);
@@ -479,6 +475,23 @@ internal static class Publisher
             return;
         }
         submitResult.Set(call);
+    }
+
+    private static bool ApplyPreviews(UGCUpdateHandle_t handle, Request request)
+    {
+        foreach (var operation in PublisherSafety.PreviewOperations(lastQueriedAdditionalPreviewCount, request.AdditionalPreviewPaths.Count))
+        {
+            var parts = operation.Split(':');
+            var index = uint.Parse(parts[1]);
+            var accepted = parts[0] == "update"
+                ? SteamUGC.UpdateItemPreviewFile(handle, index, request.AdditionalPreviewPaths[(int)index])
+                : parts[0] == "add"
+                    ? SteamUGC.AddItemPreviewFile(handle, request.AdditionalPreviewPaths[(int)index], EItemPreviewType.k_EItemPreviewType_Image)
+                    : SteamUGC.RemoveItemPreview(handle, index);
+            if (!AcceptSetter(accepted, "Preview-" + operation)) return false;
+        }
+
+        return true;
     }
 
     private static void OnSubmitted(SubmitItemUpdateResult_t result, bool ioFailure)
@@ -1012,6 +1025,7 @@ internal static class Publisher
     internal sealed class Request
     {
         public string Operation = "";
+        public string PublicationAction = "combined";
         public string PlanSha256 = "";
         public string Confirmation = "";
         public string ConfirmationNonce = "";
@@ -1043,6 +1057,7 @@ internal static class Publisher
             var request = new Request
             {
                 Operation = operation,
+                PublicationAction = objectValue.publicationAction ?? "combined",
                 PlanSha256 = objectValue.planSha256 ?? "",
                 Confirmation = objectValue.confirmation ?? "",
                 ConfirmationNonce = objectValue.confirmationNonce ?? "",
@@ -1072,19 +1087,33 @@ internal static class Publisher
 
         public void ValidatePublish()
         {
+            if (PublicationAction is not ("package" or "page" or "combined")) throw new InvalidOperationException("Unknown publicationAction.");
+            if (PublicationAction == "page" && (PublishedFileId == 0 || AllowFirstPublication || PackagePath != "" || ChangeNote != ""))
+                throw new InvalidOperationException("Page updates require an existing item and cannot upload content or consume a package change note.");
+            if (PublicationAction == "package" && (DescriptionPath != "" || PreviewPath != "" || AdditionalPreviewPaths.Count != 0 || Tags.Count != 0 || WorkshopLinks.Count != 0))
+                throw new InvalidOperationException("Package uploads cannot carry page inputs.");
             if (PlanSha256.Length != 64 || PlanSha256.Any(c => !Uri.IsHexDigit(c))) throw new InvalidOperationException("planSha256 is invalid.");
             if (ConfirmationNonce.Length < 32 || ConfirmationNonce.Any(c => !Uri.IsHexDigit(c)) ||
                 Confirmation != PublisherSafety.RequiredAdmissionProof(PlanSha256, ConfirmationNonce))
                 throw new InvalidOperationException("Exact plan-and-nonce publication admission proof is required.");
             if (string.IsNullOrWhiteSpace(Title) || Title.Length > 128) throw new InvalidOperationException("title is invalid.");
-            RequireFile(DescriptionPath, "descriptionPath");
-            RequireFile(PreviewPath, "previewPath");
-            RequireDirectory(PackagePath, "packagePath");
+            if (PublicationAction != "package")
+            {
+                RequireFile(DescriptionPath, "descriptionPath");
+                RequireFile(PreviewPath, "previewPath");
+            }
+            if (PublicationAction != "page") RequireDirectory(PackagePath, "packagePath");
+            if (AdditionalPreviewPaths.Count > 10) throw new InvalidOperationException("Too many additional previews.");
+            foreach (var path in AdditionalPreviewPaths)
+            {
+                RequireFile(path, "additionalPreviewPaths");
+                if (new FileInfo(path).Length >= 1024 * 1024) throw new InvalidOperationException("Preview must be below one MiB.");
+            }
             if (string.IsNullOrWhiteSpace(IdentityPath) || Path.GetFileName(IdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("identityPath is invalid.");
             if (string.IsNullOrWhiteSpace(RepositoryIdentityPath) || Path.GetFileName(RepositoryIdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("repositoryIdentityPath is invalid.");
             if (string.IsNullOrWhiteSpace(PackageIdentityPath) || Path.GetFileName(PackageIdentityPath) != "PublishedFileId.txt") throw new InvalidOperationException("packageIdentityPath is invalid.");
             if (string.IsNullOrWhiteSpace(StatePath) || Path.GetFileName(StatePath) != "publication-state.txt") throw new InvalidOperationException("statePath is invalid.");
-            if (Tags.Count == 0 || Tags.Count > 16 || Tags.Any(string.IsNullOrWhiteSpace)) throw new InvalidOperationException("tags are invalid.");
+            if (PublicationAction != "package" && (Tags.Count == 0 || Tags.Count > 16 || Tags.Any(string.IsNullOrWhiteSpace))) throw new InvalidOperationException("tags are invalid.");
             if (WorkshopLinks.Count > 8 ||
                 WorkshopLinks.Select(link => link.Key).Distinct(StringComparer.OrdinalIgnoreCase).Count() != WorkshopLinks.Count)
                 throw new InvalidOperationException("workshopLinks are invalid.");
@@ -1188,6 +1217,8 @@ internal static class Publisher
     {
         [DataMember(Name = "operation")]
         public string? operation;
+        [DataMember(Name = "publicationAction")]
+        public string? publicationAction;
         [DataMember(Name = "planSha256")]
         public string? planSha256;
         [DataMember(Name = "confirmation")]
@@ -1309,6 +1340,8 @@ internal static class Publisher
         [DataMember]
         public ulong RemoteContentBytes;
         [DataMember]
+        public ulong RemoteContentHandle;
+        [DataMember]
         public uint RemoteUpdatedUnixSeconds;
         [DataMember]
         public ulong[] RemoteDependencies = Array.Empty<ulong>();
@@ -1353,6 +1386,7 @@ internal static class Publisher
                 RemoteOwnerSteamId = details.m_ulSteamIDOwner,
                 RemoteConsumerAppId = details.m_nConsumerAppID.m_AppId,
                 RemoteContentBytes = checked((ulong)details.m_nFileSize),
+                RemoteContentHandle = details.m_hFile.m_UGCHandle,
                 RemoteUpdatedUnixSeconds = details.m_rtimeUpdated,
                 RemoteDependencies = dependencies
             };

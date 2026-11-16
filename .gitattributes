@@ -1,3 +1,4 @@
 # Preserve the exact bytes pinned by the Workshop presentation manifest.
 scripts/Resolve-ImmersiveChefsWorkshopDescription.ps1 text eol=lf
 scripts/Build-ImmersiveChefsWorkshopPresentation.ps1 text eol=lf
+mods/ImmersiveChefs/Release/workshop/description.bbcode text eol=lf

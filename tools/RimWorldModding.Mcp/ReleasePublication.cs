@@ -119,8 +119,9 @@ public static class ReleasePlanAdmission
         {
             throw new InvalidOperationException($"Publication plan is invalid JSON: {exception.Message}");
         }
-        if (plan.Schema != "RimWorldModReleasePlan/v3" || plan.MutatesSteam)
+        if (plan.Schema is not ("RimWorldModReleasePlan/v3" or "RimWorldModReleasePlan/v4") || plan.MutatesSteam)
             throw new InvalidOperationException("Publication plan schema or mutation-free dry-run marker is invalid.");
+        ValidateAction(plan);
         ValidateFrozenProfile(root, plan, requirePreviousPrivateEvidence: true);
         if (!string.Equals(plan.ConfirmationNonce, confirmationNonce, StringComparison.Ordinal) ||
             confirmationNonce.Length < 32 || confirmationNonce.Any(character => !Uri.IsHexDigit(character)))
@@ -136,17 +137,17 @@ public static class ReleasePlanAdmission
         if (plan.PublishedFileId is not null && plan.RemoteBaseline is null)
             throw new InvalidOperationException("An existing-item plan requires an exact authenticated remote baseline.");
         plan.RemoteBaseline?.AssertValid();
-        if (string.IsNullOrWhiteSpace(plan.ChangeNote) || plan.ChangeNote.Trim().Length < 8)
+        if (plan.PublicationAction != "page" && (string.IsNullOrWhiteSpace(plan.ChangeNote) || plan.ChangeNote.Trim().Length < 8))
             throw new InvalidOperationException("Publication plan changeNote is blank or non-specific.");
         if (!IsHash(plan.ReleaseProfileSha256) || !File.Exists(plan.ReleaseProfilePath) ||
             !string.Equals(ReleaseCandidateBuilder.Hash(plan.ReleaseProfilePath), plan.ReleaseProfileSha256, StringComparison.Ordinal))
             throw new InvalidOperationException("Release profile changed after preparation.");
-        if (!IsHash(plan.DescriptionSha256) || !File.Exists(plan.DescriptionPath) ||
-            !string.Equals(ReleaseCandidateBuilder.Hash(plan.DescriptionPath), plan.DescriptionSha256, StringComparison.Ordinal))
+        if (plan.PublicationAction != "package" && (!IsHash(plan.DescriptionSha256) || !File.Exists(plan.DescriptionPath) ||
+            !string.Equals(ReleaseCandidateBuilder.Hash(plan.DescriptionPath), plan.DescriptionSha256, StringComparison.Ordinal)))
             throw new InvalidOperationException("Workshop description changed after preparation.");
-        if (!IsHash(plan.PreviewSha256) || !File.Exists(plan.PreviewPath) ||
+        if (plan.PublicationAction != "package" && (!IsHash(plan.PreviewSha256) || !File.Exists(plan.PreviewPath) ||
             !string.Equals(ReleaseCandidateBuilder.Hash(plan.PreviewPath), plan.PreviewSha256, StringComparison.Ordinal) ||
-            new FileInfo(plan.PreviewPath).Length != plan.PreviewBytes)
+            new FileInfo(plan.PreviewPath).Length != plan.PreviewBytes))
             throw new InvalidOperationException("Workshop preview changed after preparation.");
         if (plan.VerificationFiles.Count == 0)
             throw new InvalidOperationException("Immutable release inputs are missing from the admitted plan.");
@@ -159,12 +160,14 @@ public static class ReleasePlanAdmission
         }
 
         var includes = plan.Files.Select(file => file.Path).ToArray();
-        var candidate = ReleaseCandidateBuilder.Inspect(plan.PackagePath, includes);
+        var candidate = plan.PublicationAction == "page"
+            ? new ReleaseCandidateStage("", Convert.ToHexString(System.Security.Cryptography.SHA256.HashData([])), [])
+            : ReleaseCandidateBuilder.Inspect(plan.PackagePath, includes);
         if (!string.Equals(candidate.ContentDigest, plan.CandidateDigest, StringComparison.Ordinal) ||
             candidate.Files.Count != plan.Files.Count ||
             !candidate.Files.SequenceEqual(plan.Files))
             throw new InvalidOperationException("Release candidate files changed after preparation.");
-        var allFiles = Directory.GetFiles(plan.PackagePath, "*", SearchOption.AllDirectories)
+        var allFiles = (plan.PublicationAction == "page" ? [] : Directory.GetFiles(plan.PackagePath, "*", SearchOption.AllDirectories))
             .Select(file => Path.GetRelativePath(plan.PackagePath, file).Replace('\\', '/'))
             .OrderBy(file => file, StringComparer.Ordinal)
             .ToArray();
@@ -200,15 +203,19 @@ public static class ReleasePlanAdmission
         var path = RepositoryRoot.ContainedPath(root, planPath);
         var plan = JsonSerializer.Deserialize(File.ReadAllText(path), McpJsonContext.Default.ReleasePublicationPlan) ??
                    throw new InvalidOperationException("Publication plan is empty.");
-        if (plan.Schema is not ("RimWorldModReleasePlan/v2" or "RimWorldModReleasePlan/v3") || plan.MutatesSteam ||
+        if (plan.Schema is not ("RimWorldModReleasePlan/v2" or "RimWorldModReleasePlan/v3" or "RimWorldModReleasePlan/v4") || plan.MutatesSteam ||
             !string.Equals(plan.ConfirmationNonce, confirmationNonce, StringComparison.Ordinal))
             throw new InvalidOperationException("Publication recovery plan schema or nonce is invalid.");
+        ValidateAction(plan);
         ValidateFrozenProfile(root, plan, requirePreviousPrivateEvidence: false);
         if (durableId is null)
             durableId = TryResolveConsistentIdentity(root, plan);
 
-        RequireImmutableFile(plan.DescriptionPath, plan.DescriptionSha256, null, "Workshop description");
-        RequireImmutableFile(plan.PreviewPath, plan.PreviewSha256, plan.PreviewBytes, "Workshop preview");
+        if (plan.PublicationAction != "package")
+        {
+            RequireImmutableFile(plan.DescriptionPath, plan.DescriptionSha256, null, "Workshop description");
+            RequireImmutableFile(plan.PreviewPath, plan.PreviewSha256, plan.PreviewBytes, "Workshop preview");
+        }
         foreach (var input in plan.VerificationFiles)
             RequireImmutableFile(RepositoryRoot.ContainedPath(root, input.Path), input.Sha256, input.Bytes,
                 "Immutable release input");
@@ -216,6 +223,9 @@ public static class ReleasePlanAdmission
             RequireImmutableFile(Path.Combine(plan.PackagePath, file.Path.Replace('/', Path.DirectorySeparatorChar)),
                 file.Sha256, file.Bytes, "Release candidate file");
 
+        if (plan.PublicationAction == "page")
+            return new ReleaseAdmission(plan, path, expectedPlanSha256.ToUpperInvariant(),
+                new ReleaseCandidateStage("", plan.CandidateDigest, []));
         var allowed = plan.Files.Select(file => file.Path).ToHashSet(StringComparer.Ordinal);
         if (durableId is not null) allowed.Add("About/PublishedFileId.txt");
         var actual = Directory.GetFiles(plan.PackagePath, "*", SearchOption.AllDirectories)
@@ -289,7 +299,7 @@ public static class ReleasePlanAdmission
         bool requirePresence)
     {
         var evidence = plan.PreviousPrivateReleaseEvidence;
-        var isPrivateUpdate = plan.PublishedFileId is not null && plan.Visibility == "Private";
+        var isPrivateUpdate = plan.PublicationAction != "page" && plan.PublishedFileId is not null && plan.Visibility == "Private";
         if (evidence is null)
         {
             if (requirePresence && isPrivateUpdate)
@@ -332,6 +342,31 @@ public static class ReleasePlanAdmission
                 evidence.Receipt.Bytes,
                 "Preceding publication receipt");
         }
+    }
+
+    private static void ValidateAction(ReleasePublicationPlan plan)
+    {
+        if (plan.Schema != "RimWorldModReleasePlan/v4")
+        {
+            if (plan.PublicationAction != "combined") throw new InvalidOperationException("Legacy plans cannot declare split actions.");
+            return;
+        }
+        if (plan.PublicationAction is not ("package" or "page"))
+            throw new InvalidOperationException("Publication action must be package or page.");
+        if (plan.PublicationAction == "page")
+        {
+            if (plan.PublishedFileId is null || plan.AllowFirstPublication || plan.PackagePath != "" || plan.Files.Count != 0)
+                throw new InvalidOperationException("Page updates require an existing identity and cannot contain package content.");
+            if (plan.AdditionalPreviews.Count > 10) throw new InvalidOperationException("Too many slideshow previews.");
+            foreach (var preview in plan.AdditionalPreviews)
+            {
+                RequireImmutableFile(preview.Path, preview.Sha256, preview.Bytes, "Slideshow preview");
+                if (!plan.VerificationFiles.Any(file => file.Sha256 == preview.Sha256 && file.Bytes == preview.Bytes))
+                    throw new InvalidOperationException("Slideshow preview is not bound into the plan.");
+            }
+        }
+        else if (plan.DescriptionPath != "" || plan.PreviewPath != "" || plan.AdditionalPreviews.Count != 0)
+            throw new InvalidOperationException("Package uploads cannot contain page presentation inputs.");
     }
 
     private static void RequireImmutableFile(string path, string expectedHash, long? expectedBytes, string label)

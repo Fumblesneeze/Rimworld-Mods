@@ -9,7 +9,7 @@
     <RimWorldPerformanceTestOwnerPackageId>fumblesneeze.immersivechefs</RimWorldPerformanceTestOwnerPackageId>
     <RimWorldPath Condition="'$(RimWorldPath)' == ''">$(DefaultRimWorldPath)</RimWorldPath>
     <SteamModContentFolder Condition="'$(SteamModContentFolder)' == ''">$(DefaultSteamModContentFolder)</SteamModContentFolder>
-    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(SteamModContentFolder)\2009463077\Current\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(SteamModContentFolder)\2009463077\1.6\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
   </PropertyGroup>
 
   <ItemGroup>

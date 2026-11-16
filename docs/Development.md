@@ -1,5 +1,41 @@
 # Development workflow
 
+## Exact multi-version releases
+
+`release/rimworld-targets.json` pins approved game targets by version, depot manifests and external
+file inventory hashes. Game files stay outside Git in `F:\RimWorldVersions` (override with
+`RIMWORLD_RELEASE_CACHE` or the operations' `cacheRoot`). The ordinary Steam installation is unchanged.
+
+Use the typed `game_depot_download` operation with the pinned DepotDownloader executable, a separate
+`targetDirectory`, `branch`, and `accountName`. For initial authentication set `interactiveLogin:true`
+and enter the password/Steam Guard code directly in its console. It always uses `-remember-password`:
+the resulting token lives in Windows per-user isolated storage, outside this repository. Subsequent
+downloads use `interactiveLogin:false`; a revoked or expired token requires signing in again.
+Branch downloads are discovery only. Use `game_target_snapshot` to inventory the download, review and
+commit its exact target in the catalog, and `game_target_validate` to verify reuse. Exact depot requests
+must supply both `depotId` and `manifestId`. Never use a normal Steam or Workshop directory as a cache.
+
+A profile opts in with `supportedTargets` and `developmentTarget`, version-neutral `tags`, and
+`{version}/...` package includes. `mod_build` or `release_matrix_build` compiles each target with
+separate references/intermediates/outputs, merges the allowlist, generates About versions and installs
+the combined local package. `local_mod_sync` restores that immutable bundle even after test discovery
+has rebuilt a repository-local product output. Debug matrices cannot be published.
+
+Run the exact native workflows against each frozen target before publishing, for example:
+
+```powershell
+dotnet run --project tools/RimWorldModding.Mcp -- tool call release_target_test `
+  --arguments '{"packageId":"fumblesneeze.immersivechefs","targetId":"rw-1.7.5011-win64","projectPath":"tests/ImmersiveChefs.EndToEndTests/ImmersiveChefs.EndToEndTests.csproj","testIds":["immersive-chefs.dirty-cookware-cooking-workflow","immersive-chefs.dining-place-cutlery-acquisition"],"timeoutSeconds":1200,"dryRun":false}' -o json
+```
+
+Use `dryRun:true` first. The runner installs the frozen bundle into the selected cached game's Mods
+folder and rebuilds verification infrastructure for that runtime. Inspect the native action/result
+screenshots personally; the JSON result alone is not acceptance. Commit the final reviewed source,
+build a clean Release matrix, verify both targets, then call `release_package_upload` and independently
+`release_page_update`. Page publishing never builds or uploads product content.
+
+## Compiler selection
+
 The repository compiler is pinned to .NET SDK 10.0.400. Existing product targets
 remain unchanged; the Gateway and its opted-in E2E bundle select net480 for 1.6 or
 net10.0 for 1.7. See [Gateway runtime selection](Gateway.md#runtime-selection-16--17-beta)
@@ -32,13 +68,20 @@ product, or launches a product-specific smoke. A timed-out caller may invoke the
 again: it reattaches to the same callback or polls only the durable same item and never repeats
 first-item creation or update submission. Never delete durable state to force a retry.
 
-Workshop descriptions that embed Steam-hosted feature cards use a separate typed first phase. Run
-`release_presentation_sync` for the existing package when card bytes/order change, a gallery slot is
-missing, or a retained CDN URL no longer resolves. It synchronizes the ordered additional previews,
-downloads and hashes every current Steam image, and rewrites the checked-in description/provenance
-without consuming the player-facing change note. Review and commit those resolved files before
-`release_prepare`; preparation downloads them again and fails before publication on stale links,
-redirects, origin drift, excess bytes, or hash mismatch.
+Workshop package and page updates are independent. `release_package_upload` stages the already built,
+verified allowlisted package; first publication creates a Private draft and backfills its ID.
+`release_page_update` updates description, metadata, primary preview and slideshow in one action,
+without a content upload or package change note. `release_prepare` accepts `action: package|page`
+for an explicit mutation-free plan; `release_publish` consumes that exact plan.
+
+Inline images live in a separate `description-images.json` manifest beside the description, with
+`schema: WorkshopDescriptionImages/v1` and `images` entries containing repository-relative `path`,
+immutable GitHub `url` and uppercase `sha256`. The agent commits and pushes images first, verifies
+the mirror, then commits the resolved description before publishing. Tools verify committed blobs,
+remote bytes and every description image tag; they never commit or push images. Slideshow order
+remains in `presentation.json` and is independent of inline inventory. `release_presentation_sync`
+is retired. Immersive Chefs uses byte-identical hosting copies under `docs/img/ic` to keep immutable
+URLs within Steam's 8,000-byte description budget without shortening the authored wording.
 
 `mod_build` builds the selected profile and then installs the successful positive-allowlist package
 into the configured local RimWorld `Mods/<package-id>` directory by default. `local_mod_sync` is the

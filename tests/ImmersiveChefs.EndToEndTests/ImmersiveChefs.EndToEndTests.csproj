@@ -1,31 +1,43 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net480</TargetFramework>
+    <RimWorldVersionedBuild>true</RimWorldVersionedBuild>
+    <RimWorldPath Condition="'$(RimWorldPath)' == ''">$(DefaultRimWorldPath)</RimWorldPath>
     <AssemblyName>ImmersiveChefs.EndToEndTests</AssemblyName>
     <RootNamespace>ImmersiveChefs.EndToEndTests</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <RimWorldEndToEndTest>true</RimWorldEndToEndTest>
+    <RimWorldPreparedProductReference>true</RimWorldPreparedProductReference>
     <RimWorldEndToEndTestOwnerPackageId>fumblesneeze.immersivechefs</RimWorldEndToEndTestOwnerPackageId>
-    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(DefaultSteamModContentFolder)\2009463077\Current\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
+  </PropertyGroup>
+
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.props" />
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.targets" />
+  <PropertyGroup>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(DefaultSteamModContentFolder)\2009463077\$(RimWorldVersion)\Assemblies\0Harmony.dll</HarmonyAssemblyPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\mods\ImmersiveChefs\ImmersiveChefs.csproj" />
+    <ProjectReference Include="..\..\mods\ImmersiveChefs\ImmersiveChefs.csproj" Condition="'$(PreparedProductAssemblyPath)' == ''" />
+    <Reference Include="ImmersiveChefs" Condition="'$(PreparedProductAssemblyPath)' != ''">
+      <HintPath>$(PreparedProductAssemblyPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.EndToEndTesting\RimWorldDevGateway.EndToEndTesting.csproj" />
-    <Reference Include="Assembly-CSharp">
+    <Reference Include="Assembly-CSharp" Condition="'$(RimWorldVersion)' == '1.6'">
       <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.CoreModule">
+    <Reference Include="UnityEngine.CoreModule" Condition="'$(RimWorldVersion)' == '1.6'">
       <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.IMGUIModule">
+    <Reference Include="UnityEngine.IMGUIModule" Condition="'$(RimWorldVersion)' == '1.6'">
       <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.ImageConversionModule">
+    <Reference Include="UnityEngine.ImageConversionModule" Condition="'$(RimWorldVersion)' == '1.6'">
       <HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
       <Private>false</Private>
     </Reference>

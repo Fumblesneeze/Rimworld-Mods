@@ -365,6 +365,7 @@ try {
             '--logger', "trx;LogFileName=$trxName",
             '--results-directory', $resultsDirectory,
             "-p:RimWorldPath=$resolvedRimWorldPath",
+            "-p:DefaultRimWorldPath=$resolvedRimWorldPath",
             "-p:RimWorldManagedPath=$managedPath",
             "-p:SteamModContentFolder=$resolvedWorkshopPath"
         )

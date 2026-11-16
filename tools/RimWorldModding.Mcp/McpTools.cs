@@ -7,6 +7,34 @@ namespace RimWorldModding.Mcp;
 [McpServerToolType]
 public static class McpTools
 {
+    [McpServerTool(Name = "release_target_test"), Description("Run focused native workflows against the frozen combined package on one declared exact cached game target.")]
+    public static async Task<string> TestReleaseTarget(OperationRegistry registry, string packageId, string targetId,
+        string projectPath, string[] testIds, string? cacheRoot, int timeoutSeconds, bool dryRun, CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("release_target_test", JsonSerializer.SerializeToElement(new
+        { packageId, targetId, projectPath, testIds, cacheRoot, timeoutSeconds, dryRun }), cancellationToken));
+
+    [McpServerTool(Name = "release_matrix_build"), Description("Build all declared exact game targets independently, merge and install the combined package without publishing.")]
+    public static async Task<string> BuildReleaseMatrix(OperationRegistry registry, string packageId, string? cacheRoot,
+        string? modsRoot, string? configuration, CancellationToken cancellationToken) => OperationJson.Serialize(await registry.InvokeAsync("release_matrix_build",
+        JsonSerializer.SerializeToElement(new { packageId, cacheRoot, modsRoot, configuration }), cancellationToken));
+
+    [McpServerTool(Name = "game_target_snapshot"), Description("Create an external acquired-game inventory for explicit review and target-catalog pinning.")]
+    public static async Task<string> SnapshotGameTarget(OperationRegistry registry, string targetId, string targetDirectory,
+        string? cacheRoot, CancellationToken cancellationToken) => OperationJson.Serialize(await registry.InvokeAsync("game_target_snapshot",
+        JsonSerializer.SerializeToElement(new { targetId, targetDirectory, cacheRoot }), cancellationToken));
+
+    [McpServerTool(Name = "game_target_validate"), Description("Verify every approved file and Steam manifest in one committed exact game target.")]
+    public static async Task<string> ValidateGameTarget(OperationRegistry registry, string targetId,
+        string? cacheRoot, CancellationToken cancellationToken) => OperationJson.Serialize(await registry.InvokeAsync("game_target_validate",
+        JsonSerializer.SerializeToElement(new { targetId, cacheRoot }), cancellationToken));
+
+    [McpServerTool(Name = "game_depot_download"), Description("Acquire a pinned Steam depot or onboard a branch outside the repo. Interactive QR login opens a user-controlled console; no secrets enter repository evidence.")]
+    public static async Task<string> DownloadGameDepot(OperationRegistry registry,
+        string downloaderPath, string targetDirectory, string branch, string? depotId, string? manifestId,
+        bool interactiveLogin, string? accountName, bool manifestOnly, CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("game_depot_download", JsonSerializer.SerializeToElement(new
+        { downloaderPath, targetDirectory, branch, depotId, manifestId, interactiveLogin, accountName, manifestOnly }), cancellationToken));
+
     [McpServerTool(Name = "game_installation_inspect"), Description("Inspect a supported 1.6 or 1.7 game layout without loading assemblies or launching RimWorld.")]
     public static async Task<string> InspectGameInstallation(
         OperationRegistry registry,
@@ -43,9 +71,10 @@ public static class McpTools
         [Description("Exact suite ID accepted by the repository test runner.")] string suite,
         [Description("Optional exact dotnet test filter.")] string? filter,
         [Description("Build configuration: Release or Debug.")] string? configuration,
+        [Description("Optional exact installed game root used by compiled fixtures.")] string? gameRoot,
         CancellationToken cancellationToken) =>
         OperationJson.Serialize(await registry.InvokeAsync(
-            "test_run", JsonSerializer.SerializeToElement(new { suite, filter, configuration }), cancellationToken));
+            "test_run", JsonSerializer.SerializeToElement(new { suite, filter, configuration, gameRoot }), cancellationToken));
 
     [McpServerTool(Name = "package_validate"), Description("Validate and hash one universal profile's exact allowlisted product package.")]
     public static async Task<string> ValidatePackage(
@@ -326,17 +355,30 @@ public static class McpTools
             JsonSerializer.SerializeToElement(new { packageId }),
             cancellationToken));
 
-    [McpServerTool(Name = "release_prepare"), Description("Build, validate, stage, hash, and perform a mutation-free owner/title preflight for one universal release profile. Returns a digest and nonce; never mutates Steam.")]
+    [McpServerTool(Name = "release_package_upload"), Description("Upload only mod package content. First upload creates a Private draft and backfills its Workshop ID. Existing page presentation is preserved.")]
+    public static async Task<string> UploadReleasePackage(OperationRegistry registry,
+        [Description("Canonical package ID.")] string packageId, CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("release_package_upload",
+            JsonSerializer.SerializeToElement(new { packageId }), cancellationToken));
+
+    [McpServerTool(Name = "release_page_update"), Description("Update the Steam page and slideshow in one action without uploading content. Inline GitHub images must already be committed, pushed and mirrored.")]
+    public static async Task<string> UpdateReleasePage(OperationRegistry registry,
+        [Description("Canonical package ID with an existing Workshop identity.")] string packageId, CancellationToken cancellationToken) =>
+        OperationJson.Serialize(await registry.InvokeAsync("release_page_update",
+            JsonSerializer.SerializeToElement(new { packageId }), cancellationToken));
+
+    [McpServerTool(Name = "release_prepare"), Description("Prepare an immutable package or page plan without mutating Steam. Defaults to package; page preparation never builds content.")]
     public static async Task<string> PrepareRelease(
         OperationRegistry registry,
         [Description("Canonical package ID selected from a universal release profile.")] string packageId,
-        CancellationToken cancellationToken) =>
+        CancellationToken cancellationToken,
+        [Description("package or page; defaults to package.")] string action = "package") =>
         OperationJson.Serialize(await registry.InvokeAsync(
             "release_prepare",
-            JsonSerializer.SerializeToElement(new { packageId }),
+            JsonSerializer.SerializeToElement(new { packageId, action }),
             cancellationToken));
 
-    [McpServerTool(Name = "release_presentation_sync"), Description("Synchronize reviewed additional Workshop previews, verify their current Steam-hosted bytes, and resolve the versioned description against those current identities. This mutates Steam previews but does not consume a player-facing change note.")]
+    [McpServerTool(Name = "release_presentation_sync"), Description("Retired: use release_page_update with committed GitHub inline images. This operation fails without mutation.")]
     public static async Task<string> SynchronizeReleasePresentation(
         OperationRegistry registry,
         [Description("Canonical package ID selected from a universal release profile.")] string packageId,

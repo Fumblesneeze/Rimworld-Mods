@@ -662,7 +662,7 @@ public sealed class ReleasePublicationAdmissionTests
         }
     }
 
-    private static string WritePlan(string root, DateTimeOffset expiry, string nonce, string dll)
+    internal static string WritePlan(string root, DateTimeOffset expiry, string nonce, string dll)
     {
         var candidate = Path.Combine(root, "candidate");
         Directory.CreateDirectory(Path.Combine(candidate, "1.6", "Assemblies"));

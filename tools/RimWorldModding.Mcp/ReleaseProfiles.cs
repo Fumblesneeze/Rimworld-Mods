@@ -75,6 +75,10 @@ public sealed record ReleaseProfile(
     string ChangeNote)
 {
     public IReadOnlyList<WorkshopLink> WorkshopLinks { get; init; } = [];
+    public IReadOnlyList<SteamGameTarget> Targets { get; init; } = [];
+    public string? DevelopmentTarget { get; init; }
+    [JsonIgnore]
+    public IReadOnlyList<string> SupportedVersions => Targets.Count == 0 ? [RimWorldVersion] : Targets.Select(target => target.Version).ToArray();
 }
 
 public sealed record WorkshopLink(
@@ -141,7 +145,8 @@ public static class ReleaseProfileCatalog
         "managedAssemblySha256", "steamAppId", "steamUserId", "publishedFileId",
         "allowFirstPublication", "visibility", "tags", "requiredWorkshopItems", "requiredDlcAppIds", "hardRuntimeAssemblyReferences",
         "buildOperation", "presentationOperation", "packageSource", "packageInclude",
-        "description", "preview", "previousChangeNote", "changeNote", "verificationProfile", "workshopLinks"
+        "description", "preview", "previousChangeNote", "changeNote", "verificationProfile", "workshopLinks",
+        "supportedTargets", "developmentTarget"
     };
 
     private static readonly HashSet<string> RegisteredBuildOperations = new(StringComparer.Ordinal)
@@ -154,12 +159,12 @@ public static class ReleaseProfileCatalog
         "presentation_render"
     };
 
-    public static IReadOnlyList<ReleaseProfile> Discover(string repositoryRoot)
+    public static IReadOnlyList<ReleaseProfile> Discover(string repositoryRoot, bool validatePresentation = true)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         var profiles = Directory.GetFiles(Path.Combine(root, "mods"), "release.json", SearchOption.AllDirectories)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-            .Select(path => Load(root, path))
+            .Select(path => Load(root, path, validatePresentation))
             .ToArray();
         var duplicate = profiles.GroupBy(profile => profile.PackageId, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(group => group.Count() > 1);
@@ -171,7 +176,7 @@ public static class ReleaseProfileCatalog
         return profiles;
     }
 
-    public static ReleaseProfile Load(string repositoryRoot, string profilePath)
+    public static ReleaseProfile Load(string repositoryRoot, string profilePath, bool validatePresentation = true)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         JsonDocument document;
@@ -265,6 +270,23 @@ public static class ReleaseProfileCatalog
                 hardRuntimeReferences.Distinct(StringComparer.OrdinalIgnoreCase).Count() != hardRuntimeReferences.Length)
                 throw new ReleaseProfileException("hardRuntimeAssemblyReferences must contain unique assembly simple names.");
             var includes = RequiredStringArray(element, "packageInclude");
+            IReadOnlyList<SteamGameTarget> targets = [];
+            var developmentTarget = OptionalString(element, "developmentTarget");
+            if (element.TryGetProperty("supportedTargets", out _))
+            {
+                targets = SteamGameTargets.SelectMatrix(SteamGameTargets.LoadCatalog(root),
+                    RequiredStringArray(element, "supportedTargets"), developmentTarget ?? "");
+                var development = targets.Single(target => target.Id == developmentTarget);
+                if (development.Version != rimWorldVersion || development.FullVersion != rimWorldBuild)
+                    throw new ReleaseProfileException("Legacy development build fields must match the declared development target.");
+                if (tags.Any(tag => Regex.IsMatch(tag, "^1\\.[0-9]+$")))
+                    throw new ReleaseProfileException("Matrix version tags are derived from supportedTargets; remove manually duplicated version tags.");
+                tags = tags.Concat(targets.Select(target => target.Version)).ToArray();
+                includes = includes.SelectMany(include => include.StartsWith("{version}/", StringComparison.Ordinal)
+                    ? targets.Select(target => target.Version + include[9..]) : [include]).ToArray();
+            }
+            else if (developmentTarget is not null)
+                throw new ReleaseProfileException("developmentTarget requires supportedTargets.");
             foreach (var include in includes)
             {
                 if (Path.IsPathRooted(include) || include.Split('/', '\\').Any(part => part == ".."))
@@ -274,9 +296,12 @@ public static class ReleaseProfileCatalog
             var releaseDirectory = Path.GetDirectoryName(Path.GetFullPath(profilePath))!;
             var description = ContainedProfilePath(releaseDirectory, RequiredString(element, "description"));
             var preview = ContainedProfilePath(releaseDirectory, RequiredString(element, "preview"));
-            if (!File.Exists(description)) throw new ReleaseProfileException($"Workshop description does not exist: {description}");
-            if (!File.Exists(preview)) throw new ReleaseProfileException($"Workshop preview does not exist: {preview}");
-            ReleasePresentationPolicy.ValidateDescription(description);
+            if (validatePresentation)
+            {
+                if (!File.Exists(description)) throw new ReleaseProfileException($"Workshop description does not exist: {description}");
+                if (!File.Exists(preview)) throw new ReleaseProfileException($"Workshop preview does not exist: {preview}");
+                ReleasePresentationPolicy.ValidateDescription(description);
+            }
 
             ValidateProjectIdentity(project, packageId, title, author, distributionKind);
 
@@ -312,7 +337,9 @@ public static class ReleaseProfileCatalog
                 OptionalString(element, "previousChangeNote"),
                 RequiredStringAllowEmpty(element, "changeNote"))
             {
-                WorkshopLinks = workshopLinks
+                WorkshopLinks = workshopLinks,
+                Targets = targets,
+                DevelopmentTarget = developmentTarget
             };
         }
     }

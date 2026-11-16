@@ -217,6 +217,8 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
             File.Exists(statePath) ? File.ReadAllText(statePath).Trim() : "none",
             planStatus.PlanSha256,
             planStatus.TargetPublishedFileId);
+        if (ReleasePublisher.HasCompletedLegacyReceipt(statePath, planStatus.PlanSha256, planStatus.TargetPublishedFileId))
+            durableState = "none";
         if (durableState.StartsWith("complete-reviewed|", StringComparison.Ordinal) ||
             durableState.StartsWith("complete-steam-verified|", StringComparison.Ordinal))
             throw new InvalidOperationException(
@@ -306,7 +308,8 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
         string planSha256,
         string? expectedTitle,
         string? expectedCandidateDigest,
-        bool allowLegacySubscriberResult = false)
+        bool allowLegacySubscriberResult = false,
+        bool usePackageHistory = false)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         var result = RepositoryRoot.ContainedPath(root, resultPath);
@@ -333,7 +336,7 @@ public sealed class ReleaseWorkerCoordinator(string repositoryRoot)
                                parsed.SteamModifiedAfterUnixSeconds <= resultBaseline)))
             throw new InvalidOperationException("Release worker result does not match the exact admitted plan and completed guarantees.");
         var releaseRoot = Path.Combine(root, "artifacts", "Releases", packageId);
-        var statePath = Path.Combine(releaseRoot, "publication-state.txt");
+        var statePath = Path.Combine(releaseRoot, usePackageHistory ? "package-publication-state.txt" : "publication-state.txt");
         var state = File.Exists(statePath) ? File.ReadAllText(statePath).Trim().Split('|') : [];
         var expectedState = currentResult ? "complete-steam-verified" : "complete-reviewed";
         if (state.Length != 3 || state[0] != expectedState ||

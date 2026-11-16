@@ -502,7 +502,8 @@ public static class EndToEndHostCli
         var projects = EndToEndProjectDiscovery.SelectExactProjects(
             EndToEndProjectDiscovery.Discover(input.RepositoryRoot, input.RimWorldVersion),
             input.ProjectPaths);
-        var assemblies = new EndToEndProjectBuilder(rimWorldPath: input.RimWorldPath).Build(
+        var assemblies = new EndToEndProjectBuilder(rimWorldPath: input.RimWorldPath,
+            preparedProductAssemblyPath: input.PreparedProductAssemblyPath).Build(
             projects,
             input.Configuration,
             TimeSpan.FromSeconds(input.BuildTimeoutSeconds));
@@ -720,6 +721,11 @@ public static class EndToEndHostCli
             AllowMultipleArgumentsPerToken = true
         };
 
+        public Option<string> PreparedProductAssembly { get; } = new("--prepared-product-assembly")
+        {
+            Description = "Exact frozen product DLL used instead of a product project reference by opted-in E2E projects."
+        };
+
         public Option<string> PackageIdFile { get; } = new("--package-id-file")
         {
             Description = "UTF-8 file containing one resolvable package ID per nonblank line."
@@ -765,6 +771,7 @@ public static class EndToEndHostCli
             command.Options.Add(ModsRoot);
             command.Options.Add(RimWorldVersion);
             command.Options.Add(RimWorldPath);
+            command.Options.Add(PreparedProductAssembly);
             command.Options.Add(PackageIds);
             command.Options.Add(PackageIdFile);
             command.Options.Add(Configuration);
@@ -801,7 +808,9 @@ public static class EndToEndHostCli
 
             return new CommonInputs(
                 RequiredExistingDirectory(result.GetValue(RepositoryRoot), "repository root"),
-                RequiredExistingDirectory(result.GetValue(ModsRoot), "Mods root"),
+                result.GetValue(PreparedProductAssembly) is not null
+                    ? RequiredPath(result.GetValue(ModsRoot), "Mods root")
+                    : RequiredExistingDirectory(result.GetValue(ModsRoot), "Mods root"),
                 RequiredToken(result.GetValue(RimWorldVersion), "RimWorld version"),
                 packageIds,
                 RequiredToken(result.GetValue(Configuration), "configuration"),
@@ -809,6 +818,7 @@ public static class EndToEndHostCli
                 result.GetValue(TestIds) ?? Array.Empty<string>(),
                 result.GetValue(GroupIds) ?? Array.Empty<string>(),
                 result.GetValue(RimWorldPath) is { } gamePath ? RequiredExistingDirectory(gamePath, "RimWorld path") : null,
+                result.GetValue(PreparedProductAssembly) is { } assemblyPath ? RequiredExistingFile(assemblyPath, "prepared product assembly") : null,
                 timeout);
         }
 
@@ -836,6 +846,7 @@ public static class EndToEndHostCli
         IReadOnlyList<string> TestIds,
         IReadOnlyList<string> GroupIds,
         string? RimWorldPath,
+        string? PreparedProductAssemblyPath,
         int BuildTimeoutSeconds);
 
     private sealed record LeaseRecord(

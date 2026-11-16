@@ -64,6 +64,9 @@ public static class ReleaseChangeNotePolicy
 
 public static class WorkshopChangeHistoryVerifier
 {
+    internal static string EffectiveVisibility(string action, string requested, string? current) =>
+        action == "package" ? current ?? "Private" : requested;
+
     private const string BrowserUserAgent =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
         "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
@@ -94,7 +97,9 @@ public static class WorkshopChangeHistoryVerifier
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         var packageRoot = Path.Combine(root, "artifacts", "Releases", profile.PackageId);
-        var statePath = Path.Combine(packageRoot, "publication-state.txt");
+        var packageStatePath = Path.Combine(packageRoot, "package-publication-state.txt");
+        var usePackageHistory = File.Exists(packageStatePath);
+        var statePath = usePackageHistory ? packageStatePath : Path.Combine(packageRoot, "publication-state.txt");
         if (!File.Exists(statePath))
             throw new InvalidOperationException("Private update requires the retained preceding release state.");
         var state = File.ReadAllText(statePath).Trim().Split('|');
@@ -106,7 +111,7 @@ public static class WorkshopChangeHistoryVerifier
         var workerPath = Path.Combine(packageRoot, "workers", state[1], "worker-result.json");
         var worker = ReleaseWorkerCoordinator.ReadValidatedResult(
             root, workerPath, profile.PackageId, state[1], null, null,
-            allowLegacySubscriberResult: state[0] == "complete-reviewed");
+            allowLegacySubscriberResult: state[0] == "complete-reviewed", usePackageHistory: usePackageHistory);
         if (!string.Equals(worker.PublishedFileId, profile.PublishedFileId, StringComparison.Ordinal))
             throw new InvalidOperationException("Retained preceding publisher result does not match the Private update identity.");
 
@@ -136,7 +141,7 @@ public static class WorkshopChangeHistoryVerifier
             (legacySubscriberReceipt
                 ? GatewayWorkshopClient.String(receipt, "subscriberEvidenceStatus") != "awaiting-personal-review"
                 : !currentSteamReceipt) ||
-            GatewayWorkshopClient.String(verification, "status") != "steam-callback-confirmed-private-history-not-publicly-readable" ||
+            GatewayWorkshopClient.String(verification, "status") is not ("steam-callback-confirmed-private-history-not-publicly-readable" or "latest-public-change-note-verified") ||
             GatewayWorkshopClient.String(verification, "changeNote") != previous)
             throw new InvalidOperationException("Retained preceding receipt does not bind the pinned Private change note.");
         return new RetainedPrivateReleaseEvidence(
@@ -240,6 +245,13 @@ public static class WorkshopChangeHistoryVerifier
 
 public static class ReleasePackageValidator
 {
+    internal static void ValidateAssemblyLayout(string assemblyName, IReadOnlyList<string> versions, IReadOnlyList<CandidateFile> dlls)
+    {
+        var expected = versions.Select(version => $"{version}/Assemblies/{assemblyName}.dll").OrderBy(path => path, StringComparer.Ordinal);
+        if (!dlls.Select(file => file.Path).OrderBy(path => path, StringComparer.Ordinal).SequenceEqual(expected, StringComparer.Ordinal))
+            throw new InvalidOperationException("A product package must contain exactly its own assembly in every declared version folder.");
+    }
+
     private static readonly string[] ForbiddenAssemblyPrefixes =
     {
         "RimWorldDevGateway", "NUnit", "testhost", "Microsoft.TestPlatform", "Mono.CSharp"
@@ -371,8 +383,7 @@ public static class ReleasePackageValidator
             throw new InvalidOperationException("Release project does not declare AssemblyName.");
 
         var dlls = candidate.Files.Where(file => Path.GetExtension(file.Path).Equals(".dll", StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (dlls.Length != 1 || !string.Equals(Path.GetFileNameWithoutExtension(dlls[0].Path), assemblyName, StringComparison.Ordinal))
-            throw new InvalidOperationException("A product package must contain exactly its one declared product assembly.");
+        ValidateAssemblyLayout(assemblyName, profile.SupportedVersions, dlls);
         foreach (var file in candidate.Files)
         {
             var simple = Path.GetFileNameWithoutExtension(file.Path);
@@ -381,10 +392,9 @@ public static class ReleasePackageValidator
                 throw new InvalidOperationException($"Forbidden bundled assembly: {file.Path}");
         }
 
-        ValidateAssemblyReferences(
-            Path.Combine(candidate.PackagePath, dlls[0].Path.Replace('/', Path.DirectorySeparatorChar)),
-            profile,
-            project);
+        foreach (var dll in dlls)
+            ValidateAssemblyReferences(Path.Combine(candidate.PackagePath, dll.Path.Replace('/', Path.DirectorySeparatorChar)),
+                profile with { RimWorldVersion = dll.Path.Split('/')[0] }, project);
         ValidateAbout(profile, candidate.PackagePath, project);
         return candidate;
     }
@@ -467,7 +477,7 @@ public static class ReleasePackageValidator
             !string.Equals(Value("packageId"), profile.PackageId, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("About.xml identity does not match the release profile.");
         var versions = root.Element("supportedVersions")?.Elements("li").Select(node => node.Value.Trim()).ToArray() ?? [];
-        if (!versions.SequenceEqual([profile.RimWorldVersion], StringComparer.Ordinal))
+        if (!versions.SequenceEqual(profile.SupportedVersions, StringComparer.Ordinal))
             throw new InvalidOperationException("About.xml supportedVersions does not exactly match the release profile.");
 
         var expectedLoadAfter = project.Descendants()

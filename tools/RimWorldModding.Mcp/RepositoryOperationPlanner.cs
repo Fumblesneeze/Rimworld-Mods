@@ -102,7 +102,8 @@ public static class RepositoryOperationPlanner
         string repositoryRoot,
         string suite,
         string? filter,
-        string configuration)
+        string configuration,
+        string? gameRoot = null)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         RequireLiteral(suite, "suite");
@@ -122,6 +123,11 @@ public static class RepositoryOperationPlanner
         }
         arguments.Add("-Output");
         arguments.Add("json");
+        if (gameRoot is not null)
+        {
+            arguments.Add("-RimWorldPath");
+            arguments.Add(GameInstallation.Inspect(gameRoot).Root);
+        }
         return new AdapterCommand(
             "test_run",
             "pwsh",
@@ -141,7 +147,10 @@ public static class RepositoryOperationPlanner
         bool enableAudio = false,
         string? projectPath = null,
         string? prelaunchConfigDirectory = null,
-        IReadOnlyList<string>? testIds = null)
+        IReadOnlyList<string>? testIds = null,
+        string? gameRoot = null,
+        string? preparedProductPackageId = null,
+        string? preparedProductAssemblyPath = null)
     {
         var root = RepositoryRoot.Resolve(repositoryRoot);
         if ((groupId is not null ? 1 : 0) + (testId is not null ? 1 : 0) + (testIds is not null ? 1 : 0) != 1)
@@ -194,6 +203,24 @@ public static class RepositoryOperationPlanner
             arguments.Add(scopedProject);
         }
         if (dryRun) arguments.Add("-DryRun");
+        if (gameRoot is not null)
+        {
+            arguments.Add("-RimWorldPath");
+            arguments.Add(Path.GetFullPath(gameRoot));
+        }
+        if (preparedProductPackageId is not null)
+        {
+            RequireLiteral(preparedProductPackageId, nameof(preparedProductPackageId));
+            if (gameRoot is null || preparedProductPackageId == "fumblesneeze.rimworlddevgateway")
+                throw new ArgumentException("Prepared products require an exact game root and cannot replace the Gateway.");
+            arguments.Add("-PreparedProductPackageId");
+            arguments.Add(preparedProductPackageId);
+            if (preparedProductAssemblyPath is not null)
+            {
+                arguments.Add("-PreparedProductAssemblyPath");
+                arguments.Add(RepositoryRoot.ContainedPath(root, preparedProductAssemblyPath));
+            }
+        }
         AddPrelaunchConfig(root, arguments, prelaunchConfigDirectory);
         if (enableAudio) arguments.Add("-EnableAudio");
         var evidenceRoot = Path.Combine(root, "artifacts", "EndToEndRuns", "Grouped");

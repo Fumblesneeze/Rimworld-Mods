@@ -1,0 +1,41 @@
+{
+  "schema": "WorkshopDescriptionImages/v1",
+  "images": [
+    {
+      "token": "kitchenware",
+      "path": "docs/img/ic/tools.png",
+      "url": "https://raw.githubusercontent.com/Fumblesneeze/Rimworld-Mods/8c15db06116402c0dde7ea77f432d4ab415f9212/docs/img/ic/tools.png",
+      "sha256": "694937F4762F476CFB1A6665CC48F5F67499196AE94F4FE051BD1754D471DC04"
+    },
+    {
+      "token": "teamwork",
+      "path": "docs/img/ic/team.png",
+      "url": "https://raw.githubusercontent.com/Fumblesneeze/Rimworld-Mods/8c15db06116402c0dde7ea77f432d4ab415f9212/docs/img/ic/team.png",
+      "sha256": "D65DEC8068CAC3B31A226B29A55A376F8ED61BA3D3C3DD34C622BCD462BCBE75"
+    },
+    {
+      "token": "dishwashing",
+      "path": "docs/img/ic/wash.png",
+      "url": "https://raw.githubusercontent.com/Fumblesneeze/Rimworld-Mods/8c15db06116402c0dde7ea77f432d4ab415f9212/docs/img/ic/wash.png",
+      "sha256": "68E2725DEF004A384BC418571582AF7E01D4F36D9A5EBDEB4E8AB3BC37F38692"
+    },
+    {
+      "token": "meals",
+      "path": "docs/img/ic/meals.png",
+      "url": "https://raw.githubusercontent.com/Fumblesneeze/Rimworld-Mods/8c15db06116402c0dde7ea77f432d4ab415f9212/docs/img/ic/meals.png",
+      "sha256": "B4129800C60E25BAD5F18E174B4A2F212338556D3A2904F4E6A5CF4512E90BD5"
+    },
+    {
+      "token": "colony",
+      "path": "docs/img/ic/colony.png",
+      "url": "https://raw.githubusercontent.com/Fumblesneeze/Rimworld-Mods/8c15db06116402c0dde7ea77f432d4ab415f9212/docs/img/ic/colony.png",
+      "sha256": "A678AFC699128D12BE578CABD3ECCC125273FEB0E72ABC96BCD6A9DCFBCBC0D0"
+    },
+    {
+      "token": "compatibility",
+      "path": "docs/img/ic/mods.png",
+      "url": "https://raw.githubusercontent.com/Fumblesneeze/Rimworld-Mods/8c15db06116402c0dde7ea77f432d4ab415f9212/docs/img/ic/mods.png",
+      "sha256": "824B5FC972C3E79E8EC79A6018094A692391BAFE22D8915E65A389EE1D8768AA"
+    }
+  ]
+}

@@ -20,6 +20,18 @@ public sealed class EndToEndProjectBuilderTests
 #endif
 
     [Test]
+    public void Builder_uses_the_frozen_product_reference_for_build_and_evaluation()
+    {
+        var runner = new RecordingCommandRunner(
+            new EndToEndBuildCommandResult(0, "build ok", string.Empty),
+            new EndToEndBuildCommandResult(0, PropertyOutput(AssemblyPath()), string.Empty));
+        var frozen = AssemblyPath();
+        new EndToEndProjectBuilder(runner, preparedProductAssemblyPath: frozen)
+            .Build(new[] { ProjectRecord() }, Configuration, TimeSpan.FromSeconds(30));
+        Assert.That(runner.Invocations.All(invocation => invocation.Arguments.Contains("-p:PreparedProductAssemblyPath=" + frozen)), Is.True);
+    }
+
+    [Test]
     public void Builder_uses_argument_safe_commands_and_reads_the_evaluated_compiled_output()
     {
         var project = ProjectRecord();
@@ -42,6 +54,8 @@ public sealed class EndToEndProjectBuilderTests
                 project.ProjectPath,
                 "--configuration",
                 Configuration,
+                "--framework",
+                project.TargetFramework,
                 "--nologo",
                 "--verbosity",
                 "minimal"
@@ -97,12 +111,13 @@ public sealed class EndToEndProjectBuilderTests
             Configuration,
             TimeSpan.FromMinutes(2));
 
-        Assert.That(candidates.Single().Metadata.Declarations.Select(test => test.Id), Is.EqualTo(new[]
+        Assert.That(candidates.Single().Metadata.Declarations.Select(test => test.Id), Is.EquivalentTo(new[]
         {
             "alpha.base-a",
+            "alpha.legacy",
             "alpha.optional",
             "alpha.base-b"
-        }).AsCollection);
+        }));
     }
 
     private static EndToEndProjectRecord ProjectRecord() => new(

@@ -136,7 +136,8 @@ public sealed class EndToEndProjectBuilder
     public EndToEndProjectBuilder(
         IEndToEndBuildCommandRunner? commandRunner = null,
         string dotnetExecutable = "dotnet",
-        string? rimWorldPath = null)
+        string? rimWorldPath = null,
+        string? preparedProductAssemblyPath = null)
     {
         this.commandRunner = commandRunner ?? new EndToEndProcessBuildCommandRunner();
         this.dotnetExecutable = string.IsNullOrWhiteSpace(dotnetExecutable)
@@ -146,6 +147,13 @@ public sealed class EndToEndProjectBuilder
             "-p:RimWorldPath=" + Path.GetFullPath(rimWorldPath),
             "-p:DefaultRimWorldPath=" + Path.GetFullPath(rimWorldPath)
         };
+        if (preparedProductAssemblyPath is not null)
+        {
+            var prepared = Path.GetFullPath(preparedProductAssemblyPath);
+            if (!File.Exists(prepared) || !prepared.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Prepared product reference must be an existing DLL.");
+            installationProperties = installationProperties.Append("-p:PreparedProductAssemblyPath=" + prepared).ToArray();
+        }
     }
 
     public IReadOnlyList<EndToEndAssemblyCandidate> Build(
@@ -285,6 +293,8 @@ public sealed class EndToEndProjectBuilder
             projectPath,
             "--configuration",
             configuration,
+            "--framework",
+            project.TargetFramework,
             "--nologo",
             "--verbosity",
             "minimal"
@@ -299,6 +309,7 @@ public sealed class EndToEndProjectBuilder
             "-nologo",
             "-verbosity:quiet",
             "-property:Configuration=" + configuration,
+            "-property:TargetFramework=" + project.TargetFramework,
             "-getProperty:TargetPath",
             "-getProperty:AssemblyName",
             "-getProperty:TargetFramework"

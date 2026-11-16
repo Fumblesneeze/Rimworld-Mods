@@ -148,9 +148,11 @@ After focused tests and package validation:
 3. Run the exact isolated in-game integration/E2E workflow with developer mode, inspect the live
    player-visible result, and review the complete `Player.log` for errors and warnings.
 4. Mark OpenSpec tasks only when their evidence exists.
-5. Use `release_prepare`, personally review its immutable plan, then use `release_publish` only for
-   the explicitly authorized Steam mutation. First publication is private; verify the subscribed
-   copy before promotion.
+5. Use `release_package_upload` for the tested built package. First publication creates a Private
+   draft and persists its ID. Commit and push inline images as agent work, verify the GitHub mirror,
+   then use `release_page_update` for description, metadata and slideshow together. Promotion to
+   Public is a separate page update. `release_prepare` (`action: package|page`) and `release_publish`
+   expose the same immutable plan/recovery path when a separate dry-run is useful.
 
 Keep all run evidence under ignored `artifacts/`, keep downloaded Workshop content read-only, and
 never commit tokens, saves, live Gateway manifests, generated packages, or test output.

@@ -837,6 +837,15 @@ E2E assemblies can query `IEndToEndGizmoCatalog` for stable gizmo identities, ru
 
 ## Automations and quickstart
 
+Workshop publication uses the repository's `release_package_upload` and `release_page_update`
+operations. Their `release.workshop` adapter binds a `publicationAction` to one immutable plan:
+`package` calls the content setter only (plus title/Private visibility for a first draft), while
+`page` sets description/metadata/previews and submits the slideshow on the same update handle.
+Page updates never call `SetItemContent` and never consume a package change note. Both run in a
+fresh minimized Gateway process with the exact Steam owner; the publisher runtime may differ from
+the target of an already tested package because it does not load that product. Inline images use
+committed, pushed, hash-verified GitHub content, independently of Steam slideshow identities.
+
 Use discovery rather than assuming an automation is available:
 
 ```powershell

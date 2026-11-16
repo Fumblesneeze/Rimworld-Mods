@@ -18,6 +18,8 @@
     </Description>
   </PropertyGroup>
 
+  <Import Project="..\..\tools\RimWorld.Build\VersionedGame.props" />
+
   <ItemGroup>
     <RimWorldSteamModDependency Include="imranfish.xmlextensions" />
     <RimWorldLoadAfter Include="Ludeon.RimWorld.Royalty" />
@@ -61,6 +63,7 @@
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <Import Project="..\..\tools\RimWorld.Build\VersionedGame.targets" />
 
   <Target Name="RemoveLegacyConditionalMicrowaveLayout" BeforeTargets="Build;CopyMod">
     <Delete Files="$(ModSpecificOutputfolder)\LoadFolders.xml" />

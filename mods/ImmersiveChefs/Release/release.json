@@ -5,19 +5,18 @@
   "title": "Immersive Chefs",
   "author": "Fumblesneeze",
   "distributionKind": "Product",
-  "rimWorldVersion": "1.6",
-  "rimWorldBuild": "1.6.4871 rev590",
-  "rimWorldRuntimeBuild": "1.6.4871 rev591",
-  "steamBuildId": "23969874",
-  "managedAssemblySha256": "5CF1B5BE399D5B1C9C56CA72C9D35B4ECF307FEACF5859D04AC5A1AA5926356A",
+  "rimWorldVersion": "1.7",
+  "rimWorldBuild": "1.7.5011 rev24",
+  "rimWorldRuntimeBuild": "1.7.5011 rev24",
+  "steamBuildId": "26690443",
+  "managedAssemblySha256": "7FBCE7A5B2A26CAC500150D3CFF408CDBBD8F1797456BC741252E44C2D27BDC4",
   "steamAppId": 294100,
   "steamUserId": "76561198077136238",
   "publishedFileId": "3782589902",
   "allowFirstPublication": false,
   "visibility": "Public",
   "tags": [
-    "Mod",
-    "1.6"
+    "Mod"
   ],
   "requiredWorkshopItems": [
     "2009463077",
@@ -31,14 +30,19 @@
   "packageSource": "artifacts/Mods/fumblesneeze.immersivechefs",
   "packageInclude": [
     "About/",
-    "1.6/Assemblies/ImmersiveChefs.dll",
-    "1.6/Defs/",
-    "1.6/Languages/",
-    "1.6/Patches/",
-    "1.6/Textures/"
+    "{version}/Assemblies/ImmersiveChefs.dll",
+    "{version}/Defs/",
+    "{version}/Languages/",
+    "{version}/Patches/",
+    "{version}/Textures/"
   ],
   "description": "workshop/description.bbcode",
   "preview": "workshop/preview-main.png",
-  "previousChangeNote": "Dishwasher loading and unloading no longer reserve the whole appliance, allowing multiple workers to use spare capacity without diverting to a nearby sink. Domestic appliances now hide their contents; industrial contents stay beneath the hood and are clipped where it covers them.",
-  "changeNote": "Colonists now share cutlery stacks correctly, look near their dining spot, and use clean cutlery already in their inventory."
+  "previousChangeNote": "Colonists now share cutlery stacks correctly, look near their dining spot, and use clean cutlery already in their inventory.",
+  "changeNote": "Adds RimWorld 1.7 beta support alongside RimWorld 1.6 in one package. Each version uses its own compiled mod.",
+  "supportedTargets": [
+    "rw-1.6.4871-win64",
+    "rw-1.7.5011-win64"
+  ],
+  "developmentTarget": "rw-1.7.5011-win64"
 }

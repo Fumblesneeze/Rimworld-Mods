@@ -71,6 +71,10 @@ public sealed record ReleasePublicationPlan(
     bool MutatesSteam)
 {
     public IReadOnlyList<WorkshopLink> WorkshopLinks { get; init; } = [];
+    public string PublicationAction { get; init; } = "combined";
+    public IReadOnlyList<CandidateFile> AdditionalPreviews { get; init; } = [];
+    public string InlineImageManifestPath { get; init; } = "";
+    public string InlineImageRootPath { get; init; } = "";
 }
 
 public sealed record ReleasePreparationResult(
@@ -327,28 +331,28 @@ public sealed class ReleasePreparer(string repositoryRoot)
 {
     private readonly string _repositoryRoot = RepositoryRoot.Resolve(repositoryRoot);
 
-    public async Task<ReleasePreparationResult> PrepareAsync(string packageId, CancellationToken cancellationToken)
+    public async Task<ReleasePreparationResult> PrepareAsync(string packageId, CancellationToken cancellationToken, string action = "package")
     {
-        var profile = ReleaseProfileCatalog.Discover(_repositoryRoot)
+        if (action is not ("package" or "page")) throw new ArgumentException("action must be package or page.");
+        var profile = ReleaseProfileCatalog.Discover(_repositoryRoot, validatePresentation: false)
             .SingleOrDefault(item => string.Equals(item.PackageId, packageId, StringComparison.OrdinalIgnoreCase)) ??
             throw new ArgumentException($"No universal release profile exists for packageId '{packageId}'.");
-        _ = WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport(profile.WorkshopLinks);
-        ReleaseEnvironmentValidator.Validate(profile);
-        ReleaseChangeNotePolicy.Validate(profile);
-        var initialPrivateHistory = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
-            _repositoryRoot, profile, cancellationToken);
+        if (action == "page" && profile.PublishedFileId is null)
+            throw new InvalidOperationException("Upload the package first to create and retain a Private draft Workshop ID.");
+        if (action == "page") _ = WorkshopLinkPolicy.ValidateSteamPlayerFacingSupport(profile.WorkshopLinks);
+        if (action == "package") ReleaseChangeNotePolicy.Validate(profile);
         var revision = await RequireCleanRevisionAsync(cancellationToken);
+        var matrix = action == "package" && profile.Targets.Count > 0
+            ? ReleaseMatrixBuild.ReadLatest(_repositoryRoot, profile, revision) : default;
 
-        var build = await ProcessRunner.RunAsync(
-            "dotnet",
-            ["build", profile.Project, "-c", "Release"],
-            _repositoryRoot,
-            TimeSpan.FromMinutes(5),
-            cancellationToken);
-        if (build.ExitCode != 0)
-            throw new InvalidOperationException($"Release build failed: {Bounded(build.StandardError + build.StandardOutput)}");
-
-        await ValidatePresentationAsync(profile, cancellationToken);
+        if (action == "page") await ValidatePresentationAsync(profile, cancellationToken);
+        WorkshopRemoteBaseline? remoteBaseline = profile.PublishedFileId is null
+            ? null
+            : await InspectExistingRemoteAsync(profile, cancellationToken, requireProductRuntime: false);
+        var effectiveVisibility = WorkshopChangeHistoryVerifier.EffectiveVisibility(action, profile.Visibility, remoteBaseline?.Visibility);
+        var historyProfile = profile with { Visibility = effectiveVisibility };
+        var initialPrivateHistory = action == "package"
+            ? await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(_repositoryRoot, historyProfile, cancellationToken) : null;
         var afterRevision = await RequireCleanRevisionAsync(cancellationToken);
         if (!string.Equals(revision, afterRevision, StringComparison.Ordinal))
             throw new InvalidOperationException("Source revision changed during release preparation.");
@@ -356,27 +360,20 @@ public sealed class ReleasePreparer(string repositoryRoot)
         var runId = $"{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfffZ}-{Guid.NewGuid():N}"[..(24 + 8)];
         var runRoot = Path.Combine(_repositoryRoot, "artifacts", "Releases", profile.PackageId, runId);
         Directory.CreateDirectory(runRoot);
-        var stage = ReleaseCandidateBuilder.Stage(
-            profile.PackageSource,
-            Path.Combine(runRoot, "package"),
-            profile.PackageInclude);
-        ReleasePackageValidator.Validate(profile, stage);
+        var stage = action == "package"
+            ? ReleaseCandidateBuilder.Stage(matrix.Candidate?.PackagePath ?? profile.PackageSource, Path.Combine(runRoot, "package"), profile.PackageInclude)
+            : new ReleaseCandidateStage("", Convert.ToHexString(SHA256.HashData([])), []);
+        if (action == "package") ReleasePackageValidator.Validate(profile, stage);
         IReadOnlyList<WorkshopOwnerItem> ownerItems = [];
         var exactMatches = 0;
         if (profile.PublishedFileId is null)
         {
             await ProveAuthenticatedTitleAbsenceAsync(profile, cancellationToken);
         }
-        WorkshopRemoteBaseline? remoteBaseline = profile.PublishedFileId is null
-            ? null
-            : await InspectExistingRemoteAsync(profile, cancellationToken);
-        var presentationProvenance = Path.ChangeExtension(profile.Description, ".provenance.json");
-        if (remoteBaseline is not null && File.Exists(presentationProvenance))
-            WorkshopResolvedPresentation.AssertRemoteGallery(presentationProvenance, remoteBaseline);
         if (remoteBaseline is not null)
             (ownerItems, exactMatches) = ProjectExistingOwnerEvidence(profile, remoteBaseline);
-        var finalPrivateHistory = await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(
-            _repositoryRoot, profile, cancellationToken);
+        var finalPrivateHistory = action == "package"
+            ? await WorkshopChangeHistoryVerifier.ValidatePreviousAsync(_repositoryRoot, historyProfile, cancellationToken) : null;
         if (initialPrivateHistory != finalPrivateHistory)
             throw new InvalidOperationException("Previous release evidence changed during release preparation.");
 
@@ -392,6 +389,12 @@ public sealed class ReleasePreparer(string repositoryRoot)
                 ReleaseCandidateBuilder.Hash(frozenReleaseProfile))
         };
         PreviousPrivateReleaseEvidence? previousPrivateReleaseEvidence = null;
+        if (matrix.ReceiptPath is not null)
+        {
+            var frozenMatrix = Path.Combine(verificationRoot, "matrix-build.json");
+            File.Copy(matrix.ReceiptPath, frozenMatrix, overwrite: false);
+            verificationFiles.Add(CaptureFile(_repositoryRoot, frozenMatrix));
+        }
         if (finalPrivateHistory is not null)
         {
             var privateHistoryRoot = Path.Combine(verificationRoot, "previous-private-release");
@@ -414,7 +417,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
                 !string.Equals(finalPrivateHistory.Receipt.Sha256, frozenReceiptFile.Sha256, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Previous Private release evidence changed while it was being frozen.");
             var afterFreezeHistory = WorkshopChangeHistoryVerifier.ValidateRetainedPrivateReceipt(
-                _repositoryRoot, profile);
+                _repositoryRoot, historyProfile);
             if (finalPrivateHistory != afterFreezeHistory)
                 throw new InvalidOperationException("Previous Private release evidence changed while the publication plan was being written.");
             verificationFiles.Add(frozenWorkerFile);
@@ -428,6 +431,31 @@ public sealed class ReleasePreparer(string repositoryRoot)
                 frozenWorkerFile,
                 frozenReceiptFile);
         }
+        string descriptionPath = "", previewPath = "", inlineImageRoot = "";
+        var additionalPreviews = new List<CandidateFile>();
+        if (action == "page")
+        {
+            var inlineManifest = Path.Combine(Path.GetDirectoryName(profile.Description)!, "description-images.json");
+            inlineImageRoot = Path.Combine(runRoot, "presentation", "inline");
+            verificationFiles.AddRange(WorkshopInlineImages.FreezeInputs(_repositoryRoot, inlineManifest, inlineImageRoot));
+            var presentationRoot = Path.Combine(runRoot, "presentation");
+            Directory.CreateDirectory(presentationRoot);
+            string Freeze(string source, string name)
+            {
+                var destination = Path.Combine(presentationRoot, name);
+                File.Copy(source, destination, overwrite: false);
+                verificationFiles.Add(CaptureFile(_repositoryRoot, destination));
+                return destination;
+            }
+            descriptionPath = Freeze(profile.Description, "description.bbcode");
+            previewPath = Freeze(profile.Preview, "preview-main.png");
+            var previews = WorkshopPresentationSynchronizer.ReadPreviewInputs(Path.GetDirectoryName(profile.Preview)!, profile.Preview);
+            foreach (var preview in previews)
+            {
+                var frozen = Freeze(preview.Path, $"gallery-{preview.Index:D2}-{Path.GetFileName(preview.Path)}");
+                additionalPreviews.Add(new CandidateFile(frozen, new FileInfo(frozen).Length, ReleaseCandidateBuilder.Hash(frozen)));
+            }
+        }
         var orderedVerificationFiles = verificationFiles
             .OrderBy(file => file.Path, StringComparer.Ordinal)
             .ToArray();
@@ -437,19 +465,14 @@ public sealed class ReleasePreparer(string repositoryRoot)
 
         var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var expires = DateTimeOffset.UtcNow.AddHours(2);
-        var remoteDiff = profile.PublishedFileId is null
-            ? new[]
-            {
-                $"CREATE Private Workshop item '{profile.Title}'",
-                $"UPLOAD {stage.Files.Count} package files with digest {stage.ContentDigest}",
-                $"SET primary preview SHA-256 {ReleaseCandidateBuilder.Hash(profile.Preview)}",
-                $"SET Workshop links [{string.Join(", ", profile.WorkshopLinks.Select(link => $"{link.Key}={link.Url}"))}]",
-                $"SET required items [{string.Join(", ", profile.RequiredWorkshopItems)}]",
-                $"SET required DLC applications [{string.Join(", ", profile.RequiredDlcAppIds)}]"
-            }
-            : WorkshopRemoteBaseline.DescribeDiff(remoteBaseline!, profile, stage);
+        IReadOnlyList<string> remoteDiff = action == "package"
+            ? [profile.PublishedFileId is null ? $"CREATE Private draft '{profile.Title}'" : "PRESERVE existing page and relationships",
+                $"UPLOAD {stage.Files.Count} package files with digest {stage.ContentDigest}", $"CHANGE NOTE -> {profile.ChangeNote}"]
+            : WorkshopRemoteBaseline.DescribeDiff(remoteBaseline!, profile, stage)
+                .Where(line => !line.StartsWith("CONTENT ", StringComparison.Ordinal) && !line.StartsWith("CHANGE NOTE", StringComparison.Ordinal))
+                .Append($"SLIDESHOW -> {additionalPreviews.Count} ordered previews; package content preserved").ToArray();
         var plan = new ReleasePublicationPlan(
-            "RimWorldModReleasePlan/v3",
+            "RimWorldModReleasePlan/v4",
             profile.PackageId,
             profile.Title,
             profile.Author,
@@ -461,16 +484,16 @@ public sealed class ReleasePreparer(string repositoryRoot)
             ReleaseCandidateBuilder.Hash(profile.Path),
             frozenReleaseProfile,
             profile with { Path = frozenReleaseProfile },
-            profile.Description,
-            ReleaseCandidateBuilder.Hash(profile.Description),
-            profile.Preview,
-            ReleaseCandidateBuilder.Hash(profile.Preview),
-            new FileInfo(profile.Preview).Length,
+            descriptionPath,
+            action == "page" ? ReleaseCandidateBuilder.Hash(descriptionPath) : "",
+            previewPath,
+            action == "page" ? ReleaseCandidateBuilder.Hash(previewPath) : "",
+            action == "page" ? new FileInfo(previewPath).Length : 0,
             profile.SteamAppId,
             profile.SteamUserId,
             profile.PublishedFileId,
             profile.AllowFirstPublication,
-            profile.PublishedFileId is null ? "Private" : profile.Visibility,
+            profile.PublishedFileId is null ? "Private" : effectiveVisibility,
             profile.Tags,
             profile.RequiredWorkshopItems,
             profile.RequiredDlcAppIds,
@@ -487,7 +510,11 @@ public sealed class ReleasePreparer(string repositoryRoot)
             expires,
             false)
         {
-            WorkshopLinks = profile.WorkshopLinks
+            WorkshopLinks = profile.WorkshopLinks,
+            PublicationAction = action,
+            AdditionalPreviews = additionalPreviews,
+            InlineImageManifestPath = action == "page" ? Path.Combine(inlineImageRoot, "description-images.json") : "",
+            InlineImageRootPath = inlineImageRoot
         };
         var planPath = Path.Combine(runRoot, "publication-plan.json");
         var planJson = JsonSerializer.Serialize(plan, McpJsonContext.Default.ReleasePublicationPlan);
@@ -528,7 +555,8 @@ public sealed class ReleasePreparer(string repositoryRoot)
 
     private async Task<WorkshopRemoteBaseline> InspectExistingRemoteAsync(
         ReleaseProfile profile,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool requireProductRuntime = true)
     {
         var manager = new RunLeaseManager(_repositoryRoot);
         var start = manager.StartGateway(Array.Empty<string>(), Array.Empty<string>(), 900);
@@ -550,7 +578,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
             var client = new GatewayWorkshopClient(_repositoryRoot, ready.GatewayManifestPath!, ready.GameProcessId!.Value);
             await client.RegisterAsync(cancellationToken);
             var status = await client.InvokeAsync(new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-            WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile);
+            WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile, requireProductRuntime);
             var correlation = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
             _ = await client.InvokeAsync(new Dictionary<string, object?>
             {
@@ -565,7 +593,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
                 cancellationToken);
             if (GatewayWorkshopClient.String(remote, "Status") != "queried")
                 throw new InvalidOperationException("Authenticated existing-item preflight query failed.");
-            var baseline = await WorkshopRemoteBaseline.CaptureAsync(remote, cancellationToken);
+            var baseline = await WorkshopRemoteBaseline.CaptureAsync(remote, cancellationToken, downloadImages: false);
             baseline.AssertItemIdentity(profile);
             return baseline;
         }
@@ -600,7 +628,7 @@ public sealed class ReleasePreparer(string repositoryRoot)
             var client = new GatewayWorkshopClient(_repositoryRoot, ready.GatewayManifestPath!, ready.GameProcessId!.Value);
             await client.RegisterAsync(cancellationToken);
             var status = await client.InvokeAsync(new Dictionary<string, object?> { ["operation"] = "status" }, cancellationToken);
-            WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile);
+            WorkshopRemoteBaseline.AssertRuntimeIdentity(status, profile, requireProductRuntime: false);
             var correlation = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
             _ = await client.InvokeAsync(new Dictionary<string, object?>
             {
@@ -643,37 +671,13 @@ public sealed class ReleasePreparer(string repositoryRoot)
         if (!File.Exists(profile.Description) || new FileInfo(profile.Description).Length == 0)
             throw new InvalidOperationException("Workshop description is missing or empty.");
 
-        var manifest = Path.Combine(Path.GetDirectoryName(profile.Preview)!, "presentation.json");
-        var requiresResolvedDescription = false;
-        if (File.Exists(manifest))
+        using var http = new HttpClient(new SocketsHttpHandler
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-            requiresResolvedDescription = document.RootElement.TryGetProperty("descriptionResolver", out var resolverDeclaration) &&
-                                          resolverDeclaration.ValueKind == JsonValueKind.Object;
-            if (document.RootElement.TryGetProperty("renderer", out _))
-                _ = await RepositoryOperations.ExecuteAsync(
-                    RepositoryOperationPlanner.PresentationRender(_repositoryRoot, profile), cancellationToken);
-        }
-        var provenance = Path.ChangeExtension(profile.Description, ".provenance.json");
-        if (profile.PublishedFileId is not null && requiresResolvedDescription && !File.Exists(provenance))
-            throw new InvalidOperationException(
-                "Workshop presentation declares a description resolver but its resolved provenance is missing.");
-        if (profile.PublishedFileId is not null && File.Exists(provenance))
-        {
-            using var http = new HttpClient(new SocketsHttpHandler
-            {
-                AutomaticDecompression = System.Net.DecompressionMethods.All,
-                AllowAutoRedirect = false
-            });
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("RimWorldModding.Mcp/0.1");
-            await WorkshopResolvedPresentation.ValidateAsync(
-                profile.Description,
-                provenance,
-                Path.GetDirectoryName(profile.Preview)!,
-                profile.PublishedFileId,
-                http,
-                cancellationToken);
-        }
+            AutomaticDecompression = System.Net.DecompressionMethods.All,
+            AllowAutoRedirect = false
+        });
+        await WorkshopInlineImages.ValidateAsync(_repositoryRoot, profile.Description,
+            Path.Combine(Path.GetDirectoryName(profile.Description)!, "description-images.json"), http, cancellationToken);
     }
 
     private static string Bounded(string value) => value.Length <= 8192 ? value.Trim() : value[..8192].Trim();

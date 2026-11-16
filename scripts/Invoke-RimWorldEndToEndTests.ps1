@@ -49,6 +49,11 @@ param(
 
     [string]$PrelaunchConfigDirectory,
 
+    # Supplied only by release_target_test after validating/installing the frozen bundle.
+    [string]$PreparedProductPackageId,
+
+    [string]$PreparedProductAssemblyPath,
+
     [ValidatePattern('^[A-Za-z][A-Za-z0-9]{0,63}$')]
     [string]$Language = 'English',
 
@@ -292,6 +297,10 @@ function Invoke-HostTool {
             $arguments.Add($argument)
         }
         if ($Operation -notin @('clean', 'fixture-clean')) {
+            if (-not [string]::IsNullOrWhiteSpace($PreparedProductAssemblyPath)) {
+                $arguments.Add('--prepared-product-assembly');
+                $arguments.Add($PreparedProductAssemblyPath);
+            }
             foreach ($argument in @(
                 '--repository-root', $RepositoryRoot,
                 '--mods-root', $ModsRoot,
@@ -410,6 +419,9 @@ else {
 if ($packageIds.Count -eq 0 -or $packageIds -notcontains 'ludeon.rimworld') {
     Exit-InvalidInput 'Available mod IDs must include ludeon.rimworld.'
 }
+if (-not [string]::IsNullOrWhiteSpace($PreparedProductPackageId)) {
+    $packageIds = @($packageIds + $PreparedProductPackageId | Sort-Object -Unique)
+}
 foreach ($packageId in $packageIds) {
     if (-not (Test-PackageId -Value $packageId)) {
         Exit-InvalidInput "Invalid available mod package ID: '$packageId'"
@@ -479,6 +491,13 @@ $selectedGroups = @(foreach ($group in $candidateGroups) {
 })
 if ($selectedGroups.Count -eq 0) {
     Exit-InvalidInput 'The combined E2E group and test filters selected zero tests.'
+}
+if (-not [string]::IsNullOrWhiteSpace($PreparedProductPackageId)) {
+    if ([string]::IsNullOrWhiteSpace($PreparedProductAssemblyPath) -or
+        @($plan.owners | Where-Object { $_.ownerPackageId -cne $PreparedProductPackageId }).Count -ne 0 -or
+        @($selectedGroups | Where-Object { $_.activePackageIds -cnotcontains $PreparedProductPackageId }).Count -ne 0) {
+        Exit-InvalidInput 'Prepared verification must use the exact product reference and load the requested product in every group.'
+    }
 }
 if ($TestIdsCsv -and $selectedGroups.Count -ne 1) {
     Exit-InvalidInput 'An explicit testIds batch must select exactly one active-mod/loader group; split the batch by group.'
@@ -583,6 +602,13 @@ try {
         }
 
         $buildLogPath = Join-Path $runDirectory "deploy-$ownerId.log"
+        if ($ownerId -eq $PreparedProductPackageId) {
+            [System.IO.File]::WriteAllText($buildLogPath, 'Using the exact prepared release matrix package; product compilation/deployment skipped.')
+            $productDeploymentEvidence.Add(
+                (Get-RimWorldDeployedProductEvidence -PackageId $ownerId -ProjectPath ([string]$productProjects[$ownerId]) `
+                    -RimWorldPath $resolvedRimWorldPath -BuildLogPath $buildLogPath))
+            continue
+        }
         $build = Invoke-BoundedProcess `
             -ExecutablePath 'dotnet' `
             -Arguments @(
