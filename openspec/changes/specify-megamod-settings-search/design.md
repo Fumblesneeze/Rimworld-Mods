@@ -543,6 +543,12 @@ warning even if that identity is repeated, and retains common stored preferences
 Installed packages outside the active list are not input to this decision. Registration and the
 native chooser/runtime consumption must be reviewed and verified together before accepting SS-07.
 
+The integrated native chooser keeps its existing QuickSearchWidget and extends that instance's
+input limit to512 UTF-16 code units while owned search is active, restoring the previous limit when
+relinquished. Empty/page browsing retains S047's native two-column presentation where width permits;
+nonempty option results use full-width rows like the inspected Needle results to keep owner, help,
+value provenance and individual selectable options readable. Both use the existing opening branch.
+
 Owned row discovery extends the existing SettingsRenderer registrations directly. Each setting row
 projects its current translated label/help/category/status and detached requested-global,
 requested-current-save and effective display values from the common store, together with the

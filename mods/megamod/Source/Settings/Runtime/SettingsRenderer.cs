@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Megamod.Features.SettingsSearch.Core;
 using UnityEngine;
 using Verse;
 
@@ -12,18 +13,68 @@ public sealed class SettingsRenderer
 {
     private readonly SettingsRuntime runtime;
     private readonly Dictionary<string, Row> rows = new(StringComparer.Ordinal);
+    private readonly SettingsRowReveal reveal = new();
     private Vector2 scroll;
     private long activation = -1;
+    private long revealActivation;
+    private object? revealLanguage;
+    private string? revealLanguageFolder;
 
     public SettingsRenderer(SettingsRuntime runtime) => this.runtime = runtime;
 
+    public IReadOnlyList<SettingsRowObservation> CaptureRows()
+    {
+        runtime.ProcessPendingLifecycle();
+        var revision = runtime.Store.Revision;
+        var captured = rows.Values.Where(row => row.Observe != null)
+            .OrderBy(row => row.Layout.CategoryId, StringComparer.Ordinal)
+            .ThenBy(row => row.Layout.DisplayOrder?.Invoke() ?? row.Layout.Order)
+            .ThenBy(row => row.Layout.Id, StringComparer.Ordinal)
+            .Select(row => row.Observe!()).ToArray();
+        if (runtime.Store.Revision != revision)
+            throw new InvalidOperationException("Settings changed during row observations.");
+        return captured;
+    }
+
+    public SettingsRowRevealStatus RequestReveal(string rowId, long expectedActivation)
+    {
+        runtime.ProcessPendingLifecycle();
+        revealActivation = expectedActivation;
+        revealLanguage = LanguageDatabase.activeLanguage;
+        revealLanguageFolder = LanguageDatabase.activeLanguage?.folderName;
+        reveal.Request(rowId, expectedActivation);
+        if (expectedActivation != runtime.Store.Revision.Activation) reveal.Cancel();
+        else if (rowId == null || !rows.TryGetValue(rowId, out var row) || row.Observe == null) reveal.Refuse();
+        return reveal.Status;
+    }
+
+    public SettingsRowRevealStatus RevealStatus
+    {
+        get
+        {
+            if (SettingsReadScope.Current == null) ReconcileRevealContext();
+            return reveal.Status;
+        }
+    }
+    public void CancelReveal() => reveal.Cancel();
+
+    private void ReconcileRevealContext()
+    {
+        if ((reveal.Status is SettingsRowRevealStatus.Pending or SettingsRowRevealStatus.Highlighting) &&
+            (revealActivation != runtime.Store.Revision.Activation ||
+             !ReferenceEquals(revealLanguage, LanguageDatabase.activeLanguage) ||
+             revealLanguageFolder != LanguageDatabase.activeLanguage?.folderName))
+            reveal.Cancel();
+    }
+
     public void AddBoolean(SettingDefinition<bool> definition, string labelKey, string categoryKey,
         string helpKey, string? globalOnlyReasonKey = null) =>
-        Add(definition, labelKey, categoryKey, helpKey, globalOnlyReasonKey, DrawBoolean);
+        Add(definition, labelKey, categoryKey, helpKey, globalOnlyReasonKey, DrawBoolean, DisplayBoolean);
 
     public void AddInteger(SettingDefinition<int> definition, string labelKey, string categoryKey,
         string helpKey, string? globalOnlyReasonKey = null) =>
-        Add(definition, labelKey, categoryKey, helpKey, globalOnlyReasonKey, DrawInteger);
+        Add(definition, labelKey, categoryKey, helpKey, globalOnlyReasonKey, DrawInteger,
+            value => value.ToString(CultureInfo.InvariantCulture));
 
     public void AddDynamicBoolean(SettingDefinition<bool> definition, Func<string> label, string categoryKey,
         Func<string> help, Func<string?> status, Func<bool> visible, Func<string?> unavailableReasonKey,
@@ -33,7 +84,7 @@ public sealed class SettingsRenderer
             throw new ArgumentException("Dynamic Boolean rows require global/save scope.", nameof(definition));
         AddRow(definition, label, categoryKey, help, null, DrawBoolean, DrawBoolean,
             new EditorState(), new EditorState(), 28, status, new SettingsEditGuard(unavailableReasonKey),
-            visible, displayOrder);
+            visible, displayOrder, DisplayBoolean);
     }
 
     public void AddSection(string id, string categoryId, int order, string categoryKey, float height,
@@ -54,28 +105,30 @@ public sealed class SettingsRenderer
 
     public void AddComposite<T>(SettingDefinition<T> definition, string labelKey, string categoryKey,
         string helpKey, float editorHeight, Func<SettingsStore, bool, ISettingsCompositeEditor<T>> createEditor,
-        string? globalOnlyReasonKey = null)
+        string? globalOnlyReasonKey = null, Func<T, string?>? formatValue = null)
     {
         var saveEditor = createEditor(runtime.Store, false);
         var globalEditor = createEditor(runtime.Store, true);
         AddRow(definition, () => labelKey.Translate().ToString(), categoryKey, () => helpKey.Translate().ToString(), globalOnlyReasonKey,
             (rect, _, value, enabled, commit, state) => state.ErrorKey = saveEditor.Draw(rect, value, enabled, commit),
             (rect, _, value, enabled, commit, state) => state.ErrorKey = globalEditor.Draw(rect, value, enabled, commit),
-            new EditorState { OnReset = saveEditor.Reset }, new EditorState { OnReset = globalEditor.Reset }, editorHeight);
+            new EditorState { OnReset = saveEditor.Reset }, new EditorState { OnReset = globalEditor.Reset }, editorHeight,
+            formatValue: formatValue);
     }
 
     private delegate void Editor<T>(Rect rect, SettingDefinition<T> definition, T value, bool enabled,
         Func<T, SettingEditResult> commit, EditorState state);
 
     private void Add<T>(SettingDefinition<T> definition, string labelKey, string categoryKey,
-        string helpKey, string? globalOnlyReasonKey, Editor<T> editor)
+        string helpKey, string? globalOnlyReasonKey, Editor<T> editor, Func<T, string?> formatValue)
         => AddRow(definition, () => labelKey.Translate().ToString(), categoryKey, () => helpKey.Translate().ToString(), globalOnlyReasonKey, editor, editor,
-            new EditorState(), new EditorState(), 28);
+            new EditorState(), new EditorState(), 28, formatValue: formatValue);
 
     private void AddRow<T>(SettingDefinition<T> definition, Func<string> label, string categoryKey,
         Func<string> help, string? globalOnlyReasonKey, Editor<T> saveEditor, Editor<T> globalEditor,
         EditorState saveState, EditorState globalState, float editorHeight, Func<string?>? status = null,
-        SettingsEditGuard? featureGuard = null, Func<bool>? visible = null, Func<int>? displayOrder = null)
+        SettingsEditGuard? featureGuard = null, Func<bool>? visible = null, Func<int>? displayOrder = null,
+        Func<T, string?>? formatValue = null)
     {
         if (rows.ContainsKey(definition.Id))
             throw new InvalidOperationException("A settings row with this ID is already registered.");
@@ -91,60 +144,119 @@ public sealed class SettingsRenderer
             string? error = saveState.ErrorKey ?? globalState.ErrorKey ?? runtime.Store.ReadCurrentRequested(definition).ErrorKey ??
                 runtime.Store.ReadGlobal(definition).ErrorKey;
             messages = MessageBlock.Measure(width, reason?.Translate().ToString(), error?.Translate().ToString(),
-                status?.Invoke(), effectiveOffReason?.Translate().ToString());
+                status?.Invoke(), runtime.Store.EffectiveOffReason(definition)?.Translate().ToString());
             return editorHeight + 56 + messages.Height + 8;
+        }
+        SettingsRowObservation Observe()
+        {
+            string? reason = Reason(definition, globalOnlyReasonKey, runtime.CurrentBinding,
+                runtime.Store.UsesGlobal(definition), featureGuard?.UnavailableReasonKey);
+            return SettingsRowObservation.Capture(runtime.Store, definition, label(), help(), categoryKey.Translate(),
+                formatValue, visible?.Invoke() ?? true, status?.Invoke(), reason?.Translate().ToString());
         }
         rows.Add(definition.Id, new Row(new(definition.Id, definition.CategoryId, definition.Order, visible, displayOrder), categoryKey, editorHeight + 132,
             rect => DrawRow(rect, definition, label(), help(), globalOnlyReasonKey,
                 saveEditor, globalEditor, saveState, globalState, editorHeight, messages, featureGuard),
-            () => { saveState.Reset(); globalState.Reset(); }, status == null && effectiveOffReason == null ? null : MeasureDynamicHeight));
+            () => { saveState.Reset(); globalState.Reset(); }, status == null && effectiveOffReason == null ? null : MeasureDynamicHeight,
+            Observe));
     }
 
     public void Draw(Rect rect)
     {
-        runtime.ProcessPendingLifecycle();
-        if (activation != runtime.Store.Revision.Activation)
-        {
-            activation = runtime.Store.Revision.Activation;
-            foreach (var row in rows.Values) row.Reset();
-        }
+        bool hidden = SettingsReadScope.Current != null;
         GameFont oldFont = Text.Font;
         TextAnchor oldAnchor = Text.Anchor;
         Color oldColor = GUI.color;
         bool beganScroll = false;
         try
         {
+            if (!hidden)
+            {
+                runtime.ProcessPendingLifecycle();
+                ReconcileRevealContext();
+                if (activation != runtime.Store.Revision.Activation)
+                {
+                    activation = runtime.Store.Revision.Activation;
+                    foreach (var row in rows.Values) row.Reset();
+                }
+            }
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
             float width = Math.Max(0, rect.width - 20);
-            var ordered = SettingsRowLayout.Capture(rows.Values.Select(row => row.Layout))
-                .Select(placement => rows[placement.Id])
-                .Select(row => (Row: row, Height: row.MeasureHeight?.Invoke(width) ?? row.Height)).ToArray();
-            int categories = ordered.Select(entry => entry.Row.Layout.CategoryId).Distinct().Count();
-            var view = new Rect(0, 0, width, ordered.Sum(entry => entry.Height) + categories * 32);
-            Widgets.BeginScrollView(rect, ref scroll, view);
-            beganScroll = true;
+            var measured = new List<MeasuredRow>();
             float y = 0;
             string? category = null;
-            foreach (var entry in ordered)
+            foreach (var placement in SettingsRowLayout.Capture(rows.Values.Select(row => row.Layout)))
             {
-                var row = entry.Row;
-                if (category != row.Layout.CategoryId)
-                {
-                    Widgets.Label(new Rect(0, y, view.width, 28), row.CategoryKey.Translate());
-                    y += 32;
-                    category = row.Layout.CategoryId;
-                }
-                row.Draw(new Rect(0, y, view.width, entry.Height - 4));
-                y += entry.Height;
+                var row = rows[placement.Id];
+                bool startsCategory = category != placement.CategoryId;
+                if (startsCategory) y += 32;
+                float height = row.MeasureHeight?.Invoke(width) ?? row.Height;
+                measured.Add(new(row, new Rect(0, y, width, height - 4), startsCategory));
+                y += height;
+                category = placement.CategoryId;
             }
+            var view = new Rect(0, 0, width, y);
+            // Hidden discovery may draw the page, but never owns its visible viewport or reveal clock.
+            Vector2 drawScroll = scroll;
+            string? highlightedRow = null;
+            var input = Event.current;
+            bool navigationInput = input != null &&
+                (input.type is EventType.ScrollWheel or EventType.MouseDown or EventType.MouseDrag or EventType.KeyDown);
+            if (!hidden)
+            {
+                if (input != null && rect.Contains(input.mousePosition) &&
+                    (input.type == EventType.ScrollWheel || input.type == EventType.MouseDown && input.mousePosition.x >= rect.xMax - 20))
+                    reveal.Cancel();
+                var frame = reveal.Advance(runtime.Store.Revision.Activation,
+                    measured.Where(entry => entry.Row.Observe != null)
+                        .Select(entry => new SettingsRowRevealPlacement(entry.Row.Layout.Id, entry.Bounds.y, entry.Bounds.height)).ToArray(),
+                    drawScroll.y, rect.height, view.height,
+                    System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency,
+                    input?.type == EventType.Repaint);
+                drawScroll.y = frame.ScrollY;
+                highlightedRow = frame.HighlightedRowId;
+            }
+            Vector2 requestedScroll = drawScroll;
+            Widgets.BeginScrollView(rect, ref drawScroll, view);
+            beganScroll = true;
+            if (!hidden)
+            {
+                if (navigationInput && drawScroll != requestedScroll)
+                {
+                    reveal.Cancel();
+                    highlightedRow = null;
+                }
+                scroll = drawScroll;
+            }
+            foreach (var entry in measured)
+            {
+                if (entry.StartsCategory)
+                    Widgets.Label(new Rect(0, entry.Bounds.y - 32, view.width, 28), entry.Row.CategoryKey.Translate());
+                if (entry.Row.Layout.Id == highlightedRow)
+                    Widgets.DrawBoxSolid(entry.Bounds, new Color(0.8f, 0.7f, 0.2f, 0.18f));
+                entry.Row.Draw(entry.Bounds);
+            }
+        }
+        catch
+        {
+            if (!hidden) reveal.Cancel();
+            throw;
         }
         finally
         {
-            if (beganScroll) Widgets.EndScrollView();
-            Text.Font = oldFont;
-            Text.Anchor = oldAnchor;
-            GUI.color = oldColor;
+            try { if (beganScroll) Widgets.EndScrollView(); }
+            catch
+            {
+                if (!hidden) reveal.Cancel();
+                throw;
+            }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.Anchor = oldAnchor;
+                GUI.color = oldColor;
+            }
         }
     }
 
@@ -209,6 +321,9 @@ public sealed class SettingsRenderer
     private static SettingEditResult Commit(SettingsEditGuard? guard, Func<SettingEditResult> commit) =>
         guard == null ? commit() : guard.Commit(commit);
 
+    private static string DisplayBoolean(bool value) =>
+        (value ? "Megamod_Settings_On" : "Megamod_Settings_Off").Translate();
+
     private static void DrawBoolean(Rect rect, SettingDefinition<bool> definition, bool value, bool enabled,
         Func<bool, SettingEditResult> commit, EditorState state)
     {
@@ -248,7 +363,10 @@ public sealed class SettingsRenderer
     }
 
     private sealed record Row(SettingsRowLayout Layout, string CategoryKey, float Height,
-        Action<Rect> Draw, Action Reset, Func<float, float>? MeasureHeight = null);
+        Action<Rect> Draw, Action Reset, Func<float, float>? MeasureHeight = null,
+        Func<SettingsRowObservation>? Observe = null);
+
+    private sealed record MeasuredRow(Row Row, Rect Bounds, bool StartsCategory);
 
     private sealed record MessageBlock((string Text, float Height)[] Lines)
     {

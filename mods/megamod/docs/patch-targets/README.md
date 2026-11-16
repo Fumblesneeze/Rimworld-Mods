@@ -92,6 +92,14 @@ These contracts cover existing native controls; they do not restrict eligible se
 - [SS-READ-SLIDER-SOUND](SS-READ-SLIDER-SOUND.md)
 - [SS-READ-TOOLTIP](SS-READ-TOOLTIP.md)
 
+The integrated S047/S141 chooser batch adds these target contracts. Its final combined native
+verification remains pending; earlier component evidence does not accept these new hooks:
+
+- [SS-CHOOSER](SS-CHOOSER.md) — existing chooser enumeration, native opening, ordinary page drawing
+  and completed GUI-root scheduling.
+- [SS-FOREIGN-OBSERVATION](SS-FOREIGN-OBSERVATION.md) — native control, tab and scroll observation
+  for generic discovery and fresh-layout reveal.
+
 The normative requirements are in
 [megamod-patch-target-specs](../../../../openspec/changes/add-megamod-foundation/specs/megamod-patch-target-specs/spec.md)
 and the executable development rules in [AGENTS.md](../../AGENTS.md). Documentation and checks must

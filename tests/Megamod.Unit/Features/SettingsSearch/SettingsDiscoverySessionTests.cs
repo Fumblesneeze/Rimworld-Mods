@@ -321,4 +321,43 @@ public sealed class SettingsDiscoverySessionTests
         Assert.That(session.Complete(active, null, 2, pageFinished: true), Is.True);
         Assert.That(session.Pages.Single().Callbacks, Is.EqualTo(2));
     }
+
+    [Test]
+    public void MultiDrawStepCountsActualCallbacksAndKeepsIndividualTimingSeparate()
+    {
+        var session = new SettingsDiscoverySession(new[] { First, Second }, maxCallbacksPerPage: 5);
+        Assert.That(session.Complete(session.BeginNext(1)!, Capture(First, "First path"), 120,
+            pageFinished: false, callbackCount: 3, maximumCallbackMilliseconds: 40), Is.True);
+        Assert.That(session.Pages[0].Callbacks, Is.EqualTo(3));
+        Assert.That(session.Pages[0].ElapsedMilliseconds, Is.EqualTo(120));
+        Assert.That(session.Pages[0].StopReason, Is.EqualTo(SettingsDiscoveryStop.None));
+        Assert.That(session.Complete(session.BeginNext(2)!, Capture(First, "Second path"), 20,
+            pageFinished: false, callbackCount: 2, maximumCallbackMilliseconds: 10), Is.True);
+        Assert.That(session.Pages[0].Callbacks, Is.EqualTo(5));
+        Assert.That(session.Pages[0].StopReason, Is.EqualTo(SettingsDiscoveryStop.CallbackLimit));
+        Assert.That(session.BeginNext(3)!.Page, Is.SameAs(Second));
+    }
+
+    [Test]
+    public void RefusalBeforeDrawingDoesNotInventACallbackAndInvalidCountsKeepTheReceipt()
+    {
+        var session = new SettingsDiscoverySession(new[] { First });
+        var work = session.BeginNext(1)!;
+        Assert.Throws<ArgumentOutOfRangeException>(() => session.Complete(work,
+            Capture(First, "Invalid"), 0, pageFinished: true, callbackCount: -1));
+        Assert.That(session.Pages[0].Captures, Is.Empty);
+        Assert.That(session.Complete(work, null, 0, pageFinished: true, callbackCount: 0), Is.True);
+        Assert.That(session.Pages[0].Callbacks, Is.Zero);
+    }
+
+    [Test]
+    public void OneSlowDrawStopsFurtherExplorationEvenWithinAMultiDrawStep()
+    {
+        var session = new SettingsDiscoverySession(new[] { First });
+        Assert.That(session.Complete(session.BeginNext(1)!, Capture(First, "Retained"), 140,
+            pageFinished: false, callbackCount: 2, maximumCallbackMilliseconds: 110), Is.True);
+        Assert.That(session.Pages[0].StopReason, Is.EqualTo(SettingsDiscoveryStop.SlowCallback));
+        Assert.That(session.Pages[0].Captures.Single().Records.Single().Text, Is.EqualTo("Retained"));
+        Assert.That(session.BeginNext(2), Is.Null);
+    }
 }

@@ -16,13 +16,17 @@ public sealed class SettingsNativeCatalog
     private const int MaximumPages = 4096;
     private const int MaximumTextUnits = 524288;
     private sealed record Request(Dialog_Options Source, string Identity, bool Startup = false);
-    private sealed record Entry(SettingsPage Page, Mod Native);
+    private sealed record Entry(SettingsPage Page, Mod Native, int SourceOrdinal);
     private readonly int thread = Environment.CurrentManagedThreadId;
     private Dictionary<SettingsPage, Mod> native = new(ReferenceEqualityComparer.Instance);
     private Request? pending;
     private long generation;
     public IReadOnlyList<SettingsPage> Pages { get; private set; } = Array.Empty<SettingsPage>();
     public bool Pending => pending != null;
+    public Dialog_Options? Source { get; private set; }
+    public IEnumerable<Mod>? SourceCollection { get; private set; }
+    public long Revision => generation;
+    public IReadOnlyList<SettingsNativePage> Entries { get; private set; } = Array.Empty<SettingsNativePage>();
 
     public void Refresh(Dialog_Options completedOptions)
     {
@@ -76,6 +80,9 @@ public sealed class SettingsNativeCatalog
         var descriptors = Array.AsReadOnly(candidate.Select(entry => entry.Page).ToArray());
         native = map;
         Pages = descriptors;
+        Entries = Array.AsReadOnly(candidate.Select(entry => new SettingsNativePage(entry.Page, entry.Native, entry.SourceOrdinal)).ToArray());
+        Source = request.Source;
+        SourceCollection = Collection(request.Source);
         return SettingsNeutralReadStatus.Captured;
     }
 
@@ -92,6 +99,9 @@ public sealed class SettingsNativeCatalog
         generation++;
         pending = null;
         Pages = Array.Empty<SettingsPage>();
+        Entries = Array.Empty<SettingsNativePage>();
+        Source = null;
+        SourceCollection = null;
         native.Clear();
     }
 
@@ -128,12 +138,16 @@ public sealed class SettingsNativeCatalog
                     textUnits += units;
                 }
                 string identity = request.Identity + ":" + entries.Count.ToString("D4", System.Globalization.CultureInfo.InvariantCulture);
-                entries.Add(new(new(identity, identity, title, name, author, package), mod));
+                entries.Add(new(new(identity, identity, title, name, author, package), mod, entries.Count));
             }
         }
         if (!ReferenceEquals(field.GetValue(source), collection)) throw Refuse("settings-catalog-source-replaced");
         return entries.ToArray();
     }
+
+    private static IEnumerable<Mod>? Collection(Dialog_Options options) => typeof(Dialog_Options)
+        .GetField("cachedModsWithSettings", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+        ?.GetValue(options) as IEnumerable<Mod>;
 
     private static InvalidOperationException Refuse(string reason) =>
         SettingsReadScope.Current?.Refuse(reason) ?? new InvalidOperationException(reason);
@@ -144,3 +158,6 @@ public sealed class SettingsNativeCatalog
             throw new InvalidOperationException("settings-catalog-gui-thread-required");
     }
 }
+
+// The ordinal is an occurrence in the completed source, not an ordinal among matches.
+public sealed record SettingsNativePage(SettingsPage Page, Mod Native, int SourceOrdinal);

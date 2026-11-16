@@ -15,13 +15,15 @@ public sealed class SettingsPageRecorder
     [ThreadStatic] private static RecordingBackend? active;
     private readonly SettingsPage page;
     private readonly string pathIdentity;
+    private readonly Action? observedDraw;
 
-    public SettingsPageRecorder(SettingsPage page, string pathIdentity)
+    public SettingsPageRecorder(SettingsPage page, string pathIdentity, Action? observedDraw = null)
     {
         ArgumentNullException.ThrowIfNull(page);
         ArgumentNullException.ThrowIfNull(pathIdentity);
         this.page = page;
         this.pathIdentity = pathIdentity;
+        this.observedDraw = observedDraw;
     }
 
     // The latest completed repaint only. Callers own language/page/lifecycle invalidation.
@@ -39,7 +41,7 @@ public sealed class SettingsPageRecorder
         var buffer = new SettingsCaptureBuffer(page, pathIdentity);
         var previous = GuiBackend.Current;
         var parent = active;
-        var recording = new RecordingBackend(previous, buffer);
+        var recording = new RecordingBackend(previous, buffer, observedDraw);
         bool callbackThrew = false;
         GuiBackend.Current = recording;
         active = recording;
@@ -74,17 +76,26 @@ public sealed class SettingsPageRecorder
     {
         private readonly IGuiBackend inner;
         private readonly SettingsCaptureBuffer buffer;
+        private readonly Action? observedDraw;
 
-        internal RecordingBackend(IGuiBackend inner, SettingsCaptureBuffer buffer)
+        internal RecordingBackend(IGuiBackend inner, SettingsCaptureBuffer buffer, Action? observedDraw)
         {
             this.inner = inner;
             this.buffer = buffer;
+            this.observedDraw = observedDraw;
         }
 
         internal bool Failed { get; private set; }
 
         private bool CanRecord => !Failed && ReferenceEquals(active, this) &&
             ReferenceEquals(GuiBackend.Current, this) && Event.current?.type == EventType.Repaint;
+
+        private void ObserveDraw()
+        {
+            if (!CanRecord) return;
+            try { observedDraw?.Invoke(); }
+            catch { Failed = true; }
+        }
 
         internal void Record(SettingsCaptureKind kind, Rect rect, string? text)
         {
@@ -131,6 +142,7 @@ public sealed class SettingsPageRecorder
             // Measure before the real draw, but retain only a successfully returned draw.
             var bounds = CanRecord && !string.IsNullOrEmpty(text) ? Bounds(rect) : null;
             inner.DrawText(rect, text, fontIndex, fontSize, fontStyle, anchor, wordWrap, color, clipRect, richText);
+            ObserveDraw();
             if (bounds.HasValue && CanRecord) Add(SettingsCaptureKind.Text, text, bounds.Value);
         }
 
@@ -156,19 +168,19 @@ public sealed class SettingsPageRecorder
         public void TextSelectionRects(int fontIndex, float fontSize, FontStyle fontStyle, string text,
             float wrapWidth, int from, int to, List<Rect> rects, bool richText = true) =>
             inner.TextSelectionRects(fontIndex, fontSize, fontStyle, text, wrapWidth, from, to, rects, richText);
-        public void DrawTexture(Rect rect, UnityEngine.Texture image, ScaleMode scaleMode, Color color) =>
-            inner.DrawTexture(rect, image, scaleMode, color);
-        public void DrawTextureWithTexCoords(Rect rect, UnityEngine.Texture image, Rect texCoords, Color color) =>
-            inner.DrawTextureWithTexCoords(rect, image, texCoords, color);
+        public void DrawTexture(Rect rect, UnityEngine.Texture image, ScaleMode scaleMode, Color color)
+        { inner.DrawTexture(rect, image, scaleMode, color); ObserveDraw(); }
+        public void DrawTextureWithTexCoords(Rect rect, UnityEngine.Texture image, Rect texCoords, Color color)
+        { inner.DrawTextureWithTexCoords(rect, image, texCoords, color); ObserveDraw(); }
         public void DrawTextureWithMaterial(Rect rect, UnityEngine.Texture image, Rect texCoords, Color color,
-            UnityEngine.Material material, Waylith.Rendering.Material passMaterial) =>
-            inner.DrawTextureWithMaterial(rect, image, texCoords, color, material, passMaterial);
-        public void FillRect(Rect rect, Color color) => inner.FillRect(rect, color);
-        public void FillRectRounded(Rect rect, Color color, float rounding) => inner.FillRectRounded(rect, color, rounding);
-        public void DrawTextureQuad(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, UnityEngine.Texture image, Color color) =>
-            inner.DrawTextureQuad(p0, p1, p2, p3, image, color);
+            UnityEngine.Material material, Waylith.Rendering.Material passMaterial)
+        { inner.DrawTextureWithMaterial(rect, image, texCoords, color, material, passMaterial); ObserveDraw(); }
+        public void FillRect(Rect rect, Color color) { inner.FillRect(rect, color); ObserveDraw(); }
+        public void FillRectRounded(Rect rect, Color color, float rounding) { inner.FillRectRounded(rect, color, rounding); ObserveDraw(); }
+        public void DrawTextureQuad(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, UnityEngine.Texture image, Color color)
+        { inner.DrawTextureQuad(p0, p1, p2, p3, image, color); ObserveDraw(); }
         public void DrawPrimitives(int mode, ReadOnlySpan<GuiVertex> vertices, UnityEngine.Texture texture,
-            bool screenSpace) => inner.DrawPrimitives(mode, vertices, texture, screenSpace);
+            bool screenSpace) { inner.DrawPrimitives(mode, vertices, texture, screenSpace); ObserveDraw(); }
         public void SetMatrix(Matrix4x4 matrix) => inner.SetMatrix(matrix);
         public void PushGroup(Rect rect) => inner.PushGroup(rect);
         public void PushScrollView(Rect clipRect, Vector2 contentOffset) => inner.PushScrollView(clipRect, contentOffset);

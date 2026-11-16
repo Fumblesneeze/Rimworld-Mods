@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Search_Category>Interface / Mod options</Megamod_Search_Category>
+  <Megamod_Search_SortEnabled>Organize mod settings pages</Megamod_Search_SortEnabled>
+  <Megamod_Search_SortHelp>Group and sort pages in Options → Mod options. Turning this off leaves individual-option search available.</Megamod_Search_SortHelp>
+  <Megamod_Search_Enabled>Search all mod options</Megamod_Search_Enabled>
+  <Megamod_Search_EnabledHelp>Find individual options across active mods by label, help, value or owner. Results open the original settings controls.</Megamod_Search_EnabledHelp>
+  <Megamod_Search_ByAuthor>Group by author</Megamod_Search_ByAuthor>
+  <Megamod_Search_GroupSingles>Group single-page authors</Megamod_Search_GroupSingles>
+  <Megamod_Search_VariousAuthors>Various authors</Megamod_Search_VariousAuthors>
+  <Megamod_Search_UnknownAuthor>Unknown author</Megamod_Search_UnknownAuthor>
+  <Megamod_Search_HugsLibGenerated>HugsLib settings</Megamod_Search_HugsLibGenerated>
+  <Megamod_Search_VanillaExpanded>Vanilla Expanded</Megamod_Search_VanillaExpanded>
+  <Megamod_Search_SargBjornson>Sarg Bjornson</Megamod_Search_SargBjornson>
+  <Megamod_Search_Helixien>Helixien</Megamod_Search_Helixien>
+  <Megamod_Search_UntitledPage>Untitled settings page</Megamod_Search_UntitledPage>
+  <Megamod_Search_Refresh>Refresh</Megamod_Search_Refresh>
+  <Megamod_Search_Cancel>Cancel</Megamod_Search_Cancel>
+  <Megamod_Search_Discovering>Reading settings: {0}/{1} pages</Megamod_Search_Discovering>
+  <Megamod_Search_Ready>Read {0} settings pages</Megamod_Search_Ready>
+  <Megamod_Search_Incomplete>{0} pages have incomplete or unavailable option data.</Megamod_Search_Incomplete>
+  <Megamod_Search_NoResults>No matching settings</Megamod_Search_NoResults>
+  <Megamod_Search_PageUnavailable>This settings page is no longer available. Refresh the list.</Megamod_Search_PageUnavailable>
+  <Megamod_Search_RevealUnavailable>This option cannot currently be revealed. You can navigate its original page manually.</Megamod_Search_RevealUnavailable>
+  <Megamod_Search_LastObserved>Last observed: {0}</Megamod_Search_LastObserved>
+  <Megamod_Search_UnknownValue>Unknown</Megamod_Search_UnknownValue>
+  <Megamod_Search_GlobalValue>Global default: {0}</Megamod_Search_GlobalValue>
+  <Megamod_Search_SaveValue>Current save: {0}</Megamod_Search_SaveValue>
+  <Megamod_Search_EffectiveValue>Effective setting: {0}</Megamod_Search_EffectiveValue>
+  <Megamod_Search_QueryHelp>Search labels, help, values and owners. Combine words, use "phrases", -exclusions, or mod:, author:, id: and tab: filters.</Megamod_Search_QueryHelp>
+  <Megamod_Search_Timing_NextDisplay>Applies on the next display.</Megamod_Search_Timing_NextDisplay>
+  <Megamod_Search_Timing_NextEligibleOccurrence>Applies at the next eligible action.</Megamod_Search_Timing_NextEligibleOccurrence>
+  <Megamod_Search_Timing_NewGameOrLoad>Applies when starting or loading a colony.</Megamod_Search_Timing_NewGameOrLoad>
+  <Megamod_Search_Timing_Restart>Applies after restarting RimWorld.</Megamod_Search_Timing_Restart>
+  <Megamod_Search_StatusPending>Waiting to read options.</Megamod_Search_StatusPending>
+  <Megamod_Search_StatusReading>Reading options…</Megamod_Search_StatusReading>
+  <Megamod_Search_StatusPartial>Some options may not have been captured.</Megamod_Search_StatusPartial>
+  <Megamod_Search_StatusCancelled>Reading cancelled; captured results are retained.</Megamod_Search_StatusCancelled>
+  <Megamod_Search_StatusFailed>Options could not be read. Open this page to browse them manually.</Megamod_Search_StatusFailed>
+  <Megamod_Search_ReasonBudget>Reading stopped at its work or memory limit.</Megamod_Search_ReasonBudget>
+  <Megamod_Search_ReasonUnsupported>This page uses controls or a settings window that cannot currently be read.</Megamod_Search_ReasonUnsupported>
+  <Megamod_Search_ReasonChanged>The page changed while it was being read. Refresh to try again.</Megamod_Search_ReasonChanged>
+  <Megamod_Search_ReasonCallback>The page failed while its settings were being read.</Megamod_Search_ReasonCallback>
+  <Megamod_Search_CatalogFailed>The settings list could not be read. Native page browsing remains available.</Megamod_Search_CatalogFailed>
+</LanguageData>

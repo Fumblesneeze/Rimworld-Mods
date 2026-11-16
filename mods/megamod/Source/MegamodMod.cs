@@ -17,6 +17,9 @@ using Megamod.Features.PracticalNeeds;
 using Megamod.Features.PracticalNeeds.Core;
 using Megamod.Features.ReadableNumbers;
 using Megamod.Features.MessagePlacement;
+using Megamod.Features.ModSettingsNavigation;
+using Megamod.Features.SettingsSearch;
+using Megamod.Features.SettingsSearch.Runtime;
 using Megamod.Patching;
 using Megamod.Settings;
 using RimWorld;
@@ -30,6 +33,7 @@ public sealed class MegamodMod : Mod
     private static MegamodMod? initialOwner;
     private readonly SettingsRuntime settings;
     private readonly SettingsRenderer renderer;
+    private readonly SettingsSearchController settingsSearch;
     private readonly CurrentGameObserverPatch gameObserver;
     private readonly SettingsLifecyclePumpPatch settingsPump;
     private readonly ProtectedDiagnosticsRuntime diagnostics;
@@ -65,7 +69,9 @@ public sealed class MegamodMod : Mod
             originalContent.EffectiveOff, originalDrugPolicy.EffectiveOff,
             new SettingsEffectiveOff(MessagePlacementProviderPolicy.Reasons(activePackageIds)),
             new SettingsEffectiveOff(DrugToleranceProviderPolicy.Reasons(activePackageIds)),
-            new SettingsEffectiveOff(PotentialMoodProviderPolicy.Reasons(activePackageIds))));
+            new SettingsEffectiveOff(PotentialMoodProviderPolicy.Reasons(activePackageIds)),
+            new SettingsEffectiveOff(ModSettingsNavigationProviderPolicy.Reasons(activePackageIds)),
+            new SettingsEffectiveOff(SettingsSearchProviderPolicy.Reasons(activePackageIds))));
         ReadableNumbersSettings.Register(store);
         store.Register(ReadableNumbersSettings.Punctuation);
         DiagnosticSettings.Register(store);
@@ -74,6 +80,8 @@ public sealed class MegamodMod : Mod
         DrugToleranceSettings.Register(store);
         PotentialMoodSettings.Register(store);
         MessagePlacementSettings.Register(store);
+        ModSettingsNavigationSettings.Register(store);
+        SettingsSearchSettings.Register(store);
         settings = SettingsRuntime.Initialize(store, GetSettings<MegamodGlobalSettings>(), exception =>
             diagnostics.Write("[fumblesneeze.megamod] common-settings-lifecycle observation failed; " +
                 "current-save settings are unavailable; global settings and stored overrides remain. " +
@@ -84,12 +92,15 @@ public sealed class MegamodMod : Mod
         foreach (var warning in originalDiagnostics.StartupWarnings.Concat(originalContent.StartupWarnings)
             .Concat(originalDrugPolicy.StartupWarnings).Concat(MessagePlacementProviderPolicy.StartupWarnings(activePackageIds))
             .Concat(DrugToleranceProviderPolicy.StartupWarnings(activePackageIds))
-            .Concat(PotentialMoodProviderPolicy.StartupWarnings(activePackageIds)))
+            .Concat(PotentialMoodProviderPolicy.StartupWarnings(activePackageIds))
+            .Concat(ModSettingsNavigationProviderPolicy.StartupWarnings(activePackageIds))
+            .Concat(SettingsSearchProviderPolicy.StartupWarnings(activePackageIds)))
             diagnostics.Write(warning);
         warningCapture = new WarningCaptureRuntime(store);
         definitionDiagnostics = new DefinitionDiagnosticsRuntime(
             admission, store, diagnostics.Write, warningCapture);
         renderer = new SettingsRenderer(settings);
+        SettingsSearchSettingsUi.Register(renderer);
         ReadableNumbersSettingsUi.Register(renderer);
         ReadableNumbersSettingsUi.RegisterPunctuation(renderer);
         DiagnosticSettingsUi.Register(renderer);
@@ -99,6 +110,8 @@ public sealed class MegamodMod : Mod
         PotentialMoodSettingsUi.Register(renderer, () => scheduledDrugDecision?.PotentialMood.StatusKey);
         MessagePlacementSettingsUi.Register(renderer, settings.Store, () => messagePlacement?.Available == true,
             () => messagePlacement?.CurrentBarBounds);
+        settingsSearch = new SettingsSearchController(this, settings, renderer, diagnostics.Write);
+        if (settingsSearch.Install()) settingsSearch.RequestStartupDiscovery();
         // Owned row state survives ordinary feature-off choices and precedes native policy factories.
         drugTolerancePersistence = NativeDrugTolerancePersistence.Create(diagnostics.Write);
         if (admission.Apply(drugTolerancePersistence.Group, AdmissionPhase.Early)) drugTolerancePersistence.Enable();

@@ -1,4 +1,14 @@
 Owner: **Make Rimworld Great Again** (`fumblesneeze.megamod`, `mods/megamod`), 1.7 beta.
+
+Current revision31 checkpoint: S047/S141 now have production registration, the original native
+chooser query/opening path, owned value/reveal integration, generic foreign control/tab/scroll
+capture, translated coverage/refresh/cancel UI and seven catalogs. Independent reviews are clear;
+the combined166-test Unit/five-test Harmony preflight and30 affected follow-up checks pass, as do
+the warning-free canonical build, package checks and compiled219-step English workflow dry-run.
+The reviewed workflow still needs its actual native run and personal observation. Provider-window
+hidden reads and the previously recorded broader coverage/lifecycle gaps remain explicit. No
+gameplay checkbox closes from this implementation checkpoint. Historical component records follow.
+
 S141's detached query checkpoint is followed by the verified ordinary-draw recorder in plan
 revision29. Automatic discovery/reveal and full feature acceptance remain open. Drafting or host
 checks alone accept no gameplay checkbox.

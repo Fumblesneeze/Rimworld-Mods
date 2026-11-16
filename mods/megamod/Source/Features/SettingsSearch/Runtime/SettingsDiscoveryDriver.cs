@@ -16,6 +16,9 @@ public sealed class SettingsDiscoveryDriver : IDisposable
     private readonly int thread = Environment.CurrentManagedThreadId;
     private readonly SettingsNativeCatalog catalog = new();
     private readonly SettingsNeutralReader reader;
+    private readonly SettingsForeignRecorder? foreignRecorder;
+    private SettingsForeignPageRead? foreignRead;
+    private readonly Dictionary<SettingsPage, IReadOnlyList<SettingsForeignOption>> foreignOptions = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<SettingsPage, string> failures = new(ReferenceEqualityComparer.Instance);
     private SettingsDiscoverySession? session;
     private SettingsDiscoveryWork? work;
@@ -25,12 +28,20 @@ public sealed class SettingsDiscoveryDriver : IDisposable
     private string? languageFolder, catalogFailure;
     private long generation;
     private long? lastRepaint;
-    private bool bound, disposed, reading;
+    private bool bound, disposed, reading, cancelled;
 
-    public SettingsDiscoveryDriver(Action<string> warning) => reader = new(warning);
+    public SettingsDiscoveryDriver(Action<string> warning, SettingsForeignRecorder? foreignRecorder = null)
+    { reader = new(warning); this.foreignRecorder = foreignRecorder; }
     public IReadOnlyList<SettingsDiscoveryPage> Pages { get { EnsureCurrent(); return pages; } }
     public bool Pending { get { EnsureCurrent(); return catalog.Pending || session is { IsFinished: false }; } }
     public string? CatalogFailure { get { EnsureCurrent(); return catalogFailure; } }
+    public IReadOnlyList<SettingsNativePage> CatalogPages { get { EnsureCurrent(); return catalog.Entries; } }
+    public long Generation { get { EnsureCurrent(); return generation; } }
+    public bool Cancelled { get { EnsureCurrent(); return cancelled || session?.IsCancelled == true; } }
+    public IReadOnlyDictionary<SettingsPage, IReadOnlyList<SettingsForeignOption>> ForeignOptions => foreignOptions;
+    internal SettingsNeutralReader Reader => reader;
+    public bool MatchesSource(Dialog_Options options, IEnumerable<Mod> collection)
+    { EnsureCurrent(); return ReferenceEquals(catalog.Source, options) && ReferenceEquals(catalog.SourceCollection, collection); }
 
     public void Refresh(Dialog_Options options)
     {
@@ -45,7 +56,7 @@ public sealed class SettingsDiscoveryDriver : IDisposable
         catalog.RefreshStartup();
     }
 
-    public void ReadNext(long repaintId)
+    public void ReadNext(long repaintId, bool readPages = true)
     {
         EnsureCurrent();
         if (SettingsReadScope.Current is { } parent) throw parent.Refuse("nested-settings-discovery");
@@ -68,7 +79,7 @@ public sealed class SettingsDiscoveryDriver : IDisposable
                 pages = session.Pages;
                 return;
             }
-            if (session == null || session.IsFinished) return;
+            if (!readPages || session == null || session.IsFinished) return;
             if (work == null)
             {
                 work = session.BeginNext(repaintId);
@@ -80,6 +91,9 @@ public sealed class SettingsDiscoveryDriver : IDisposable
             SettingsCaptureSnapshot? capture = null;
             string? failure = null;
             SettingsNeutralReadStatus result;
+            bool pageFinished = true;
+            int callbackCount = 0;
+            double? maximumCallbackMilliseconds = null;
             var elapsed = Stopwatch.StartNew();
             try
             {
@@ -96,12 +110,24 @@ public sealed class SettingsDiscoveryDriver : IDisposable
                 var rect = new Rect(0, 0, size.x - 2 * Window.StandardMargin, size.y - 2 * Window.StandardMargin);
                 if (!float.IsFinite(rect.width) || !float.IsFinite(rect.height) || rect.width <= 0 || rect.height <= 0)
                     throw new InvalidOperationException("The native settings layout is unavailable.");
-                result = reader.Read(currentWork.Page, "root", () =>
+                Action draw = () =>
                 {
                     if (!CanPublish(currentGeneration))
                         throw SettingsReadScope.Current!.Refuse("settings-discovery-work-replaced");
+                    callbackCount++;
                     drawWindow.DoWindowContents(rect);
-                }, out capture, out failure);
+                };
+                if (foreignRecorder != null && foreignRecorder.Available)
+                {
+                    foreignRead ??= new SettingsForeignPageRead(currentWork.Page, foreignRecorder);
+                    result = foreignRead.Step(reader, draw);
+                    callbackCount = foreignRead.LastDrawCount;
+                    maximumCallbackMilliseconds = foreignRead.LastMaximumDrawMilliseconds;
+                    capture = foreignRead.LastCapture;
+                    failure = foreignRead.FailureReason;
+                    pageFinished = foreignRead.Finished;
+                }
+                else result = reader.Read(currentWork.Page, "root", draw, out capture, out failure);
             }
             catch (Exception)
             {
@@ -116,11 +142,16 @@ public sealed class SettingsDiscoveryDriver : IDisposable
                 capture = new(currentWork.Page, "root", Array.Empty<SettingsCaptureRecord>(),
                     SettingsCaptureStatus.Failed, SettingsCaptureFailure.RecordingFailed);
             }
-            if (!currentSession.Complete(currentWork, capture, elapsed.Elapsed.TotalMilliseconds, pageFinished: true))
+            if (!currentSession.Complete(currentWork, capture, elapsed.Elapsed.TotalMilliseconds, pageFinished, callbackCount, maximumCallbackMilliseconds))
                 throw new InvalidOperationException("The current settings discovery receipt was rejected.");
+            if (foreignRead != null && result == SettingsNeutralReadStatus.Captured)
+                foreignOptions[currentWork.Page] = foreignRead.Options;
+            else if (result != SettingsNeutralReadStatus.Captured) foreignOptions.Remove(currentWork.Page);
+            if (failure != null) failures[currentWork.Page] = failure;
             work = null;
-            wrapper = null;
             pages = currentSession.Pages;
+            if (pageFinished || pages.Any(page => ReferenceEquals(page.Page, currentWork.Page) && page.Status != SettingsDiscoveryStatus.Reading))
+            { wrapper = null; foreignRead = null; }
         }
         finally { reading = false; }
     }
@@ -128,6 +159,7 @@ public sealed class SettingsDiscoveryDriver : IDisposable
     public void Cancel()
     {
         EnsureCurrent();
+        cancelled = true;
         generation++;
         // Startup construction can reenter before a pending catalog request exists.
         // There are no completed opening routes to retain until a session was acquired.
@@ -135,6 +167,7 @@ public sealed class SettingsDiscoveryDriver : IDisposable
         session?.Cancel();
         work = null;
         wrapper = null;
+        foreignRead = null;
         pages = session?.Pages ?? Array.Empty<SettingsDiscoveryPage>();
     }
 
@@ -189,11 +222,14 @@ public sealed class SettingsDiscoveryDriver : IDisposable
     private void ClearCore()
     {
         generation++;
+        cancelled = false;
         catalog.Clear();
         session?.Cancel();
         session = null;
         work = null;
         wrapper = null;
+        foreignRead = null;
+        foreignOptions.Clear();
         pages = Array.Empty<SettingsDiscoveryPage>();
         failures.Clear();
         catalogFailure = null;

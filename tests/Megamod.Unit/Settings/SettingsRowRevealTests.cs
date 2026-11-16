@@ -7,6 +7,22 @@ namespace Megamod.Unit.Settings;
 public sealed class SettingsRowRevealTests
 {
     [Test]
+    public void RefusingAnUnknownRegisteredRowReplacesAnActiveRevealAndPreservesTheViewport()
+    {
+        var reveal = new SettingsRowReveal();
+        var layout = new[] { new SettingsRowRevealPlacement("target", 740, 40) };
+        reveal.Request("target", 4);
+        reveal.Advance(4, layout, 0, 100, 1000, 50, isRepaint: true);
+
+        reveal.Refuse();
+
+        Assert.That(reveal.Status, Is.EqualTo(SettingsRowRevealStatus.Unavailable));
+        var next = reveal.Advance(4, layout, 19, 100, 1000, 51, isRepaint: true);
+        Assert.That(next.ScrollY, Is.EqualTo(19));
+        Assert.That(next.HighlightedRowId, Is.Null, "A later layout must not revive a refused reveal.");
+    }
+
+    [Test]
     public void FreshLayoutRevealsTheRowForThreeVisibleRepaintSecondsAndUserCancellationStopsIt()
     {
         var reveal = new SettingsRowReveal();

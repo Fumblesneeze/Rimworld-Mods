@@ -69,21 +69,27 @@ public sealed class SettingsDiscoverySession
         return inFlight = new SettingsDiscoveryWork(generation, nextPage, pages[nextPage].Page);
     }
     public bool Complete(SettingsDiscoveryWork work, SettingsCaptureSnapshot? capture,
-        double elapsedMilliseconds, bool pageFinished)
+        double elapsedMilliseconds, bool pageFinished, int callbackCount = 1,
+        double? maximumCallbackMilliseconds = null)
     {
         if (inFlight == null || !ReferenceEquals(inFlight, work) || work.Generation != generation) return false;
         if (capture != null && !ReferenceEquals(capture.Page, work.Page)) return false;
         if (!double.IsFinite(elapsedMilliseconds) || elapsedMilliseconds < 0)
             throw new ArgumentOutOfRangeException(nameof(elapsedMilliseconds));
+        if (callbackCount < 0) throw new ArgumentOutOfRangeException(nameof(callbackCount));
+        double longestCallback = maximumCallbackMilliseconds ?? elapsedMilliseconds;
+        if (!double.IsFinite(longestCallback) || longestCallback < 0 || longestCallback > elapsedMilliseconds)
+            throw new ArgumentOutOfRangeException(nameof(maximumCallbackMilliseconds));
         var retained = capture == null ? null : capture with { Records = Array.AsReadOnly(capture.Records.ToArray()) };
         var page = pages[nextPage];
+        int completedCallbacks = checked(page.Callbacks + callbackCount);
         if (retained != null) page.Captures.Add(retained);
-        page.Callbacks++;
+        page.Callbacks = completedCallbacks;
         page.ElapsedMilliseconds += elapsedMilliseconds;
         inFlight = null;
         page.StopReason = capture?.Status == SettingsCaptureStatus.Failed ? SettingsDiscoveryStop.CaptureFailed
             : capture?.Status == SettingsCaptureStatus.Truncated ? SettingsDiscoveryStop.RetentionLimit
-            : elapsedMilliseconds > maxCallbackMilliseconds ? SettingsDiscoveryStop.SlowCallback
+            : longestCallback > maxCallbackMilliseconds ? SettingsDiscoveryStop.SlowCallback
             : !pageFinished && page.ElapsedMilliseconds >= maxPageMilliseconds ? SettingsDiscoveryStop.TimeLimit
             : !pageFinished && page.Callbacks >= maxCallbacksPerPage ? SettingsDiscoveryStop.CallbackLimit
             : SettingsDiscoveryStop.None;

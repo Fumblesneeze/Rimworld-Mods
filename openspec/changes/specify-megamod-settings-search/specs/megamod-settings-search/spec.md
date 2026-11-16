@@ -37,6 +37,8 @@ without an exact match permit at most one edit at 5–8 characters or two at 9+;
 phrases, exclusions and field terms stay literal. Insert/delete/substitute/transpose are edits.
 Exact results rank before typo results and labels before help/value-only matches, with stable
 page/path/occurrence ties. Empty input restores the page list, not every captured option.
+The existing native search field accepts up to512 UTF-16 code units while option search is enabled,
+so compound queries are not constrained by the native page-name field's30-character default.
 Canonical-equivalent Unicode and normalized whitespace SHALL match; syntactic rich-text tags are
 not searchable, while literal comparisons such as `value < 5` remain readable text. Typo fallback
 eligibility is determined against the complete current supplied search snapshot before field and
@@ -105,6 +107,10 @@ Discovery SHALL run in bounded sessions at valid GUI phases, refresh affected ob
 Initial capture occurs at startup when enabled or on first enable/open if needed. Querying uses
 captured text, not repeated draws per keystroke. Real page renders and explicit Refresh update
 observations. Query/highlight are view-local; the index is process-local and never saved to disk.
+An ordinary visible draw updates the controls it actually observes without deleting previously
+captured offscreen controls or labelling their old values current. Explicit refresh replaces those
+last-observed results. Replacement of the native page collection revokes old routes immediately
+and queues one deferred reacquisition, including when the Options window remains open.
 Language, page-collection and main-menu/save/world changes invalidate affected text, values and
 targets before reuse. Conditional rows are discoverable when rendered; do not edit prerequisites.
 
@@ -124,6 +130,20 @@ arbitrary foreign setting values. Owned registration metadata is the direct fast
 Third-party callbacks may have effects the reader cannot undo; known mutation or failed restoration
 is a failed page, not successful read-only coverage. Cancellation/budgets apply between callbacks;
 do not claim forced preemption or transactional rollback of arbitrary callback internals.
+The initial generic control reader retains at most4096 widgets per frame and options per page,
+262144 UTF-16 code units per frame and retained page text, including generated path, tab and help
+metadata,256 tab or scroll observations,
+and16 nested scroll contexts. Tab exploration admits at most32 states, depth3 and96 total draws
+including restoration work. Bounds stop further exploration with explicit incomplete status;
+the current step restores any tabs it changed before returning. Automatic reveal stops after120
+visible repaints without resolution; its highlight still uses three elapsed seconds from a
+successful visible result, not a guessed frame-rate conversion. These bounds are admission limits,
+not forced timeouts of foreign callbacks or claims of complete coverage.
+The reader checks elapsed work after each callback before starting another exploratory draw;
+an exceeded100ms callback budget or500ms aggregate page budget stops exploration but never skips
+required tab restoration. Progress counts actual draws, including restoration; a multi-draw step
+does not turn the sum of individually fast callbacks into a single slow-callback report.
+Native tabs spread across several visual rows remain one logical selection group.
 
 #### Scenario: Traverse tabs without changing settings
 - **WHEN** generic capture reads an actual tabbed settings page with sliders, checkboxes and help
@@ -247,6 +267,8 @@ handling, retaining stored preferences; an inactive installed copy does not trig
 Search SHALL report per-page pending, partial, failed or unverified discovery and accessible reasons, preserve page opening, and never describe page-name-only fallback as completed individual-option coverage.
 Show aggregate discovery status alongside results, including zero-result searches. Unsupported
 custom rendering, inaccessible provider pages and budget exhaustion remain outstanding gaps.
+Status and reasons use translated player-facing text; internal failure codes remain diagnostics.
+Catalog failure cannot be presented as a completed empty list.
 Every mod stays eligible; test fixtures or optional provider adapters are not a product whitelist.
 An exception-free draw alone does not establish complete control coverage.
 

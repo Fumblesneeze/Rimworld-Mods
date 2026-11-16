@@ -1,12 +1,17 @@
 # Governing implementation tasks
 
 Owner: **Make Rimworld Great Again**, `fumblesneeze.megamod`, RimWorld **1.7 beta**.
-Plan revision **30**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
+Plan revision **31**. Read [design](design.md), [roadmap](roadmap.md) and the assigned feature changes.
 This is the aggregate coordination checklist. Each chunk's linked feature tasks hold its behavior
 slices; expand assignments into focused spec → RED/GREEN → code → review work before dispatch.
 A handoff gate below verifies that work; it does not replace those tasks or accept gameplay.
 
 Documentation completion and implementation are separate. All aggregate runtime gates remain open.
+Revision31 applies the user's source-first whole-batch cadence: connect the S047/S141 chooser,
+discovery, scoped metadata and original-control reveal into the selected user workflow, then run
+and fix the affected host/native checks together. Prior component checks remain supporting evidence;
+no separate test/build/game cycle is required for each internal helper. All152 features and the
+final language gate remain allocated. The earlier revision notes below are retained history.
 Revision30 selects S141-D1–D3 automatic generic discovery, with neutral-reader contract preparation
 before hidden runtime dispatch and detached session work in parallel. All remaining features and
 full native search/reveal acceptance remain open; the scope stays all available settings pages.

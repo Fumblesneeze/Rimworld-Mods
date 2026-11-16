@@ -1,8 +1,8 @@
-# P0 dispatch — current plan revision 28, 2026-11-14
+# P0 dispatch — current plan revision 31, 2026-11-16
 
 Owner: Make Rimworld Great Again (`fumblesneeze.megamod`). The current 152-entry scope is governed
-by [plan revision 28](roadmap.md) and the final **Revision 28 — settings search**
-section below. Later entries supersede earlier author leases and verification schedules. Root owns
+by [plan revision 31](roadmap.md) and its source-first integrated batch cadence.
+Later entries below supersede earlier author leases and verification schedules. Root owns
 build/install outputs and final native acceptance; no complete feature is accepted by this record.
 
 The original checkpoint, environment and assignments below are historical execution records.
@@ -1315,3 +1315,23 @@ verified owned cleanup. The retired settings_family_review renderer lease is sup
 `owned_renderer_implementation`, limited to Settings/Runtime/SettingsRenderer.cs. The committed
 host helpers and frozen native fixture remain read-only inputs. Root retains tests, builds,
 independent-review coordination, native acceptance and commits. Full S141 and the part stay open.
+
+Revision31 integrates the complete selected S047/S141 user path under the user's source-first batch
+cadence. `chooser_splice_research` now owns new SettingsSearchController runtime and SettingsChooser
+Harmony files/tests, plus SettingsNativeCatalog/SettingsDiscoveryDriver integration. It preserves
+the native query widget and opening branch while supplying actual results and discovery scheduling.
+`owned_renderer_implementation` has frozen the renderer and now owns new SettingsForeign runtime/core
+files and matching tests for observed controls, tabs and fresh reveal. Existing-file changes require
+coordination with the controller owner. `owned_renderer_review` finished independent renderer review
+and now owns only the new NativeSettingsSearchTests workflow and announced helpers. Its view-close
+cancellation finding is assigned to the controller owner. A different reviewer must review that
+agent's authored scenario. Root owns common definitions/registration, translations, shared contracts,
+all builds/tests, final integrated English observation and commits. No lane launches per-helper games.
+
+The review-fix batch extends the foreign lane to the existing SettingsPageRecorder's optional
+active-scope drawing observer. It replaces an unaccepted closed-generic tab-scope attempt with
+Needle's inspected nongeneric TabRecord/outside-rendering boundary. Root owns the small common
+session callback-count/timing adjustment and coordinated the shared foreign retention helper used
+by controller merging and raw capture publication. Controller, foreign runtime, session and native
+scenario deltas have independent review; root runs their affected checks together. Native workflow
+is219 steps in English with a3270s scenario/3600s launcher ceiling. Implementation is not acceptance.

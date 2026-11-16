@@ -158,6 +158,9 @@ An observation-only hook should still require only the callable and execution fa
   calls or metadata. If isolation is unproved, refuse acquisition before adding any observer;
   do not use a broad BCL patch or an unchanged sibling receipt as a workaround. Prefer a separately
   proved passive publication/body inspection path where it can establish the consumed semantics.
+  This also applies to a small prefix/finalizer used only to mark a drawing scope: an `object`
+  callback parameter does not isolate the detoured generic native body. Inspect the source mod's
+  nongeneric leaf/drawing boundaries before adding a closed-generic scope hook.
 - Preserve machine arithmetic when validating layout or numeric producer chains. Real-number
   affine equality does not prove Single/Double evaluation equivalence: large cancellation,
   overflow and reassociation can change consumed values. Keep the relevant operation order or

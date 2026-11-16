@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Search_Category>Интерфейс / Настройки модов</Megamod_Search_Category>
+  <Megamod_Search_SortEnabled>Упорядочивать страницы настроек модов</Megamod_Search_SortEnabled>
+  <Megamod_Search_SortHelp>Группирует и сортирует страницы в меню «Настройки → Настройки модов». Поиск отдельных параметров остаётся доступен при отключении сортировки.</Megamod_Search_SortHelp>
+  <Megamod_Search_Enabled>Искать по всем настройкам модов</Megamod_Search_Enabled>
+  <Megamod_Search_EnabledHelp>Находит отдельные параметры активных модов по названию, подсказке, значению или моду. Результаты открывают исходные элементы управления.</Megamod_Search_EnabledHelp>
+  <Megamod_Search_ByAuthor>Группировать по автору</Megamod_Search_ByAuthor>
+  <Megamod_Search_GroupSingles>Объединять авторов с одной страницей</Megamod_Search_GroupSingles>
+  <Megamod_Search_VariousAuthors>Разные авторы</Megamod_Search_VariousAuthors>
+  <Megamod_Search_UnknownAuthor>Неизвестный автор</Megamod_Search_UnknownAuthor>
+  <Megamod_Search_HugsLibGenerated>Настройки HugsLib</Megamod_Search_HugsLibGenerated>
+  <Megamod_Search_VanillaExpanded>Vanilla Expanded</Megamod_Search_VanillaExpanded>
+  <Megamod_Search_SargBjornson>Sarg Bjornson</Megamod_Search_SargBjornson>
+  <Megamod_Search_Helixien>Helixien</Megamod_Search_Helixien>
+  <Megamod_Search_UntitledPage>Страница настроек без названия</Megamod_Search_UntitledPage>
+  <Megamod_Search_Refresh>Обновить</Megamod_Search_Refresh>
+  <Megamod_Search_Cancel>Отмена</Megamod_Search_Cancel>
+  <Megamod_Search_Discovering>Чтение настроек: {0}/{1} страниц</Megamod_Search_Discovering>
+  <Megamod_Search_Ready>Прочитано страниц настроек: {0}</Megamod_Search_Ready>
+  <Megamod_Search_Incomplete>На {0} страницах данные параметров неполны или недоступны.</Megamod_Search_Incomplete>
+  <Megamod_Search_NoResults>Подходящих настроек нет</Megamod_Search_NoResults>
+  <Megamod_Search_PageUnavailable>Эта страница настроек больше недоступна. Обновите список.</Megamod_Search_PageUnavailable>
+  <Megamod_Search_RevealUnavailable>Сейчас этот параметр невозможно показать. Его можно найти вручную на исходной странице.</Megamod_Search_RevealUnavailable>
+  <Megamod_Search_LastObserved>Последнее наблюдаемое значение: {0}</Megamod_Search_LastObserved>
+  <Megamod_Search_UnknownValue>Неизвестно</Megamod_Search_UnknownValue>
+  <Megamod_Search_GlobalValue>Общее значение: {0}</Megamod_Search_GlobalValue>
+  <Megamod_Search_SaveValue>Текущее сохранение: {0}</Megamod_Search_SaveValue>
+  <Megamod_Search_EffectiveValue>Действующее значение: {0}</Megamod_Search_EffectiveValue>
+  <Megamod_Search_QueryHelp>Поиск по названиям, подсказкам, значениям и модам. Объединяйте слова, используйте "фразы", -исключения или фильтры mod:, author:, id: и tab:.</Megamod_Search_QueryHelp>
+  <Megamod_Search_Timing_NextDisplay>Применяется при следующем отображении.</Megamod_Search_Timing_NextDisplay>
+  <Megamod_Search_Timing_NextEligibleOccurrence>Применяется при следующем подходящем действии.</Megamod_Search_Timing_NextEligibleOccurrence>
+  <Megamod_Search_Timing_NewGameOrLoad>Применяется при создании или загрузке колонии.</Megamod_Search_Timing_NewGameOrLoad>
+  <Megamod_Search_Timing_Restart>Применяется после перезапуска RimWorld.</Megamod_Search_Timing_Restart>
+  <Megamod_Search_StatusPending>Ожидание чтения настроек.</Megamod_Search_StatusPending>
+  <Megamod_Search_StatusReading>Чтение настроек…</Megamod_Search_StatusReading>
+  <Megamod_Search_StatusPartial>Некоторые настройки могли остаться неучтёнными.</Megamod_Search_StatusPartial>
+  <Megamod_Search_StatusCancelled>Чтение отменено; уже полученные результаты сохранены.</Megamod_Search_StatusCancelled>
+  <Megamod_Search_StatusFailed>Не удалось прочитать настройки. Откройте эту страницу, чтобы просмотреть их вручную.</Megamod_Search_StatusFailed>
+  <Megamod_Search_ReasonBudget>Чтение остановлено по достижении ограничения на объём работы или памяти.</Megamod_Search_ReasonBudget>
+  <Megamod_Search_ReasonUnsupported>На этой странице используются элементы управления или окно настроек, которые пока не удаётся прочитать.</Megamod_Search_ReasonUnsupported>
+  <Megamod_Search_ReasonChanged>Страница изменилась во время чтения. Обновите список, чтобы повторить попытку.</Megamod_Search_ReasonChanged>
+  <Megamod_Search_ReasonCallback>При чтении настроек на этой странице произошла ошибка.</Megamod_Search_ReasonCallback>
+  <Megamod_Search_CatalogFailed>Не удалось прочитать список настроек. Обычный просмотр страниц по-прежнему доступен.</Megamod_Search_CatalogFailed>
+</LanguageData>

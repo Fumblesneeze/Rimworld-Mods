@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Search_Category>Interface / Options des mods</Megamod_Search_Category>
+  <Megamod_Search_SortEnabled>Organiser les pages de paramètres des mods</Megamod_Search_SortEnabled>
+  <Megamod_Search_SortHelp>Regroupe et trie les pages dans Options → Options des mods. La recherche d’options individuelles reste disponible si le tri est désactivé.</Megamod_Search_SortHelp>
+  <Megamod_Search_Enabled>Rechercher dans toutes les options des mods</Megamod_Search_Enabled>
+  <Megamod_Search_EnabledHelp>Trouve les options des mods actifs par libellé, aide, valeur ou mod. Les résultats ouvrent les commandes d’origine.</Megamod_Search_EnabledHelp>
+  <Megamod_Search_ByAuthor>Regrouper par auteur</Megamod_Search_ByAuthor>
+  <Megamod_Search_GroupSingles>Regrouper les auteurs ayant une seule page</Megamod_Search_GroupSingles>
+  <Megamod_Search_VariousAuthors>Auteurs divers</Megamod_Search_VariousAuthors>
+  <Megamod_Search_UnknownAuthor>Auteur inconnu</Megamod_Search_UnknownAuthor>
+  <Megamod_Search_HugsLibGenerated>Paramètres HugsLib</Megamod_Search_HugsLibGenerated>
+  <Megamod_Search_VanillaExpanded>Vanilla Expanded</Megamod_Search_VanillaExpanded>
+  <Megamod_Search_SargBjornson>Sarg Bjornson</Megamod_Search_SargBjornson>
+  <Megamod_Search_Helixien>Helixien</Megamod_Search_Helixien>
+  <Megamod_Search_UntitledPage>Page de paramètres sans titre</Megamod_Search_UntitledPage>
+  <Megamod_Search_Refresh>Actualiser</Megamod_Search_Refresh>
+  <Megamod_Search_Cancel>Annuler</Megamod_Search_Cancel>
+  <Megamod_Search_Discovering>Lecture des paramètres : {0}/{1} pages</Megamod_Search_Discovering>
+  <Megamod_Search_Ready>{0} pages de paramètres lues</Megamod_Search_Ready>
+  <Megamod_Search_Incomplete>Les données des options de {0} pages sont incomplètes ou indisponibles.</Megamod_Search_Incomplete>
+  <Megamod_Search_NoResults>Aucun paramètre correspondant</Megamod_Search_NoResults>
+  <Megamod_Search_PageUnavailable>Cette page de paramètres n’est plus disponible. Actualisez la liste.</Megamod_Search_PageUnavailable>
+  <Megamod_Search_RevealUnavailable>Cette option ne peut pas être affichée actuellement. Vous pouvez parcourir sa page d’origine manuellement.</Megamod_Search_RevealUnavailable>
+  <Megamod_Search_LastObserved>Dernière valeur observée : {0}</Megamod_Search_LastObserved>
+  <Megamod_Search_UnknownValue>Inconnu</Megamod_Search_UnknownValue>
+  <Megamod_Search_GlobalValue>Valeur globale : {0}</Megamod_Search_GlobalValue>
+  <Megamod_Search_SaveValue>Partie actuelle : {0}</Megamod_Search_SaveValue>
+  <Megamod_Search_EffectiveValue>Paramètre effectif : {0}</Megamod_Search_EffectiveValue>
+  <Megamod_Search_QueryHelp>Recherchez des libellés, aides, valeurs et mods. Combinez des mots, utilisez des "expressions", des -exclusions ou les filtres mod:, author:, id: et tab:.</Megamod_Search_QueryHelp>
+  <Megamod_Search_Timing_NextDisplay>S’applique au prochain affichage.</Megamod_Search_Timing_NextDisplay>
+  <Megamod_Search_Timing_NextEligibleOccurrence>S’applique à la prochaine action admissible.</Megamod_Search_Timing_NextEligibleOccurrence>
+  <Megamod_Search_Timing_NewGameOrLoad>S’applique au démarrage ou au chargement d’une colonie.</Megamod_Search_Timing_NewGameOrLoad>
+  <Megamod_Search_Timing_Restart>S’applique après le redémarrage de RimWorld.</Megamod_Search_Timing_Restart>
+  <Megamod_Search_StatusPending>En attente de lecture des options.</Megamod_Search_StatusPending>
+  <Megamod_Search_StatusReading>Lecture des options…</Megamod_Search_StatusReading>
+  <Megamod_Search_StatusPartial>Certaines options n’ont peut-être pas été recensées.</Megamod_Search_StatusPartial>
+  <Megamod_Search_StatusCancelled>Lecture annulée ; les résultats déjà recueillis sont conservés.</Megamod_Search_StatusCancelled>
+  <Megamod_Search_StatusFailed>Impossible de lire les options. Ouvrez cette page pour les consulter manuellement.</Megamod_Search_StatusFailed>
+  <Megamod_Search_ReasonBudget>La lecture a atteint sa limite de travail ou de mémoire.</Megamod_Search_ReasonBudget>
+  <Megamod_Search_ReasonUnsupported>Cette page utilise des commandes ou une fenêtre de réglages qui ne peuvent pas être lues pour le moment.</Megamod_Search_ReasonUnsupported>
+  <Megamod_Search_ReasonChanged>La page a changé pendant la lecture. Actualisez pour réessayer.</Megamod_Search_ReasonChanged>
+  <Megamod_Search_ReasonCallback>Une erreur s’est produite sur cette page pendant la lecture de ses réglages.</Megamod_Search_ReasonCallback>
+  <Megamod_Search_CatalogFailed>Impossible de lire la liste des réglages. La navigation habituelle entre les pages reste disponible.</Megamod_Search_CatalogFailed>
+</LanguageData>

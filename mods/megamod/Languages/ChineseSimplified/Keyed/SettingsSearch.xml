@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Search_Category>界面 / 模组选项</Megamod_Search_Category>
+  <Megamod_Search_SortEnabled>整理模组设置页面</Megamod_Search_SortEnabled>
+  <Megamod_Search_SortHelp>在“选项 → 模组选项”中分组和排序设置页面。关闭后仍可搜索单个选项。</Megamod_Search_SortHelp>
+  <Megamod_Search_Enabled>搜索所有模组选项</Megamod_Search_Enabled>
+  <Megamod_Search_EnabledHelp>按名称、帮助文本、数值或所属模组搜索已启用模组的单个选项。选择结果会打开原有设置控件。</Megamod_Search_EnabledHelp>
+  <Megamod_Search_ByAuthor>按作者分组</Megamod_Search_ByAuthor>
+  <Megamod_Search_GroupSingles>合并只有一个页面的作者</Megamod_Search_GroupSingles>
+  <Megamod_Search_VariousAuthors>其他作者</Megamod_Search_VariousAuthors>
+  <Megamod_Search_UnknownAuthor>未知作者</Megamod_Search_UnknownAuthor>
+  <Megamod_Search_HugsLibGenerated>HugsLib 设置</Megamod_Search_HugsLibGenerated>
+  <Megamod_Search_VanillaExpanded>Vanilla Expanded</Megamod_Search_VanillaExpanded>
+  <Megamod_Search_SargBjornson>Sarg Bjornson</Megamod_Search_SargBjornson>
+  <Megamod_Search_Helixien>Helixien</Megamod_Search_Helixien>
+  <Megamod_Search_UntitledPage>无标题设置页面</Megamod_Search_UntitledPage>
+  <Megamod_Search_Refresh>刷新</Megamod_Search_Refresh>
+  <Megamod_Search_Cancel>取消</Megamod_Search_Cancel>
+  <Megamod_Search_Discovering>正在读取设置：{0}/{1} 页</Megamod_Search_Discovering>
+  <Megamod_Search_Ready>已读取 {0} 个设置页面</Megamod_Search_Ready>
+  <Megamod_Search_Incomplete>{0} 个页面的选项数据不完整或不可用。</Megamod_Search_Incomplete>
+  <Megamod_Search_NoResults>没有匹配的设置</Megamod_Search_NoResults>
+  <Megamod_Search_PageUnavailable>此设置页面已不可用。请刷新列表。</Megamod_Search_PageUnavailable>
+  <Megamod_Search_RevealUnavailable>目前无法定位此选项。你可以在其原始页面中手动查找。</Megamod_Search_RevealUnavailable>
+  <Megamod_Search_LastObserved>上次观察值：{0}</Megamod_Search_LastObserved>
+  <Megamod_Search_UnknownValue>未知</Megamod_Search_UnknownValue>
+  <Megamod_Search_GlobalValue>全局默认值：{0}</Megamod_Search_GlobalValue>
+  <Megamod_Search_SaveValue>当前存档：{0}</Megamod_Search_SaveValue>
+  <Megamod_Search_EffectiveValue>有效设置值：{0}</Megamod_Search_EffectiveValue>
+  <Megamod_Search_QueryHelp>搜索名称、帮助文本、数值和所属模组。可组合多个词，使用"短语"、-排除词，或 mod:、author:、id: 和 tab: 筛选。</Megamod_Search_QueryHelp>
+  <Megamod_Search_Timing_NextDisplay>下次显示界面时生效。</Megamod_Search_Timing_NextDisplay>
+  <Megamod_Search_Timing_NextEligibleOccurrence>下次符合条件的操作时生效。</Megamod_Search_Timing_NextEligibleOccurrence>
+  <Megamod_Search_Timing_NewGameOrLoad>开始或载入殖民地时生效。</Megamod_Search_Timing_NewGameOrLoad>
+  <Megamod_Search_Timing_Restart>重启 RimWorld 后生效。</Megamod_Search_Timing_Restart>
+  <Megamod_Search_StatusPending>正在等待读取选项。</Megamod_Search_StatusPending>
+  <Megamod_Search_StatusReading>正在读取选项…</Megamod_Search_StatusReading>
+  <Megamod_Search_StatusPartial>部分选项可能未被收录。</Megamod_Search_StatusPartial>
+  <Megamod_Search_StatusCancelled>读取已取消；已收录的结果将保留。</Megamod_Search_StatusCancelled>
+  <Megamod_Search_StatusFailed>无法读取选项。请打开此页面手动查看。</Megamod_Search_StatusFailed>
+  <Megamod_Search_ReasonBudget>读取已达到工作量或内存限制。</Megamod_Search_ReasonBudget>
+  <Megamod_Search_ReasonUnsupported>此页面使用了目前无法读取的控件或设置窗口。</Megamod_Search_ReasonUnsupported>
+  <Megamod_Search_ReasonChanged>页面在读取期间发生了变化。请刷新后重试。</Megamod_Search_ReasonChanged>
+  <Megamod_Search_ReasonCallback>读取设置时，此页面发生了错误。</Megamod_Search_ReasonCallback>
+  <Megamod_Search_CatalogFailed>无法读取设置列表。仍可通过原有界面浏览设置页面。</Megamod_Search_CatalogFailed>
+</LanguageData>

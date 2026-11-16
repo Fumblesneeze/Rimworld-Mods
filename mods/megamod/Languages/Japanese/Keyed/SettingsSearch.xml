@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Search_Category>インターフェース / Mod設定</Megamod_Search_Category>
+  <Megamod_Search_SortEnabled>Mod設定ページを整理</Megamod_Search_SortEnabled>
+  <Megamod_Search_SortHelp>オプション → Mod設定のページをグループ化し、並べ替えます。無効にしても個別の設定項目は検索できます。</Megamod_Search_SortHelp>
+  <Megamod_Search_Enabled>すべてのMod設定を検索</Megamod_Search_Enabled>
+  <Megamod_Search_EnabledHelp>有効なModの設定項目を名前、説明、値、Mod名で検索します。検索結果から元の設定画面を開きます。</Megamod_Search_EnabledHelp>
+  <Megamod_Search_ByAuthor>作者ごとにグループ化</Megamod_Search_ByAuthor>
+  <Megamod_Search_GroupSingles>ページが1つの作者をまとめる</Megamod_Search_GroupSingles>
+  <Megamod_Search_VariousAuthors>複数の作者</Megamod_Search_VariousAuthors>
+  <Megamod_Search_UnknownAuthor>作者不明</Megamod_Search_UnknownAuthor>
+  <Megamod_Search_HugsLibGenerated>HugsLib設定</Megamod_Search_HugsLibGenerated>
+  <Megamod_Search_VanillaExpanded>Vanilla Expanded</Megamod_Search_VanillaExpanded>
+  <Megamod_Search_SargBjornson>Sarg Bjornson</Megamod_Search_SargBjornson>
+  <Megamod_Search_Helixien>Helixien</Megamod_Search_Helixien>
+  <Megamod_Search_UntitledPage>無題の設定ページ</Megamod_Search_UntitledPage>
+  <Megamod_Search_Refresh>更新</Megamod_Search_Refresh>
+  <Megamod_Search_Cancel>中止</Megamod_Search_Cancel>
+  <Megamod_Search_Discovering>設定を読み込み中：{0}/{1}ページ</Megamod_Search_Discovering>
+  <Megamod_Search_Ready>{0}ページの設定を読み込み済み</Megamod_Search_Ready>
+  <Megamod_Search_Incomplete>{0}ページの設定データが不完全、または取得できません。</Megamod_Search_Incomplete>
+  <Megamod_Search_NoResults>一致する設定はありません</Megamod_Search_NoResults>
+  <Megamod_Search_PageUnavailable>この設定ページは利用できなくなりました。一覧を更新してください。</Megamod_Search_PageUnavailable>
+  <Megamod_Search_RevealUnavailable>現在この設定項目を表示できません。元のページで手動で探すことができます。</Megamod_Search_RevealUnavailable>
+  <Megamod_Search_LastObserved>最後に確認した値：{0}</Megamod_Search_LastObserved>
+  <Megamod_Search_UnknownValue>不明</Megamod_Search_UnknownValue>
+  <Megamod_Search_GlobalValue>グローバル既定値：{0}</Megamod_Search_GlobalValue>
+  <Megamod_Search_SaveValue>現在のセーブ：{0}</Megamod_Search_SaveValue>
+  <Megamod_Search_EffectiveValue>有効な設定値：{0}</Megamod_Search_EffectiveValue>
+  <Megamod_Search_QueryHelp>名前、説明、値、Mod名を検索します。複数の単語、"フレーズ"、-除外語、mod:、author:、id:、tab:フィルターを使用できます。</Megamod_Search_QueryHelp>
+  <Megamod_Search_Timing_NextDisplay>次に画面を表示したときに適用されます。</Megamod_Search_Timing_NextDisplay>
+  <Megamod_Search_Timing_NextEligibleOccurrence>次の対象となる動作で適用されます。</Megamod_Search_Timing_NextEligibleOccurrence>
+  <Megamod_Search_Timing_NewGameOrLoad>コロニーの開始時またはロード時に適用されます。</Megamod_Search_Timing_NewGameOrLoad>
+  <Megamod_Search_Timing_Restart>RimWorldの再起動後に適用されます。</Megamod_Search_Timing_Restart>
+  <Megamod_Search_StatusPending>オプションの読み取りを待機しています。</Megamod_Search_StatusPending>
+  <Megamod_Search_StatusReading>オプションを読み取り中…</Megamod_Search_StatusReading>
+  <Megamod_Search_StatusPartial>一部のオプションを取得できていない可能性があります。</Megamod_Search_StatusPartial>
+  <Megamod_Search_StatusCancelled>読み取りをキャンセルしました。取得済みの結果は保持されます。</Megamod_Search_StatusCancelled>
+  <Megamod_Search_StatusFailed>オプションを読み取れませんでした。このページを開いて手動で確認してください。</Megamod_Search_StatusFailed>
+  <Megamod_Search_ReasonBudget>処理量またはメモリの上限に達したため、読み取りを停止しました。</Megamod_Search_ReasonBudget>
+  <Megamod_Search_ReasonUnsupported>このページには、現在読み取れない操作部品または設定ウィンドウが使われています。</Megamod_Search_ReasonUnsupported>
+  <Megamod_Search_ReasonChanged>読み取り中にページが変更されました。更新して再試行してください。</Megamod_Search_ReasonChanged>
+  <Megamod_Search_ReasonCallback>このページの設定を読み取り中にエラーが発生しました。</Megamod_Search_ReasonCallback>
+  <Megamod_Search_CatalogFailed>設定一覧を読み取れませんでした。通常の画面から引き続き設定ページを開けます。</Megamod_Search_CatalogFailed>
+</LanguageData>

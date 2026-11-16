@@ -37,9 +37,7 @@ public sealed class SettingsRowReveal
         if (!isRepaint) return new(scrollY, null);
         SettingsRowRevealFrame Refuse()
         {
-            rowId = null;
-            highlightedAt = null;
-            Status = SettingsRowRevealStatus.Unavailable;
+            this.Refuse();
             return new(scrollY, null);
         }
         if (!float.IsFinite(scrollY) || scrollY < 0 || !float.IsFinite(viewportHeight) || viewportHeight <= 0 ||
@@ -71,6 +69,13 @@ public sealed class SettingsRowReveal
         highlightedAt ??= nowSeconds;
         Status = SettingsRowRevealStatus.Highlighting;
         return new(nextScroll, rowId);
+    }
+
+    public void Refuse()
+    {
+        rowId = null;
+        highlightedAt = null;
+        Status = SettingsRowRevealStatus.Unavailable;
     }
 
     public void Cancel()

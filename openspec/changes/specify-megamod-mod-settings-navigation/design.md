@@ -90,6 +90,12 @@ not another Thing index and must not survive save/discovery changes as stale sta
 
 ### Source browsing state stays transient
 
+The feature activation itself uses the common default-on GlobalAndSave definition
+`modSettingsNavigation.enabled`, category `interface.navigation`, order0, with NextDisplay timing.
+The exact active original package `Superniquito.ModOptionsSort` applies effective-off to this
+definition only and preserves stored preferences. S141 search remains separately switchable.
+The two browsing choices described below remain transient and are not common settings values.
+
 The two sort choices are UI navigation state, not durable game configuration: author mode and group
 single-entry authors both default on at process start and retain their current choice across chooser
 openings until restart. Query resets on a fresh opening, as native. Name mode hides/disables the

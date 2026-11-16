@@ -15,6 +15,9 @@ For a red-green slice in a registered project, filter its exact wrapper suite an
 Source-linked host tests can compile product files under a newer C# language version than the owning
 mod project. Keep shared source within the product project's language version and perform the owning
 product build at the batch checkpoint; a passing host test does not prove product compilation.
+Check the product's LangVersion when authoring runtime files that host tests do not compile too:
+megamod currently uses C#11, so class primary constructors (C#12) must use ordinary constructors.
+Do not raise the product language version merely to accommodate an accidental host-only syntax choice.
 
 Read generated evidence at the exact path returned by the operation. If only a run directory is
 known, enumerate that bounded directory with `rg --files --no-ignore` before selecting its log or

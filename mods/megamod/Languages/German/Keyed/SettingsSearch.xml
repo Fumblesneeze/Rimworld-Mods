@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Megamod_Search_Category>Oberfläche / Mod-Optionen</Megamod_Search_Category>
+  <Megamod_Search_SortEnabled>Mod-Einstellungsseiten ordnen</Megamod_Search_SortEnabled>
+  <Megamod_Search_SortHelp>Seiten unter Optionen → Mod-Optionen gruppieren und sortieren. Die Suche nach einzelnen Optionen bleibt auch ohne Sortierung verfügbar.</Megamod_Search_SortHelp>
+  <Megamod_Search_Enabled>Alle Mod-Optionen durchsuchen</Megamod_Search_Enabled>
+  <Megamod_Search_EnabledHelp>Einzelne Optionen aktiver Mods anhand von Bezeichnung, Hilfe, Wert oder Mod finden. Ergebnisse öffnen die ursprünglichen Einstellungsfelder.</Megamod_Search_EnabledHelp>
+  <Megamod_Search_ByAuthor>Nach Autor gruppieren</Megamod_Search_ByAuthor>
+  <Megamod_Search_GroupSingles>Autoren mit einer Seite zusammenfassen</Megamod_Search_GroupSingles>
+  <Megamod_Search_VariousAuthors>Verschiedene Autoren</Megamod_Search_VariousAuthors>
+  <Megamod_Search_UnknownAuthor>Unbekannter Autor</Megamod_Search_UnknownAuthor>
+  <Megamod_Search_HugsLibGenerated>HugsLib-Einstellungen</Megamod_Search_HugsLibGenerated>
+  <Megamod_Search_VanillaExpanded>Vanilla Expanded</Megamod_Search_VanillaExpanded>
+  <Megamod_Search_SargBjornson>Sarg Bjornson</Megamod_Search_SargBjornson>
+  <Megamod_Search_Helixien>Helixien</Megamod_Search_Helixien>
+  <Megamod_Search_UntitledPage>Einstellungsseite ohne Titel</Megamod_Search_UntitledPage>
+  <Megamod_Search_Refresh>Aktualisieren</Megamod_Search_Refresh>
+  <Megamod_Search_Cancel>Abbrechen</Megamod_Search_Cancel>
+  <Megamod_Search_Discovering>Einstellungen werden gelesen: {0}/{1} Seiten</Megamod_Search_Discovering>
+  <Megamod_Search_Ready>{0} Einstellungsseiten gelesen</Megamod_Search_Ready>
+  <Megamod_Search_Incomplete>Bei {0} Seiten sind die Optionsdaten unvollständig oder nicht verfügbar.</Megamod_Search_Incomplete>
+  <Megamod_Search_NoResults>Keine passenden Einstellungen</Megamod_Search_NoResults>
+  <Megamod_Search_PageUnavailable>Diese Einstellungsseite ist nicht mehr verfügbar. Liste aktualisieren.</Megamod_Search_PageUnavailable>
+  <Megamod_Search_RevealUnavailable>Diese Option kann derzeit nicht angezeigt werden. Die ursprüngliche Seite kann manuell durchsucht werden.</Megamod_Search_RevealUnavailable>
+  <Megamod_Search_LastObserved>Zuletzt beobachtet: {0}</Megamod_Search_LastObserved>
+  <Megamod_Search_UnknownValue>Unbekannt</Megamod_Search_UnknownValue>
+  <Megamod_Search_GlobalValue>Globaler Standard: {0}</Megamod_Search_GlobalValue>
+  <Megamod_Search_SaveValue>Aktueller Spielstand: {0}</Megamod_Search_SaveValue>
+  <Megamod_Search_EffectiveValue>Wirksame Einstellung: {0}</Megamod_Search_EffectiveValue>
+  <Megamod_Search_QueryHelp>Bezeichnungen, Hilfen, Werte und Mods durchsuchen. Wörter kombinieren, "Wortgruppen", -Ausschlüsse oder die Filter mod:, author:, id: und tab: verwenden.</Megamod_Search_QueryHelp>
+  <Megamod_Search_Timing_NextDisplay>Gilt ab der nächsten Anzeige.</Megamod_Search_Timing_NextDisplay>
+  <Megamod_Search_Timing_NextEligibleOccurrence>Gilt bei der nächsten passenden Aktion.</Megamod_Search_Timing_NextEligibleOccurrence>
+  <Megamod_Search_Timing_NewGameOrLoad>Gilt beim Starten oder Laden einer Kolonie.</Megamod_Search_Timing_NewGameOrLoad>
+  <Megamod_Search_Timing_Restart>Gilt nach einem Neustart von RimWorld.</Megamod_Search_Timing_Restart>
+  <Megamod_Search_StatusPending>Warten auf das Einlesen der Optionen.</Megamod_Search_StatusPending>
+  <Megamod_Search_StatusReading>Optionen werden eingelesen…</Megamod_Search_StatusReading>
+  <Megamod_Search_StatusPartial>Einige Optionen wurden möglicherweise nicht erfasst.</Megamod_Search_StatusPartial>
+  <Megamod_Search_StatusCancelled>Einlesen abgebrochen; bereits erfasste Ergebnisse bleiben erhalten.</Megamod_Search_StatusCancelled>
+  <Megamod_Search_StatusFailed>Die Optionen konnten nicht eingelesen werden. Öffne diese Seite, um sie manuell durchzusehen.</Megamod_Search_StatusFailed>
+  <Megamod_Search_ReasonBudget>Das Einlesen hat seine Arbeits- oder Speichergrenze erreicht.</Megamod_Search_ReasonBudget>
+  <Megamod_Search_ReasonUnsupported>Diese Seite verwendet Bedienelemente oder ein Einstellungsfenster, die derzeit nicht eingelesen werden können.</Megamod_Search_ReasonUnsupported>
+  <Megamod_Search_ReasonChanged>Die Seite hat sich während des Einlesens geändert. Aktualisiere die Liste, um es erneut zu versuchen.</Megamod_Search_ReasonChanged>
+  <Megamod_Search_ReasonCallback>Beim Einlesen der Einstellungen ist auf dieser Seite ein Fehler aufgetreten.</Megamod_Search_ReasonCallback>
+  <Megamod_Search_CatalogFailed>Die Einstellungsliste konnte nicht eingelesen werden. Die Seiten sind weiterhin über die normale Ansicht erreichbar.</Megamod_Search_CatalogFailed>
+</LanguageData>
