@@ -2,11 +2,11 @@
 
 Package ID: `fumblesneeze.guestbedgizmo`
 
-This small RimWorld 1.6 compatibility mod moves Hospitality guest beds into RimWorld's ordinary bed-owner command. A selected supported bed offers one menu with **For colonists**, **For prisoners**, **For slaves**, and **For guests** instead of Hospitality's legacy standalone guest toggle.
+This small RimWorld 1.6 and 1.7 beta compatibility mod moves Hospitality guest beds into RimWorld's ordinary bed-owner command. A selected supported bed offers one menu with **For colonists**, **For prisoners**, **For slaves**, and **For guests** instead of Hospitality's legacy standalone guest toggle.
 
 ## Requirements
 
-- RimWorld 1.6
+- RimWorld 1.6 or 1.7 beta
 - Harmony (`brrainz.harmony`)
 - Ideology
 - Hospitality Continued (`Orion.Hospitality`)
@@ -38,5 +38,7 @@ dotnet run --project $mcp -- tool call e2e_run_start `
   --arguments '{"testId":"guest-bed-gizmo.unified-owner-menu","language":"English","timeoutSeconds":300,"dryRun":true}' -o json
 ```
 
-The owning contract is [`openspec/changes/add-guest-bed-gizmo`](../../openspec/changes/add-guest-bed-gizmo/). Workshop copy and presentation sources live under [`Release/workshop`](Release/workshop/); the universal release profile is [`Release/release.json`](Release/release.json).
+`mod_build` produces and installs one package with separately compiled 1.6 and 1.7 assemblies. Use `release_target_test` with this mod's E2E project and explicit test IDs to verify the frozen package on either declared target. Package upload and page update are separate operations.
+
+The gameplay contract is [`openspec/changes/add-guest-bed-gizmo`](../../openspec/changes/add-guest-bed-gizmo/) and the versioned release contract is [`release-guest-bed-multiversion`](../../openspec/changes/release-guest-bed-multiversion/). Workshop copy and presentation sources live under [`Release/workshop`](Release/workshop/); the universal release profile is [`Release/release.json`](Release/release.json).
 

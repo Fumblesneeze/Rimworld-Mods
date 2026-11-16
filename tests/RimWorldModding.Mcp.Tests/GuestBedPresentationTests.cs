@@ -7,6 +7,22 @@ namespace RimWorldModding.Mcp.Tests;
 public sealed class GuestBedPresentationTests
 {
     [Test]
+    public void ReleaseProfile_IncludesBothGamePayloadsWithoutExternalAssemblies()
+    {
+        var profile = ReleaseProfileCatalog.Discover(TestRepository.FindRoot())
+            .Single(item => item.PackageId == "fumblesneeze.guestbedgizmo");
+        Assert.Multiple(() =>
+        {
+            Assert.That(profile.Targets.Select(target => target.Version), Is.EqualTo(new[] { "1.6", "1.7" }));
+            Assert.That(profile.PackageInclude.Where(path => path.EndsWith(".dll", StringComparison.Ordinal)),
+                Is.EqualTo(new[] { "1.6/Assemblies/GuestBedGizmo.dll", "1.7/Assemblies/GuestBedGizmo.dll" }));
+            Assert.That(profile.Tags, Is.EquivalentTo(new[] { "Mod", "1.6", "1.7" }));
+            Assert.That(profile.RequiredWorkshopItems, Is.EquivalentTo(new[] { "2009463077", "3509486825" }));
+            Assert.That(profile.RequiredDlcAppIds, Is.EqualTo(new[] { "1392840" }));
+        });
+    }
+
+    [Test]
     public void AnnotatedWorkshopPresentation_IsCorrectedConciseAndMenuDominant()
     {
         var root = TestRepository.FindRoot();

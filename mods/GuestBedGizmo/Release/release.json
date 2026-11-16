@@ -5,15 +5,14 @@
   "title": "Hospitality + Ideology Patch",
   "author": "Fumblesneeze",
   "distributionKind": "Product",
-  "rimWorldVersion": "1.6",
+  "rimWorldVersion": "1.7",
   "steamAppId": 294100,
   "steamUserId": "76561198077136238",
   "publishedFileId": "3789536584",
   "allowFirstPublication": false,
   "visibility": "Public",
   "tags": [
-    "Mod",
-    "1.6"
+    "Mod"
   ],
   "requiredWorkshopItems": [
     "2009463077",
@@ -30,11 +29,13 @@
   "packageInclude": [
     "About/About.xml",
     "About/Preview.png",
-    "1.6/Assemblies/GuestBedGizmo.dll",
+    "{version}/Assemblies/GuestBedGizmo.dll",
     "About/PublishedFileId.txt"
   ],
   "description": "workshop/description.bbcode.txt",
   "preview": "workshop/preview-main.png",
-  "changeNote": "Restored the four-choice bed owner menu with the current Hospitality release. Compatible Hospitality rebuilds no longer disable guest-bed conversion.",
-  "previousChangeNote": "Corrected the title, simplified the Workshop page and preview around the four-choice bed menu, and declared Ideology as required DLC."
+  "changeNote": "Adds RimWorld 1.7 beta support alongside 1.6 in one package. Hospitality guest beds keep the unified colonist, prisoner, slave, and guest owner menu on both versions.",
+  "previousChangeNote": "Restored the four-choice bed owner menu with the current Hospitality release. Compatible Hospitality rebuilds no longer disable guest-bed conversion.",
+  "supportedTargets": ["1.6", "1.7"],
+  "developmentTarget": "1.7"
 }

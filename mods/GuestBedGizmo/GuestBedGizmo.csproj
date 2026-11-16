@@ -12,8 +12,10 @@
     <RootNamespace>GuestBedGizmo</RootNamespace>
     <IncludeHarmony>true</IncludeHarmony>
     <OutputFolder>$(ArtifactsRoot)Mods</OutputFolder>
-    <Description>Adds Hospitality guest beds to RimWorld 1.6's unified bed-owner menu alongside colonist, prisoner, and slave beds.</Description>
+    <Description>Adds Hospitality guest beds to RimWorld's unified bed-owner menu alongside colonist, prisoner, and slave beds.</Description>
   </PropertyGroup>
+
+  <Import Project="..\..\tools\RimWorld.Build\VersionedGame.props" />
 
   <ItemGroup>
     <RimWorldLoadAfter Include="Orion.Hospitality" />
@@ -21,4 +23,5 @@
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Zlepper.RimWorld.ModSdk" Version="0.0.9" />
+  <Import Project="..\..\tools\RimWorld.Build\VersionedGame.targets" />
 </Project>

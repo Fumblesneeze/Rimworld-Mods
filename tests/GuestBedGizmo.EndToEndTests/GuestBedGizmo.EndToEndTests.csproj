@@ -1,18 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net480</TargetFramework>
+    <RimWorldVersionedBuild>true</RimWorldVersionedBuild>
+    <RimWorldPath Condition="'$(RimWorldPath)' == ''">$(DefaultRimWorldPath)</RimWorldPath>
     <AssemblyName>GuestBedGizmo.EndToEndTests</AssemblyName>
     <RootNamespace>GuestBedGizmo.EndToEndTests</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <RimWorldEndToEndTest>true</RimWorldEndToEndTest>
+    <RimWorldPreparedProductReference>true</RimWorldPreparedProductReference>
     <RimWorldEndToEndTestOwnerPackageId>fumblesneeze.guestbedgizmo</RimWorldEndToEndTestOwnerPackageId>
   </PropertyGroup>
 
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.props" />
+  <Import Project="../../tools/RimWorld.Build/VersionedGame.targets" />
+
   <ItemGroup>
-    <ProjectReference Include="..\..\mods\GuestBedGizmo\GuestBedGizmo.csproj" />
+    <ProjectReference Include="..\..\mods\GuestBedGizmo\GuestBedGizmo.csproj" Condition="'$(PreparedProductAssemblyPath)' == ''" />
+    <Reference Include="GuestBedGizmo" Condition="'$(PreparedProductAssemblyPath)' != ''">
+      <HintPath>$(PreparedProductAssemblyPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
     <ProjectReference Include="..\..\shared\RimWorldDevGateway.EndToEndTesting\RimWorldDevGateway.EndToEndTesting.csproj" />
-    <Reference Include="Assembly-CSharp"><HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
-    <Reference Include="UnityEngine.CoreModule"><HintPath>$(DefaultRimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Assembly-CSharp" Condition="'$(RimWorldVersion)' == '1.6'"><HintPath>$(RimWorldManagedPath)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule" Condition="'$(RimWorldVersion)' == '1.6'"><HintPath>$(RimWorldManagedPath)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
 </Project>

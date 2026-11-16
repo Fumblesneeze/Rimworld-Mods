@@ -648,8 +648,8 @@ public sealed class GuestBedOwnerMenuEdgeWorkflowTests : IRimWorldEndToEndTest
             "mixed selection and outdoor rejection outcome",
             _ => new Dictionary<string, string>
             {
-                ["guestRuntimeType"] = CurrentOrdinaryBed().GetType().FullName,
-                ["animalRuntimeType"] = animalBed.GetType().FullName,
+                ["guestRuntimeType"] = CurrentOrdinaryBed().GetType().FullName ?? string.Empty,
+                ["animalRuntimeType"] = animalBed.GetType().FullName ?? string.Empty,
                 ["foreignFaction"] = foreignBed.Faction?.Name ?? string.Empty,
                 ["expectedOutdoorRejection"] =
                     "CommandBedSetForPrisonersFailOutdoors".Translate().ToString(),

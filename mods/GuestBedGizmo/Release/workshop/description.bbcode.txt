@@ -8,7 +8,7 @@ Safe to add or remove during a save game.
 
 [h2]Requirements[/h2]
 [list]
-[*]RimWorld 1.6
+[*]RimWorld 1.6 or 1.7 beta
 [*]Harmony
 [*]Ideology
 [*]Hospitality Continued

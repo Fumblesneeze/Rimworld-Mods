@@ -8,7 +8,7 @@ Safe to add or remove during a save game.
 
 ## Requirements
 
-- RimWorld 1.6
+- RimWorld 1.6 or 1.7 beta
 - Harmony
 - Ideology
 - Hospitality Continued

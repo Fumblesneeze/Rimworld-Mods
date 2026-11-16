@@ -1,6 +1,6 @@
 # Fumblesneeze RimWorld mods
 
-This repository is the Windows development monorepo for Fumblesneeze's RimWorld mods. Immersive Chefs ships separate 1.6 and 1.7 beta payloads in one package. Other established product mods target 1.6; megamod development targets 1.7 beta. The developer-only Gateway and explicitly opted-in verification bundles also support the inspected 1.7 beta runtime. The repository owns mod sources, host and in-game tests, OpenSpec contracts, release profiles, and typed MCP/CLI automation for building, verifying, installing, and publishing them.
+This repository is the Windows development monorepo for Fumblesneeze's RimWorld mods. Immersive Chefs and Hospitality + Ideology Patch each ship separate 1.6 and 1.7 beta payloads in one package. Other established product mods target 1.6; megamod development targets 1.7 beta. The developer-only Gateway and explicitly opted-in verification bundles also support the inspected 1.7 beta runtime. The repository owns mod sources, host and in-game tests, OpenSpec contracts, release profiles, and typed MCP/CLI automation for building, verifying, installing, and publishing them.
 
 ## Mods
 
@@ -153,7 +153,7 @@ Use semantic Gateway operations for repeatable actions and observations. Raw C# 
 
 ## Release operations
 
-Immersive Chefs declares an exact 1.6/1.7 release matrix. `mod_build` builds and installs both
+Immersive Chefs and Hospitality + Ideology Patch declare 1.6/1.7 release matrices. `mod_build` builds and installs both
 version folders together; `release_matrix_build` also exposes explicit cache/configuration overrides.
 Use `release_target_test` for each declared target to exercise the frozen combined package through
 native workflows. Publication requires a clean Release build receipt matching the source revision,
