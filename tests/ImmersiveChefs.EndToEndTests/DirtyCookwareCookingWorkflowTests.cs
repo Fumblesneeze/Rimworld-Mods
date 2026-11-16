@@ -103,6 +103,9 @@ public sealed class DirtyCookwareCookingWorkflowTest : IRimWorldEndToEndTest
         settings.AllowTerrainHandwashing = true;
         settings.DishwashingWorkScale = 1f;
         settings.AutoCallAssistants = false;
+        HandwashingE2EFixture.AssertTerrainDestination(automatic.Cook, automatic.Cookware, automaticWater);
+        HandwashingE2EFixture.AssertTerrainDestination(plateCleaner, shortWashPlate, plateWater);
+        HandwashingE2EFixture.AssertTerrainDestination(cutleryCleaner, shortWashCutlery, cutleryWater);
     }
 
     public IEnumerator<EndToEndStep> Execute(IEndToEndContext context)
@@ -733,6 +736,7 @@ public sealed class DirtyCookwareCookingWorkflowTest : IRimWorldEndToEndTest
                 var cell = center + new IntVec3(x, 0, z);
                 if (!cell.InBounds(map) ||
                     !cell.Walkable(map) ||
+                    map.terrainGrid.TerrainAt(cell).IsWater ||
                     cell.GetEdifice(map) is not null)
                 {
                     return false;
